@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+
+<html lang="pl"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#f8f9ff;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: 'class', theme: { extend: { 'colors': { 'primary': '#3525cd', 'surface': '#f8f9ff', 'surface-container-high': '#dce9ff', 'primary-container': '#4f46e5', 'surface-container-lowest': '#ffffff', 'surface-variant': '#d3e4fe', 'on-surface': '#0b1c30', 'inverse-on-surface': '#eaf1ff', 'on-error-container': '#93000a', 'tertiary-container': '#934e00', 'on-primary-fixed-variant': '#3323cc', 'surface-container-low': '#eff4ff', 'tertiary-fixed': '#ffdcc3', 'on-surface-variant': '#464555', 'secondary-fixed-dim': '#68dba9', 'on-tertiary-fixed-variant': '#6e3900', 'tertiary-fixed-dim': '#ffb77d', 'outline-variant': '#c7c4d8', 'on-secondary-container': '#00714e', 'on-tertiary-fixed': '#2f1500', 'tertiary': '#703a00', 'on-primary-container': '#dad7ff', 'surface-container-highest': '#d3e4fe', 'on-secondary-fixed-variant': '#005137', 'on-secondary-fixed': '#002114', 'on-tertiary-container': '#ffd2b1', 'surface-dim': '#cbdbf5', 'error-container': '#ffdad6', 'on-primary': '#ffffff', 'surface-tint': '#4d44e3', 'inverse-primary': '#c3c0ff', 'on-background': '#0b1c30', 'on-primary-fixed': '#0f0069', 'background': '#f8f9ff', 'inverse-surface': '#213145', 'on-error': '#ffffff', 'on-secondary': '#ffffff', 'surface-bright': '#f8f9ff', 'secondary-container': '#82f5c1', 'surface-container': '#e5eeff', 'on-tertiary': '#ffffff', 'outline': '#777587', 'secondary-fixed': '#85f8c4', 'primary-fixed': '#e2dfff', 'secondary': '#006c4a', 'error': '#ba1a1a', 'primary-fixed-dim': '#c3c0ff' }, 'borderRadius': { 'DEFAULT': '0.125rem', 'lg': '0.25rem', 'xl': '0.5rem', 'full': '0.75rem' }, 'spacing': { 'gutter': '0.75rem', 'space-sm': '0.5rem', 'space-md': '0.75rem', 'space-xs': '0.25rem', 'margin': '1rem', 'space-xl': '1.5rem', 'space-lg': '1rem' }, 'fontFamily': { 'headline-lg-mobile': ['Plus Jakarta Sans'], 'body-lg': ['Plus Jakarta Sans'], 'headline-sm': ['Plus Jakarta Sans'], 'body-sm': ['Plus Jakarta Sans'], 'label-md': ['Plus Jakarta Sans'], 'body-md': ['Plus Jakarta Sans'], 'headline-md': ['Plus Jakarta Sans'], 'label-lg': ['Plus Jakarta Sans'], 'headline-lg': ['Plus Jakarta Sans'], 'label-sm': ['Plus Jakarta Sans'] }, 'fontSize': { 'headline-lg-mobile': ['24px', { 'lineHeight': '30px', 'letterSpacing': '-0.02em', 'fontWeight': '700' }], 'body-lg': ['15px', { 'lineHeight': '22px', 'letterSpacing': '0em', 'fontWeight': '400' }], 'headline-sm': ['16px', { 'lineHeight': '22px', 'letterSpacing': '0em', 'fontWeight': '600' }], 'body-sm': ['11px', { 'lineHeight': '15px', 'letterSpacing': '0.01em', 'fontWeight': '400' }], 'label-md': ['11px', { 'lineHeight': '14px', 'letterSpacing': '0.02em', 'fontWeight': '600' }], 'body-md': ['13px', { 'lineHeight': '18px', 'letterSpacing': '0em', 'fontWeight': '400' }], 'headline-md': ['20px', { 'lineHeight': '26px', 'letterSpacing': '-0.01em', 'fontWeight': '600' }], 'label-lg': ['13px', { 'lineHeight': '16px', 'letterSpacing': '0.01em', 'fontWeight': '600' }], 'headline-lg': ['28px', { 'lineHeight': '34px', 'letterSpacing': '-0.02em', 'fontWeight': '700' }], 'label-sm': ['10px', { 'lineHeight': '12px', 'letterSpacing': '0.04em', 'fontWeight': '700' }] } } } };</script></head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-container-lowest/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-margin flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm min-w-0 flex-1"><img alt="EduSync Logo" class="h-8 w-auto object-contain shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1UWyiDm_1zqhVZkKNETi3NtGhHPeMmpklq483t4bv98cvA1lGYKVn5-7_jAoVCP9JiLTv8DN-tVrrMeQ4YehB5AoMoDT-XfOLoggNwYsx7Qmt47ryTZFBPM3V1YLv_4hgd12bDIoSzAOrd3b0BGWvBCF2Af3jjSuh9GmJCMejiBK2QX99K6XJ9xffV4ZRSvcSGAraXt2j3UM1u0p5waxXFX9EYuqlUNiPTuSIDVvyJ4sAXVQGZjyQBHvC8"/><div class="flex flex-col min-w-0"><div class="flex items-center gap-1"><span class="font-headline-sm text-headline-sm text-on-surface truncate">Maja Kowalska</span><span class="material-symbols-outlined text-outline text-[16px]">expand_more</span></div><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">3B LO • Oceny</span></div></div><div class="flex items-center gap-space-xs shrink-0"><button aria-label="Powiadomienia" class="w-11 h-11 flex items-center justify-center text-on-surface relative rounded-full hover:bg-surface-container-high transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2 right-2 flex items-center justify-center min-w-[16px] h-4 px-1 bg-error text-on-error font-label-sm text-[10px] rounded-full">3</span></button><div class="flex items-center justify-center p-0.5 rounded-full bg-surface-container-high"><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBM89AnuJsEhZEgNdUzb0td5UeroY5dgFmZqrZH8oAqskUaIEN2-e5raZ2Gz_tUYDUoS1xhw5QxnhV_CmyYFK3nqoxjrFZU2Dd9zHVybKt8LQOWKP4LoCZLWFNRGL6ZPyDVC_JvgOCVvFlurBBKaSsnm3k0NsIHd5AoBdi9nPWLrHx5Izhkv671Dj7RtGl3D5xCliq27yiy-XyONWu5fTNU_oEUvEK4Z40wbL453uMpAMq7XoTUC-fL"/></div></div></div></header><main class="flex-1 flex flex-col relative w-full pt-16 pb-24 bg-surface px-margin"><div class="flex flex-col w-full pb-6 space-y-space-md">
+<!-- Segmented Term Switcher & Controls -->
+<div class="flex items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex p-1 bg-surface-container rounded-full flex-1 max-w-[280px]">
+<button class="flex-1 py-1.5 px-3 rounded-full bg-surface-container-lowest text-primary font-label-md text-label-md shadow-sm transition-all text-center">
+        Semestr 1
+      </button>
+<button class="flex-1 py-1.5 px-3 rounded-full text-on-surface-variant font-label-md text-label-md hover:text-on-surface transition-all text-center">
+        Semestr 2
+      </button>
+<button class="flex-1 py-1.5 px-3 rounded-full text-on-surface-variant font-label-md text-label-md hover:text-on-surface transition-all text-center">
+        Roczna
+      </button>
+</div>
+<button aria-label="Filtruj i sortuj" class="flex items-center justify-center gap-1 h-9 px-3 bg-surface-container-low rounded-full text-on-surface font-label-md text-label-md shadow-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[18px] text-primary">tune</span>
+<span class="hidden xs:inline">Filtry</span>
+</button>
+</div>
+<!-- Summary Stats Bento Banner -->
+<div class="relative overflow-hidden bg-surface-container-lowest rounded-xl p-space-md shadow-sm">
+<div class="flex items-start justify-between gap-space-sm mb-space-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Średnia ważona ocen</span>
+<div class="flex items-baseline gap-space-xs mt-0.5">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight">4.82</span>
+<span class="font-label-md text-label-md text-secondary flex items-center">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span> +0.14
+          </span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">stars</span>
+          Top 5% w 3B
+        </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mt-1">Pozycja: 2 / 28</span>
+</div>
+</div>
+<!-- Scholarship Progress Indicator -->
+<div class="p-space-xs bg-surface-container-low rounded-lg">
+<div class="flex items-center justify-between text-on-surface-variant mb-1">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-primary">school</span>
+<span class="font-label-sm text-label-sm font-medium">Stypendium naukowe (próg 4.75)</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-bold">Spełniony (+0.07)</span>
+</div>
+<div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden flex">
+<div class="bg-primary h-full rounded-full transition-all duration-500" style="width: 86%;"></div>
+<div class="bg-secondary h-full rounded-full transition-all duration-500" style="width: 14%;"></div>
+</div>
+<div class="flex justify-between items-center mt-1 text-[10px] text-on-surface-variant font-label-sm">
+<span>Bazowa: 4.00</span>
+<span class="text-primary font-semibold">Cel: 4.75</span>
+<span>Maks: 6.00</span>
+</div>
+</div>
+</div>
+<!-- Subject List Header -->
+<div class="flex items-center justify-between pt-space-xs">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">Przedmioty</span>
+<span class="px-2 py-0.5 bg-surface-container-high text-on-surface-variant rounded-full font-label-sm text-label-sm">12</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Kliknij, aby rozwinąć historię</span>
+</div>
+<!-- Subjects Accordion Container -->
+<div class="flex flex-col space-y-space-sm" id="accordion-group">
+<!-- CARD 1: MATEMATYKA (EXPANDED) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden transition-all duration-200" id="card-mat">
+<!-- Accordion Header -->
+<button class="w-full text-left p-space-md flex flex-col gap-space-xs active:bg-surface-container-low transition-colors" onclick="toggleAccordion('card-mat')">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-2 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-primary shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Matematyka</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">mgr K. Wiśniewski</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="flex flex-col items-end">
+<span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-headline-sm text-headline-sm">4.90</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Ważona</span>
+</div>
+<span class="material-symbols-outlined text-outline transition-transform duration-300 transform rotate-180" id="icon-mat">expand_more</span>
+</div>
+</div>
+<!-- Grade Badges Preview Row -->
+<div class="flex items-center gap-1.5 flex-wrap pt-1">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-md text-label-md">
+            5 <span class="text-[9px] opacity-75 ml-0.5">(w:3)</span>
+</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-md text-label-md">
+            5 <span class="text-[9px] opacity-75 ml-0.5">(w:3)</span>
+</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-md text-label-md">
+            4+ <span class="text-[9px] opacity-75 ml-0.5">(w:2)</span>
+</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-md text-label-md">
+            5 <span class="text-[9px] opacity-75 ml-0.5">(w:1)</span>
+</span>
+<span class="text-[10px] text-outline font-label-sm ml-auto">+2 przewidywane</span>
+</div>
+</button>
+<!-- Detailed Ledger (Expanded View) -->
+<div class="px-space-md pb-space-md pt-0 flex flex-col space-y-space-xs bg-surface-container-lowest" id="content-mat">
+<div class="h-px bg-surface-container-high my-1"></div>
+<div class="flex items-center justify-between text-on-surface-variant py-1">
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Szczegółowy wykaz ocen</span>
+<span class="font-label-sm text-label-sm">4 oceny cząstkowe</span>
+</div>
+<!-- Grade Entry 1 -->
+<div class="p-2.5 rounded-lg bg-surface-container-low flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-7 h-7 rounded-full bg-secondary-container text-on-secondary-container font-headline-sm text-headline-sm flex items-center justify-center">5</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Sprawdzian: Ciągi liczbowe</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">24 Października • Waga: 3</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">100%</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant pl-9 italic">"Świetna praca, pełna punktacja i elegancki zapis dowodu."</p>
+</div>
+<!-- Grade Entry 2 -->
+<div class="p-2.5 rounded-lg bg-surface-container-low flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-7 h-7 rounded-full bg-secondary-container text-on-secondary-container font-headline-sm text-headline-sm flex items-center justify-center">5</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Kartkówka: Granice ciągów</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">14 Października • Waga: 2</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">94%</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant pl-9">Brak uwag</p>
+</div>
+<!-- Grade Entry 3 -->
+<div class="p-2.5 rounded-lg bg-surface-container-low flex flex-col gap-1">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-7 h-7 rounded-full bg-surface-container-highest text-on-surface font-headline-sm text-headline-sm flex items-center justify-center">4+</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Odpowiedź ustna</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">02 Października • Waga: 1</span>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm text-label-sm">88%</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant pl-9 italic">"Drobne potknięcie przy wzorze Viète'a, reszta bez zarzutu."</p>
+</div>
+</div>
+</div>
+<!-- CARD 2: JĘZYK POLSKI -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden transition-all duration-200" id="card-pol">
+<button class="w-full text-left p-space-md flex flex-col gap-space-xs active:bg-surface-container-low transition-colors" onclick="toggleAccordion('card-pol')">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-2 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary-container shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Język Polski</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">mgr E. Dąbrowska</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="flex flex-col items-end">
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface font-headline-sm text-headline-sm">4.65</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Ważona</span>
+</div>
+<span class="material-symbols-outlined text-outline transition-transform duration-300" id="icon-pol">expand_more</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 flex-wrap pt-1">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-md text-label-md">
+            5 <span class="text-[9px] opacity-75 ml-0.5">(w:3)</span>
+</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-md text-label-md">
+            4 <span class="text-[9px] opacity-75 ml-0.5">(w:2)</span>
+</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-md text-label-md">
+            5- <span class="text-[9px] opacity-75 ml-0.5">(w:1)</span>
+</span>
+</div>
+</button>
+<div class="hidden px-space-md pb-space-md pt-0 flex flex-col space-y-space-xs bg-surface-container-lowest" id="content-pol">
+<div class="h-px bg-surface-container-high my-1"></div>
+<div class="p-2.5 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-7 h-7 rounded-full bg-secondary-container text-on-secondary-container font-headline-sm text-headline-sm flex items-center justify-center">5</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Rozprawka: Motyw cierpienia</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">18 Października • Waga: 3</span>
+</div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">mgr E. Dąbrowska</span>
+</div>
+</div>
+</div>
+<!-- CARD 3: JĘZYK ANGIELSKI -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden transition-all duration-200" id="card-ang">
+<button class="w-full text-left p-space-md flex flex-col gap-space-xs active:bg-surface-container-low transition-colors" onclick="toggleAccordion('card-ang')">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-2 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Język Angielski</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">mgr J. Smith</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="flex flex-col items-end">
+<span class="px-2.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-headline-sm text-headline-sm">5.10</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Ważona</span>
+</div>
+<span class="material-symbols-outlined text-outline transition-transform duration-300" id="icon-ang">expand_more</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 flex-wrap pt-1">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-md text-label-md font-bold">
+            6 <span class="text-[9px] opacity-75 ml-0.5">(w:3)</span>
+</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-md text-label-md">
+            5 <span class="text-[9px] opacity-75 ml-0.5">(w:2)</span>
+</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-md text-label-md">
+            5 <span class="text-[9px] opacity-75 ml-0.5">(w:2)</span>
+</span>
+</div>
+</button>
+<div class="hidden px-space-md pb-space-md pt-0 flex flex-col space-y-space-xs bg-surface-container-lowest" id="content-ang">
+<div class="h-px bg-surface-container-high my-1"></div>
+<div class="p-2.5 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-7 h-7 rounded-full bg-primary-container text-on-primary font-headline-sm text-headline-sm flex items-center justify-center">6</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Cambridge C1 Speaking Mock</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">21 Października • Waga: 3</span>
+</div>
+</div>
+<span class="font-body-sm text-body-sm text-secondary font-semibold">100%</span>
+</div>
+</div>
+</div>
+<!-- CARD 4: FIZYKA -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden transition-all duration-200" id="card-fiz">
+<button class="w-full text-left p-space-md flex flex-col gap-space-xs active:bg-surface-container-low transition-colors" onclick="toggleAccordion('card-fiz')">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-2 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Fizyka</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">dr T. Lewandowski</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="flex flex-col items-end">
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface font-headline-sm text-headline-sm">4.15</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Ważona</span>
+</div>
+<span class="material-symbols-outlined text-outline transition-transform duration-300" id="icon-fiz">expand_more</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 flex-wrap pt-1">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-md text-label-md">
+            4 <span class="text-[9px] opacity-75 ml-0.5">(w:3)</span>
+</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-md text-label-md">
+            3 <span class="text-[9px] opacity-75 ml-0.5">(w:2)</span>
+</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-md text-label-md">
+            5 <span class="text-[9px] opacity-75 ml-0.5">(w:1)</span>
+</span>
+</div>
+</button>
+<div class="hidden px-space-md pb-space-md pt-0 flex flex-col space-y-space-xs bg-surface-container-lowest" id="content-fiz">
+<div class="h-px bg-surface-container-high my-1"></div>
+<div class="p-2.5 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-7 h-7 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-headline-sm text-headline-sm flex items-center justify-center">3</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Termodynamika: Prawa gazów</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">10 Października • Waga: 2</span>
+</div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Poprawka możliwa</span>
+</div>
+</div>
+</div>
+<!-- CARD 5: CHEMIA -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden transition-all duration-200" id="card-chm">
+<button class="w-full text-left p-space-md flex flex-col gap-space-xs active:bg-surface-container-low transition-colors" onclick="toggleAccordion('card-chm')">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-2 min-w-0">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container shrink-0"></span>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Chemia</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">mgr M. Zielińska</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="flex flex-col items-end">
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface font-headline-sm text-headline-sm">4.40</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Ważona</span>
+</div>
+<span class="material-symbols-outlined text-outline transition-transform duration-300" id="icon-chm">expand_more</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 flex-wrap pt-1">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-md text-label-md">
+            4+ <span class="text-[9px] opacity-75 ml-0.5">(w:2)</span>
+</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface font-label-md text-label-md">
+            4 <span class="text-[9px] opacity-75 ml-0.5">(w:3)</span>
+</span>
+</div>
+</button>
+<div class="hidden px-space-md pb-space-md pt-0 flex flex-col space-y-space-xs bg-surface-container-lowest" id="content-chm">
+<div class="h-px bg-surface-container-high my-1"></div>
+<div class="p-2.5 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-7 h-7 rounded-full bg-surface-container-highest text-on-surface font-headline-sm text-headline-sm flex items-center justify-center">4+</span>
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface">Stechiometria reakcji</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">04 Października • Waga: 2</span>
+</div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">mgr M. Zielińska</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Motivational Tip -->
+<div class="p-space-sm bg-primary-fixed/30 rounded-xl flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary text-[20px]">lightbulb</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-on-primary-fixed font-bold uppercase">Podpowiedź edukacyjna</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Zdobycie jeszcze jednej 5 z Fizyki podniesie średnią całkowitą do 4.86.</span>
+</div>
+</div>
+<!-- Interactive Floating Simulation Pill Action -->
+<div class="sticky bottom-4 z-20 flex justify-center w-full px-space-md mt-2">
+<button class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-label-lg text-label-lg shadow-lg hover:shadow-xl active:scale-95 transition-all" onclick="toggleSimulator()">
+<span class="material-symbols-outlined text-[20px]">calculate</span>
+<span>Symuluj ocenę i cel GPA</span>
+</button>
+</div>
+<!-- Grade Simulator Modal Sheet (Hidden by default) -->
+<div class="fixed inset-0 z-50 bg-on-surface/40 backdrop-blur-sm hidden items-end justify-center p-0 transition-opacity" id="sim-modal">
+<div class="w-full max-w-lg bg-surface-container-lowest rounded-t-2xl p-space-lg flex flex-col space-y-space-md shadow-2xl animate-in slide-in-from-bottom duration-300">
+<div class="flex items-center justify-between pb-1">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">calculate</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Symulator Średniej</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Sprawdź, jak nowa ocena wpłynie na Twój wynik</p>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-on-surface" onclick="toggleSimulator()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="space-y-space-sm bg-surface-container-low p-space-sm rounded-xl">
+<label class="block font-label-sm text-label-sm text-on-surface-variant uppercase">Wybierz przedmiot</label>
+<div class="flex gap-2 overflow-x-auto pb-1">
+<button class="px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md shrink-0">Fizyka</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface text-on-surface-variant font-label-md text-label-md shrink-0">Matematyka</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface text-on-surface-variant font-label-md text-label-md shrink-0">Polski</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface text-on-surface-variant font-label-md text-label-md shrink-0">Chemia</button>
+</div>
+<div class="grid grid-cols-2 gap-space-sm pt-1">
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Przewidywana ocena</label>
+<div class="flex items-center gap-1">
+<button class="sim-btn w-9 h-9 rounded-lg bg-surface font-label-lg text-label-lg font-bold" onclick="selectSimGrade(this)">4</button>
+<button class="sim-btn w-9 h-9 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg font-bold" onclick="selectSimGrade(this)">5</button>
+<button class="sim-btn w-9 h-9 rounded-lg bg-surface font-label-lg text-label-lg font-bold" onclick="selectSimGrade(this)">6</button>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-on-surface-variant mb-1">Waga oceny</label>
+<div class="flex items-center gap-1">
+<button class="w-9 h-9 rounded-lg bg-surface font-label-lg text-label-lg">1</button>
+<button class="w-9 h-9 rounded-lg bg-surface font-label-lg text-label-lg">2</button>
+<button class="w-9 h-9 rounded-lg bg-primary text-on-primary font-label-lg text-label-lg font-bold">3</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Projected Impact Stat -->
+<div class="flex items-center justify-between p-space-sm bg-secondary-container/40 rounded-xl">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-secondary-container font-semibold">Nowa średnia z Fizyki: 4.44 (+0.29)</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Globalny wpływ na semestr: +0.04</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-secondary">4.86</span>
+</div>
+<button class="w-full py-2.5 rounded-lg bg-primary-container text-on-primary font-label-lg text-label-lg" onclick="toggleSimulator()">
+        Zastosuj podgląd do widoku
+      </button>
+</div>
+</div>
+</div>
+<script>
+  function toggleAccordion(id) {
+    const card = document.getElementById(id);
+    const content = card.querySelector('[id^="content-"]');
+    const icon = card.querySelector('[id^="icon-"]');
+    
+    if (content.classList.contains('hidden')) {
+      content.classList.remove('hidden');
+      icon.classList.add('rotate-180');
+    } else {
+      content.classList.add('hidden');
+      icon.classList.remove('rotate-180');
+    }
+  }
+
+  function toggleSimulator() {
+    const modal = document.getElementById('sim-modal');
+    if (modal.classList.contains('hidden')) {
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    } else {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+  }
+
+  function selectSimGrade(button) {
+    const parent = button.parentElement;
+    parent.querySelectorAll('.sim-btn').forEach(btn => {
+      btn.classList.remove('bg-primary', 'text-on-primary');
+      btn.classList.add('bg-surface', 'text-on-surface');
+    });
+    button.classList.remove('bg-surface', 'text-on-surface');
+    button.classList.add('bg-primary', 'text-on-primary');
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/85 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.05)]" data-active-classes="text-primary font-headline-sm"><div class="flex justify-between items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center flex-1 h-full gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-sm text-label-sm">Start</span></a><a aria-current="page" class="flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors text-primary font-headline-sm" data-path="oceny" href="#"><span class="material-symbols-outlined text-[22px]">bar_chart</span><span class="font-label-sm text-label-sm">Oceny</span></a><a class="flex flex-col items-center justify-center flex-1 h-full gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors" data-path="plan-lekcji" href="#"><span class="material-symbols-outlined text-[22px]">calendar_today</span><span class="font-label-sm text-label-sm">Plan</span></a><a class="flex flex-col items-center justify-center flex-1 h-full gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors" data-path="frekwencja" href="#"><span class="material-symbols-outlined text-[22px]">how_to_reg</span><span class="font-label-sm text-label-sm">Frekwencja</span></a><a class="flex flex-col items-center justify-center flex-1 h-full gap-0.5 text-on-surface-variant hover:text-on-surface transition-colors" data-path="wiadomosci" href="#"><span class="material-symbols-outlined text-[22px]">mail</span><span class="font-label-sm text-label-sm">Wiadomości</span></a></div></nav></body></html>

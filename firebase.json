@@ -1,0 +1,70 @@
+{
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/api/syncNow",
+        "function": {
+          "functionId": "syncNow",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/api/studentData",
+        "function": {
+          "functionId": "getStudentData",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/api/saveConnection",
+        "function": {
+          "functionId": "saveConnection",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/api/getConnection",
+        "function": {
+          "functionId": "getConnection",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
