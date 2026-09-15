@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
+import '../../domain/models/attendance_record.dart';
 import '../providers/school_providers.dart';
 import '../providers/auth_providers.dart';
 import '../providers/sync_provider.dart';
@@ -26,6 +27,20 @@ class MainNavigationScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(currentNavIndexProvider);
     final studentAsync = ref.watch(studentProfileProvider);
+    final attendanceAsync = ref.watch(attendanceProvider);
+    final messagesAsync = ref.watch(messagesProvider);
+
+    // Unexcused absences count for Frekwencja badge
+    final unexcusedCount = (attendanceAsync.value ?? [])
+        .where((r) => r.type == AttendanceType.absent && r.justificationStatus == JustificationStatus.none)
+        .length;
+
+    // Unread messages / notifications count for Wiadomości badge
+    final unreadMessagesCount = (messagesAsync.value ?? [])
+        .where((m) => m.isUnread)
+        .length;
+    final unreadNotifs = studentAsync.value?.unreadMessagesCount ?? 0;
+    final messageBadgeCount = unreadMessagesCount > 0 ? unreadMessagesCount : unreadNotifs;
 
     final screens = const [
       DashboardScreen(),
@@ -59,30 +74,50 @@ class MainNavigationScreen extends ConsumerWidget {
         onDestinationSelected: (index) {
           ref.read(currentNavIndexProvider.notifier).setIndex(index);
         },
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard),
             label: 'Pulpit',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.calendar_month_outlined),
             selectedIcon: Icon(Icons.calendar_month),
             label: 'Plan',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.school_outlined),
             selectedIcon: Icon(Icons.school),
             label: 'Oceny',
           ),
           NavigationDestination(
-            icon: Icon(Icons.rule_outlined),
-            selectedIcon: Icon(Icons.rule),
+            icon: Badge(
+              isLabelVisible: unexcusedCount > 0,
+              label: Text('$unexcusedCount'),
+              backgroundColor: AppColors.error,
+              child: const Icon(Icons.rule_outlined),
+            ),
+            selectedIcon: Badge(
+              isLabelVisible: unexcusedCount > 0,
+              label: Text('$unexcusedCount'),
+              backgroundColor: AppColors.error,
+              child: const Icon(Icons.rule),
+            ),
             label: 'Frekwencja',
           ),
           NavigationDestination(
-            icon: Icon(Icons.mail_outline),
-            selectedIcon: Icon(Icons.mail),
+            icon: Badge(
+              isLabelVisible: messageBadgeCount > 0,
+              label: Text('$messageBadgeCount'),
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.mail_outline),
+            ),
+            selectedIcon: Badge(
+              isLabelVisible: messageBadgeCount > 0,
+              label: Text('$messageBadgeCount'),
+              backgroundColor: AppColors.primary,
+              child: const Icon(Icons.mail),
+            ),
             label: 'Wiadomości',
           ),
         ],

@@ -54,3 +54,4 @@ functions/.env.*
 !functions/.env.example
 credentials.json
 secrets/
+.firebase/

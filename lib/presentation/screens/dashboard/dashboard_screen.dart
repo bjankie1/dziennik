@@ -7,7 +7,6 @@ import '../../../domain/models/grade.dart';
 import '../../providers/school_providers.dart';
 import '../../providers/sync_provider.dart';
 import '../grades/grade_details_modal.dart';
-import '../grades/average_simulator_modal.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -18,7 +17,6 @@ class DashboardScreen extends ConsumerWidget {
     final examAsync = ref.watch(upcomingExamProvider);
     final scheduleAsync = ref.watch(todayScheduleProvider);
     final recentGradesAsync = ref.watch(recentGradesProvider);
-    final subjectsAsync = ref.watch(subjectsProvider);
     final syncState = ref.watch(syncProvider);
 
     final now = DateTime.now();
@@ -455,52 +453,7 @@ class DashboardScreen extends ConsumerWidget {
               loading: () => const SizedBox.shrink(),
               error: (err, stack) => const SizedBox.shrink(),
             ),
-            const SizedBox(height: 16),
-
-            // Quick Action Buttons Row
-            Row(
-              children: [
-                Expanded(
-                  child: _buildQuickActionButton(
-                    context,
-                    icon: Icons.rule,
-                    label: 'Usprawiedliw',
-                    badge: '2 do dec.',
-                    onTap: () {
-                      ref.read(currentNavIndexProvider.notifier).setIndex(3); // Attendance tab
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    context,
-                    icon: Icons.calculate_outlined,
-                    label: 'Kalkulator',
-                    onTap: () {
-                      final subs = subjectsAsync.value ?? [];
-                      final avg = studentAsync.value?.overallAverage ?? 4.82;
-                      if (subs.isNotEmpty) {
-                        AverageSimulatorModal.show(context, subs, avg);
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    context,
-                    icon: Icons.mail_outline,
-                    label: 'Wiadomość',
-                    badge: '2 nowe',
-                    onTap: () {
-                      ref.read(currentNavIndexProvider.notifier).setIndex(4); // Messages tab
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
 
             // 4. Daily Schedule Timeline
             Row(
@@ -634,63 +587,6 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickActionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    String? badge,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.surfaceContainerHigh),
-        ),
-        child: Column(
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(icon, size: 22, color: AppColors.primary),
-                if (badge != null)
-                  Positioned(
-                    right: -16,
-                    top: -6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: AppColors.errorContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        badge,
-                        style: const TextStyle(
-                          color: AppColors.onErrorContainer,
-                          fontSize: 8,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildScheduleItem(BuildContext context, LessonSlot slot) {
     if (slot.status == LessonStatus.canceled) {
