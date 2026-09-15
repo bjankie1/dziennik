@@ -23,6 +23,23 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
     final studentAsync = ref.watch(studentProfileProvider);
     final subjectsAsync = ref.watch(subjectsProvider);
 
+    final cleanSubjects = (subjectsAsync.value ?? []).where((s) {
+      final name = s.name.trim();
+      if (name.isEmpty || name.length > 40 || name.contains('\n') || name.contains('\r')) return false;
+      final lower = name.toLowerCase();
+      if (lower.contains('kategoria') ||
+          lower.contains('brak ocen') ||
+          lower.contains('punkty startowe') ||
+          lower.contains('suma') ||
+          lower.contains('okres 1') ||
+          lower.contains('okres 2') ||
+          lower.contains('ocena opisowa') ||
+          lower.contains('zachowanie')) {
+        return false;
+      }
+      return true;
+    }).toList();
+
     return Scaffold(
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -49,10 +66,9 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
               const SizedBox(width: 8),
               IconButton.filledTonal(
                 onPressed: () {
-                  final subjects = subjectsAsync.value ?? [];
                   final avg = studentAsync.value?.overallAverage ?? 4.82;
-                  if (subjects.isNotEmpty) {
-                    AverageSimulatorModal.show(context, subjects, avg);
+                  if (cleanSubjects.isNotEmpty) {
+                    AverageSimulatorModal.show(context, cleanSubjects, avg);
                   }
                 },
                 style: IconButton.styleFrom(
@@ -247,7 +263,7 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      '${subjectsAsync.value?.length ?? 12}',
+                      '${cleanSubjects.isNotEmpty ? cleanSubjects.length : (subjectsAsync.value?.length ?? 12)}',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -263,8 +279,8 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
 
           // 4. Subjects List
           subjectsAsync.when(
-            data: (subjects) => Column(
-              children: subjects.map((sub) => _buildSubjectCard(sub)).toList(),
+            data: (_) => Column(
+              children: cleanSubjects.map((sub) => _buildSubjectCard(sub)).toList(),
             ),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, _) => Text('Błąd: $err'),

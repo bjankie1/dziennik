@@ -149,10 +149,27 @@ class LibrusClient {
       const tds = $(tr).find("td");
       if (tds.length < 5) return;
 
-      const subjectName = $(tds[1]).text().trim();
-      if (!subjectName || subjectName.length < 2 || subjectName.includes("Zachowanie") || subjectName === "Ocena" || subjectName.match(/^\d+$/)) {
+      const rawText = $(tds[1]).text().trim();
+      // Subject name must be clean, single-line, reasonable length
+      if (!rawText || rawText.length < 2 || rawText.length > 40 || rawText.includes("\n") || rawText.includes("\r")) {
         return;
       }
+
+      const lower = rawText.toLowerCase();
+      if (lower.includes("zachowanie") ||
+          lower.includes("kategoria") ||
+          lower.includes("brak ocen") ||
+          lower.includes("ocena opisowa") ||
+          lower.includes("punkty startowe") ||
+          lower.includes("suma") ||
+          lower.includes("okres 1") ||
+          lower.includes("okres 2") ||
+          rawText === "Ocena" ||
+          rawText.match(/^\d+$/)) {
+        return;
+      }
+
+      const subjectName = rawText.replace(/\s+/g, " ");
 
       const grades = [];
       $(tr).find("span.grade-box a, a.grade-box").each((__, g) => {

@@ -253,7 +253,29 @@ class FirestoreSchoolRepository implements SchoolRepository {
     final rawSubjects = data['subjects'] as List<dynamic>? ?? [];
     if (rawSubjects.isEmpty) return _mockFallback.getSubjects();
 
-    return rawSubjects.map((s) {
+    final validSubjects = rawSubjects.where((s) {
+      if (s is! Map) return false;
+      final rawName = (s['name'] as String? ?? '').trim();
+      if (rawName.isEmpty || rawName.length < 2 || rawName.length > 40) return false;
+      if (rawName.contains('\n') || rawName.contains('\r')) return false;
+
+      final lower = rawName.toLowerCase();
+      if (lower.contains('kategoria') ||
+          lower.contains('brak ocen') ||
+          lower.contains('ocena opisowa') ||
+          lower.contains('punkty startowe') ||
+          lower.contains('suma') ||
+          lower.contains('okres 1') ||
+          lower.contains('okres 2') ||
+          lower.contains('zachowanie')) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    if (validSubjects.isEmpty) return _mockFallback.getSubjects();
+
+    return validSubjects.map((s) {
       final sName = s['name'] as String? ?? 'Przedmiot';
       final avg = (s['currentAverage'] as num?)?.toDouble();
       final teacher = s['teacher'] as String? ?? '';
