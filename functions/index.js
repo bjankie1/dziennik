@@ -217,8 +217,8 @@ exports.sendMessage = onRequest(
       }
 
       if (login && pass) {
-        const client = new LibrusClient();
-        await client.login(login, pass);
+        const client = new LibrusClient(login, pass);
+        await client.authenticate();
         const result = await client.sendMessage({ recipients, subject, body, replyToMsgId: replyToId });
         return res.status(200).json(result);
       }
@@ -232,6 +232,73 @@ exports.sendMessage = onRequest(
       });
     } catch (error) {
       console.error("sendMessage error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+/**
+ * Retrieve full message details (including body) from Librus Synergia.
+ */
+exports.getMessageDetails = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 30,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const { LibrusClient } = require("./src/librus_client");
+      const msgId = req.query.msgId || req.body?.msgId;
+      const url = req.query.url || req.body?.url;
+      const login = req.query.login || req.body?.login || process.env.LIBRUS_LOGIN;
+      const pass = process.env.LIBRUS_PASSWORD;
+
+      if (!msgId && !url) {
+        return res.status(400).json({ error: "Missing msgId or url" });
+      }
+
+      if (login && pass) {
+        const client = new LibrusClient(login, pass);
+        await client.authenticate();
+        const details = await client.fetchMessageDetails(msgId, url);
+
+        // Update Firestore cached messages if present
+        try {
+          const studentRef = admin.firestore().collection("students").doc(login);
+          const studentDoc = await studentRef.get();
+          if (studentDoc.exists) {
+            const data = studentDoc.data();
+            const msgs = data.messages || [];
+            let changed = false;
+            for (const m of msgs) {
+              if (String(m.id) === String(msgId)) {
+                m.body = details.body;
+                if (details.body) {
+                  m.preview = details.body.replace(/\s+/g, " ").substring(0, 90);
+                }
+                changed = true;
+                break;
+              }
+            }
+            if (changed) {
+              await studentRef.update({ messages: msgs });
+            }
+          }
+        } catch (cacheErr) {
+          console.warn("Could not cache message details in Firestore:", cacheErr.message);
+        }
+
+        return res.status(200).json(details);
+      }
+
+      return res.status(200).json({
+        id: msgId,
+        body: "Treść wiadomości pobrana w trybie demonstracyjnym."
+      });
+    } catch (error) {
+      console.error("getMessageDetails error:", error);
       res.status(500).json({ error: error.message });
     }
   }

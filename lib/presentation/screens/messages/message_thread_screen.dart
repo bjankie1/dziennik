@@ -22,6 +22,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
   final Set<String> _expandedMessageIds = {};
   bool _isReplying = false;
   bool _isSending = false;
+  bool _isLoadingBody = false;
   final TextEditingController _replyController = TextEditingController();
   final FocusNode _replyFocusNode = FocusNode();
 
@@ -32,6 +33,53 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
     // By default, the latest message is expanded
     if (_currentThread.messages.isNotEmpty) {
       _expandedMessageIds.add(_currentThread.messages.last.id);
+    }
+    _fetchBodyIfNeeded();
+  }
+
+  Future<void> _fetchBodyIfNeeded({bool force = false}) async {
+    final firstMsg = _currentThread.messages.isNotEmpty ? _currentThread.messages.first : null;
+    final isBodyMissingOrSameAsSubject = firstMsg == null ||
+        firstMsg.body.trim().isEmpty ||
+        firstMsg.body.trim() == _currentThread.subject.trim();
+
+    if (force || isBodyMissingOrSameAsSubject) {
+      if (mounted) setState(() => _isLoadingBody = true);
+      try {
+        final fullBody = await ref.read(schoolRepositoryProvider).getMessageBody(_currentThread.id);
+        if (fullBody != null && fullBody.trim().isNotEmpty && mounted) {
+          setState(() {
+            final updatedMessages = _currentThread.messages.map((m) {
+              if (m == _currentThread.messages.first) {
+                return MessageItem(
+                  id: m.id,
+                  senderName: m.senderName,
+                  senderRole: m.senderRole,
+                  senderInitials: m.senderInitials,
+                  timestamp: m.timestamp,
+                  body: fullBody,
+                  attachments: m.attachments,
+                  isFromMe: m.isFromMe,
+                );
+              }
+              return m;
+            }).toList();
+
+            _currentThread = _currentThread.copyWith(
+              body: fullBody,
+              preview: fullBody.length > 90 ? '${fullBody.substring(0, 90)}...' : fullBody,
+              messages: updatedMessages,
+            );
+            _isLoadingBody = false;
+          });
+          return;
+        }
+      } catch (e) {
+        debugPrint('Error loading full message body: $e');
+      }
+      if (mounted) {
+        setState(() => _isLoadingBody = false);
+      }
     }
   }
 
@@ -157,7 +205,10 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
           IconButton(
             icon: const Icon(Icons.refresh, color: AppColors.onSurfaceVariant, size: 22),
             tooltip: 'Odśwież wątek',
-            onPressed: () => ref.invalidate(messagesProvider),
+            onPressed: () {
+              ref.invalidate(messagesProvider);
+              _fetchBodyIfNeeded(force: true);
+            },
           ),
           const SizedBox(width: 4),
         ],
@@ -407,14 +458,38 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
           const Divider(height: 24, thickness: 0.8),
 
           // Message Body
-          SelectableText(
-            message.body,
-            style: const TextStyle(
-              fontSize: 14,
-              height: 1.5,
-              color: AppColors.onSurface,
+          if (_isLoadingBody && !message.isFromMe && message == _currentThread.messages.first) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Pobieranie pełnej treści wiadomości z Librusa...',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+          ] else ...[
+            SelectableText(
+              message.body,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: AppColors.onSurface,
+              ),
+            ),
+          ],
 
           // Attachments
           if (message.attachments.isNotEmpty) ...[

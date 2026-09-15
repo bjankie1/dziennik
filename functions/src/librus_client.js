@@ -368,12 +368,44 @@ class LibrusClient {
           date,
           isRead,
           preview: subject,
+          body: subject,
           librusUrl: link ? `https://synergia.librus.pl${link}` : ""
         });
       }
     });
 
+    // Fetch full body for the latest 10 messages so they are immediately available
+    for (let i = 0; i < Math.min(messages.length, 10); i++) {
+      const m = messages[i];
+      if (m.librusUrl) {
+        try {
+          const detailRes = await this.client.get(m.librusUrl);
+          const $$ = cheerio.load(detailRes.data);
+          const bodyText = $$("div.container-message-content").text().trim();
+          if (bodyText) {
+            m.body = bodyText;
+            m.preview = bodyText.replace(/\s+/g, " ").substring(0, 90);
+          }
+        } catch (e) {
+          console.warn(`Could not fetch body for message ${m.id}:`, e.message);
+        }
+      }
+    }
+
     return { messages };
+  }
+
+  async fetchMessageDetails(msgId, librusUrl) {
+    const cheerio = require("cheerio");
+    const targetUrl = librusUrl || `https://synergia.librus.pl/wiadomosci/1/5/${msgId}`;
+    const detailRes = await this.client.get(targetUrl);
+    const $ = cheerio.load(detailRes.data);
+    const bodyText = $("div.container-message-content").text().trim();
+    return {
+      id: msgId,
+      body: bodyText || "",
+      librusUrl: targetUrl
+    };
   }
 
   async sendMessage({ recipients, subject, body, replyToMsgId }) {

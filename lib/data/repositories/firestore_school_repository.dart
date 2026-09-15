@@ -458,7 +458,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
         senderRole: role,
         subject: subject,
         preview: item['preview'] as String? ?? subject,
-        body: item['preview'] as String? ?? subject,
+        body: item['body'] as String? ?? item['preview'] as String? ?? subject,
         timestamp: dt,
         isUnread: item['isRead'] == false,
         isImportant: isImportant,
@@ -574,6 +574,27 @@ class FirestoreSchoolRepository implements SchoolRepository {
       body: body,
       replyToId: replyToId,
     );
+  }
+
+  @override
+  Future<String?> getMessageBody(String msgId, {String? url}) async {
+    final isDemo = await _connectionService.isDemoMode();
+    if (isDemo) return _mockFallback.getMessageBody(msgId, url: url);
+
+    final connectedLogin = await _connectionService.getConnectedLogin();
+    final query = (connectedLogin != null && connectedLogin.isNotEmpty) ? '&login=$connectedLogin' : '';
+    final urlParam = (url != null && url.isNotEmpty) ? '&url=${Uri.encodeComponent(url)}' : '';
+
+    try {
+      final res = await http.get(Uri.parse('/api/messageDetails?msgId=$msgId$query$urlParam'))
+          .timeout(const Duration(seconds: 8));
+      if (res.statusCode == 200) {
+        final data = json.decode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+        return data['body'] as String?;
+      }
+    } catch (_) {}
+
+    return null;
   }
 }
 

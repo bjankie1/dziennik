@@ -212,4 +212,11 @@ class MockSchoolRepository implements SchoolRepository {
     );
     _messages.insert(0, newThread);
   }
+
+  @override
+  Future<String?> getMessageBody(String msgId, {String? url}) async {
+    await Future.delayed(const Duration(milliseconds: 50));
+    final thread = _messages.cast<MessageThread?>().firstWhere((t) => t?.id == msgId, orElse: () => null);
+    return thread?.body;
+  }
 }
