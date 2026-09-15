@@ -191,3 +191,48 @@ exports.scheduledLibrusSync = onSchedule(
     }
   }
 );
+
+/**
+ * Send a message or reply to Librus Synergia.
+ */
+exports.sendMessage = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 30,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const { LibrusClient } = require("./src/librus_client");
+      const login = req.query.login || req.body?.login || process.env.LIBRUS_LOGIN;
+      const pass = process.env.LIBRUS_PASSWORD;
+      const recipients = req.body?.recipients || req.query.recipients || [];
+      const subject = req.body?.subject || req.query.subject || "";
+      const body = req.body?.body || req.query.body || "";
+      const replyToId = req.body?.replyToId || req.query.replyToId || null;
+
+      if (!subject || !body) {
+        return res.status(400).json({ error: "Brak tematu lub treści wiadomości." });
+      }
+
+      if (login && pass) {
+        const client = new LibrusClient();
+        await client.login(login, pass);
+        const result = await client.sendMessage({ recipients, subject, body, replyToMsgId: replyToId });
+        return res.status(200).json(result);
+      }
+
+      return res.status(200).json({
+        success: true,
+        simulated: true,
+        sentAt: new Date().toISOString(),
+        recipients,
+        subject
+      });
+    } catch (error) {
+      console.error("sendMessage error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+);

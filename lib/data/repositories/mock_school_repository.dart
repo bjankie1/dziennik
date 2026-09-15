@@ -6,6 +6,7 @@ import '../../domain/models/grade.dart';
 import '../../domain/models/lesson_slot.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/message_thread.dart';
+import '../../domain/models/teacher_contact.dart';
 
 import '../services/librus_connection_service.dart';
 
@@ -123,5 +124,92 @@ class MockSchoolRepository implements SchoolRepository {
       }
       return rec;
     }).toList();
+  }
+
+  @override
+  Future<List<TeacherContact>> getTeachers() async {
+    await Future.delayed(const Duration(milliseconds: 50));
+    final list = <TeacherContact>[];
+    final seen = <String>{};
+
+    for (final s in MockData.subjects) {
+      if (s.teacherName.isNotEmpty && !seen.contains(s.teacherName)) {
+        seen.add(s.teacherName);
+        final parts = s.teacherName.split(' ');
+        final initials = parts.map((p) => p.isNotEmpty ? p[0] : '').take(2).join().toUpperCase();
+        list.add(TeacherContact(
+          id: s.teacherName.toLowerCase().replaceAll(' ', '_'),
+          name: s.teacherName,
+          subjectName: s.name,
+          role: 'Nauczyciel',
+          initials: initials.isNotEmpty ? initials : 'N',
+        ));
+      }
+    }
+
+    if (!seen.contains('mgr Łukasz Sobota')) {
+      list.insert(
+        0,
+        const TeacherContact(
+          id: 'educator',
+          name: 'mgr Łukasz Sobota',
+          subjectName: 'Wychowawstwo / Informatyka',
+          role: 'Wychowawca',
+          initials: 'ŁS',
+        ),
+      );
+    }
+    return list;
+  }
+
+  @override
+  Future<void> sendMessage({
+    required List<String> recipientNames,
+    required String subject,
+    required String body,
+    String? replyToId,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 150));
+    final now = DateTime.now();
+    final newMsgItem = MessageItem(
+      id: 'msg_${now.millisecondsSinceEpoch}',
+      senderName: MockData.student.name,
+      senderRole: 'Uczeń',
+      senderInitials: 'OJ',
+      timestamp: now,
+      body: body,
+      isFromMe: true,
+    );
+
+    if (replyToId != null) {
+      final idx = _messages.indexWhere((t) => t.id == replyToId);
+      if (idx != -1) {
+        final existing = _messages[idx];
+        final updatedMessages = List<MessageItem>.from(existing.messages)..add(newMsgItem);
+        _messages[idx] = existing.copyWith(
+          preview: 'Ja: $body',
+          timestamp: now,
+          messages: updatedMessages,
+        );
+        return;
+      }
+    }
+
+    // New thread
+    final newThread = MessageThread(
+      id: 'thread_${now.millisecondsSinceEpoch}',
+      senderName: recipientNames.join(', '),
+      senderInitials: recipientNames.isNotEmpty && recipientNames.first.isNotEmpty
+          ? recipientNames.first[0].toUpperCase()
+          : 'N',
+      senderRole: 'Nauczyciel',
+      subject: subject,
+      preview: 'Ja: $body',
+      body: body,
+      timestamp: now,
+      isUnread: false,
+      messages: [newMsgItem],
+    );
+    _messages.insert(0, newThread);
   }
 }

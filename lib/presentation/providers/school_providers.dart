@@ -7,6 +7,7 @@ import '../../domain/models/grade.dart';
 import '../../domain/models/lesson_slot.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/message_thread.dart';
+import '../../domain/models/teacher_contact.dart';
 
 final schoolRepositoryProvider = Provider<SchoolRepository>((ref) {
   return FirestoreSchoolRepository();
@@ -83,4 +84,9 @@ final messagesProvider = FutureProvider<List<MessageThread>>((ref) async {
 final announcementsProvider = FutureProvider<List<Announcement>>((ref) async {
   final repo = ref.watch(schoolRepositoryProvider);
   return repo.getAnnouncements();
+});
+
+final teachersProvider = FutureProvider<List<TeacherContact>>((ref) async {
+  final repo = ref.watch(schoolRepositoryProvider);
+  return repo.getTeachers();
 });

@@ -11,6 +11,7 @@ import '../../domain/models/grade.dart';
 import '../../domain/models/lesson_slot.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/message_thread.dart';
+import '../../domain/models/teacher_contact.dart';
 
 class FirestoreSchoolRepository implements SchoolRepository {
   final FirebaseFirestore _firestore;
@@ -498,6 +499,81 @@ class FirestoreSchoolRepository implements SchoolRepository {
   @override
   Future<void> submitJustification(List<String> recordIds, String reason) async {
     return _mockFallback.submitJustification(recordIds, reason);
+  }
+
+  @override
+  Future<List<TeacherContact>> getTeachers() async {
+    final subjects = await getSubjects();
+    final list = <TeacherContact>[];
+    final seen = <String>{};
+
+    for (final s in subjects) {
+      if (s.teacherName.isNotEmpty && !seen.contains(s.teacherName)) {
+        seen.add(s.teacherName);
+        final parts = s.teacherName.split(' ');
+        final initials = parts.map((p) => p.isNotEmpty ? p[0] : '').take(2).join().toUpperCase();
+        list.add(TeacherContact(
+          id: s.teacherName.toLowerCase().replaceAll(' ', '_'),
+          name: s.teacherName,
+          subjectName: s.name,
+          role: 'Nauczyciel',
+          initials: initials.isNotEmpty ? initials : 'N',
+        ));
+      }
+    }
+
+    final data = await _getStudentData();
+    final studentMap = data?['student'] as Map<String, dynamic>?;
+    final educator = studentMap?['educator'] as String?;
+    if (educator != null && educator.isNotEmpty && !seen.contains(educator)) {
+      final parts = educator.split(' ');
+      final initials = parts.map((p) => p.isNotEmpty ? p[0] : '').take(2).join().toUpperCase();
+      list.insert(
+        0,
+        TeacherContact(
+          id: 'educator',
+          name: educator,
+          subjectName: 'Wychowawstwo',
+          role: 'Wychowawca',
+          initials: initials.isNotEmpty ? initials : 'W',
+        ),
+      );
+    }
+
+    if (list.isEmpty) {
+      return _mockFallback.getTeachers();
+    }
+    return list;
+  }
+
+  @override
+  Future<void> sendMessage({
+    required List<String> recipientNames,
+    required String subject,
+    required String body,
+    String? replyToId,
+  }) async {
+    final connectedLogin = await _connectionService.getConnectedLogin();
+    try {
+      await http.post(
+        Uri.parse('/api/sendMessage'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'login': connectedLogin ?? '',
+          'recipients': recipientNames,
+          'subject': subject,
+          'body': body,
+          'replyToId': replyToId,
+        }),
+      ).timeout(const Duration(seconds: 5));
+    } catch (_) {}
+
+    await _mockFallback.sendMessage(
+      recipientNames: recipientNames,
+      subject: subject,
+      body: body,
+      replyToId: replyToId,
+    );
   }
 }
 

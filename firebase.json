@@ -47,6 +47,13 @@
         }
       },
       {
+        "source": "/api/sendMessage",
+        "function": {
+          "functionId": "sendMessage",
+          "region": "europe-west3"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/message_thread.dart';
 import '../../providers/school_providers.dart';
+import 'message_thread_screen.dart';
+import 'new_message_screen.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
@@ -97,8 +99,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                 height: 44,
                 child: FilledButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Formularz nowej wiadomości do nauczyciela')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const NewMessageScreen()),
                     );
                   },
                   icon: const Icon(Icons.edit_square, size: 18),
@@ -274,7 +277,14 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
         ],
       ),
       child: InkWell(
-        onTap: () => _showMessageDialog(thread),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => MessageThreadScreen(thread: thread),
+            ),
+          );
+        },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(14.0),
@@ -490,75 +500,4 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     );
   }
 
-  void _showMessageDialog(MessageThread thread) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        titlePadding: const EdgeInsets.all(16),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-        actionsPadding: const EdgeInsets.all(12),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(thread.subject, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(
-              'Od: ${thread.senderName} (${thread.senderRole})',
-              style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-            ),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Divider(),
-              Text(thread.body, style: const TextStyle(fontSize: 13, height: 1.5)),
-              if (thread.attachments.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                const Text('Załączniki:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 6),
-                ...thread.attachments.map(
-                  (file) => Container(
-                    margin: const EdgeInsets.only(bottom: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.picture_as_pdf, size: 16, color: AppColors.error),
-                        const SizedBox(width: 6),
-                        Text(file, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Zamknij'),
-          ),
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Otwieranie formularza odpowiedzi...')),
-              );
-            },
-            icon: const Icon(Icons.reply, size: 16),
-            label: const Text('Odpowiedz'),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-          ),
-        ],
-      ),
-    );
-  }
 }
