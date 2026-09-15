@@ -3,12 +3,6 @@ phase: 04-bezpieczny-autologin-i-trwale-powiazanie-profilu-librus
 verified: 2026-09-15T19:06:07Z
 status: passed
 score: 4/4 must-haves verified
-covered_files:
-  - lib/presentation/providers/auth_providers.dart
-  - lib/data/services/librus_connection_service.dart
-  - lib/presentation/screens/auth/auth_gate.dart
-  - lib/presentation/screens/main_navigation_screen.dart
-  - functions/index.js
 behavior_unverified: 0
 ---
 
