@@ -3,7 +3,7 @@
 **Defined:** 2026-09-15  
 **Core Value:** Błyskawiczny, czytelny i niezależny dostęp do rzeczywistych danych edukacyjnych ucznia (LO nr X we Wrocławiu) w czasie rzeczywistym, z automatyczną synchronizacją w tle co 30 minut.
 
-## v1 Requirements
+## v1 Requirements (Complete)
 
 ### Schedule & Calendar
 - [x] **SCHED-01**: Interaktywne przełączanie dni tygodnia (Poniedziałek – Piątek) w widoku planu lekcji z dynamicznymi datami i filtrowaniem lekcji.
@@ -20,19 +20,22 @@
 - [x] **MSG-02**: Wskaźnik nowych / nieprzeczytanych wiadomości (badge) na dolnym pasku nawigacji.
 - [x] **MSG-03**: Automatyczne powiadomienia w tle o nowych wiadomościach i ocenach w cyklu Cloud Scheduler (co 30 min).
 
-## v2 Requirements
+## v2 Requirements (Active Milestone)
 
-### Push Notifications & Mobile
-- **PUSH-01**: Bezpośrednie powiadomienia Web Push (FCM) na urządzenia mobilne i przeglądarki.
-- **OFFLINE-01**: Pełny tryb offline z buforowaniem wpisów w lokalnej bazie Hive/Isar.
-- **JUST-01**: Zgłaszanie usprawiedliwień nieobecności bezpośrednio do Librusa z poziomu aplikacji.
+### Authentication & Persistence
+- [ ] **REQ-AUTH-01**: Trwałe powiązanie konta Librus pod profilem użytkownika Google w Firestore. Po wylogowaniu i ponownym zalogowaniu kontem Google aplikacja automatycznie rozpoznaje istniejące powiązanie i wchodzi do aplikacji bez ponownego wpisywania loginu Librus.
 
-## Out of Scope
+### Grades Interface (wg makiety)
+- [ ] **REQ-GRADES-01**: Zakładki semestrów (Semestr 1, Semestr 2, Roczna) z filtrami.
+- [ ] **REQ-GRADES-02**: Karta podsumowania średniej ważonej z pozycją w klasie i paskiem stypendium naukowego.
+- [ ] **REQ-GRADES-03**: Lista przedmiotów od razu prezentująca pigułki ocen cząstkowych z wagami w wierszu przedmiotu bez konieczności rozwijania.
+- [ ] **REQ-GRADES-04**: Rozwijany panel szczegółów ocen z dokładną datą, wagą, procentem i komentarzem nauczyciela.
 
-| Feature | Reason |
-|---------|--------|
-| Płatne moduły komercyjne Librusa | Celem jest wolny, niezależny dostęp bez subskrypcji |
-| Modyfikacja danych po stronie serwera szkoły | Wyłącznie bezpieczny odczyt danych ucznia |
+### Attendance Justification (wg makiety)
+- [ ] **REQ-ATTN-03**: Nowoczesny widok frekwencji z kołowym wykresem, celem semestru i podsumowaniem obecności/spóźnień.
+- [ ] **REQ-ATTN-04**: Filtrowanie frekwencji (Wszystkie, Do usprawiedliwienia, Usprawiedliwione) z grupowaniem po dniach i etykietami stanu.
+- [ ] **REQ-ATTN-05**: Zaznaczanie wielu lekcji checkboxami i dolny wysuwany panel z szybkimi powodami usprawiedliwienia.
+- [ ] **REQ-ATTN-06**: Wysyłanie wniosku o usprawiedliwienie do Librus Synergia z aplikacji.
 
 ## Traceability
 
@@ -45,8 +48,12 @@
 | MSG-01 | Phase 3 | Complete |
 | MSG-02 | Quick polish | Complete |
 | MSG-03 | Phase 3 | Complete |
-
-**Coverage:**
-- v1 requirements: 7 total
-- Mapped to phases: 7
-- Unmapped: 0
+| REQ-AUTH-01 | Phase 4 | Pending |
+| REQ-GRADES-01 | Phase 5 | Pending |
+| REQ-GRADES-02 | Phase 5 | Pending |
+| REQ-GRADES-03 | Phase 5 | Pending |
+| REQ-GRADES-04 | Phase 5 | Pending |
+| REQ-ATTN-03 | Phase 6 | Pending |
+| REQ-ATTN-04 | Phase 6 | Pending |
+| REQ-ATTN-05 | Phase 6 | Pending |
+| REQ-ATTN-06 | Phase 6 | Pending |
