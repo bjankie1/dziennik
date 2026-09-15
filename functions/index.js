@@ -90,16 +90,28 @@ exports.saveConnection = onRequest(
   async (req, res) => {
     try {
       const userId = req.query.userId || req.body?.userId;
-      const login = req.query.login || req.body?.login || process.env.LIBRUS_LOGIN || "";
-      const email = req.query.email || req.body?.email || "";
+      const unbind = req.query.unbind === "true" || req.body?.unbind === true;
 
       if (!userId) {
         return res.status(400).json({ error: "Missing userId" });
       }
 
+      if (unbind) {
+        await admin.firestore().collection("users").doc(userId).set({
+          connected: false,
+          librusLogin: null,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        return res.status(200).json({ success: true, unbind: true });
+      }
+
+      const login = req.query.login || req.body?.login || process.env.LIBRUS_LOGIN || "";
+      const email = req.query.email || req.body?.email || "";
+
       await admin.firestore().collection("users").doc(userId).set({
         userId,
         email,
+        connected: true,
         librusLogin: login,
         isDemoMode: false,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -136,6 +148,10 @@ exports.getConnection = onRequest(
       }
 
       const data = doc.data();
+      if (data.connected === false || !data.librusLogin) {
+        return res.status(200).json({ connected: false });
+      }
+
       res.status(200).json({
         connected: true,
         librusLogin: data.librusLogin,

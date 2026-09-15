@@ -23,7 +23,7 @@
 ## v2 Requirements (Active Milestone)
 
 ### Authentication & Persistence
-- [ ] **REQ-AUTH-01**: Trwałe powiązanie konta Librus pod profilem użytkownika Google w Firestore. Po wylogowaniu i ponownym zalogowaniu kontem Google aplikacja automatycznie rozpoznaje istniejące powiązanie i wchodzi do aplikacji bez ponownego wpisywania loginu Librus.
+- [x] **REQ-AUTH-01**: Trwałe powiązanie konta Librus pod profilem użytkownika Google w Firestore. Po wylogowaniu i ponownym zalogowaniu kontem Google aplikacja automatycznie rozpoznaje istniejące powiązanie i wchodzi do aplikacji bez ponownego wpisywania loginu Librus. Odświeżenie strony (F5) zachowuje sesję.
 
 ### Grades Interface (wg makiety)
 - [ ] **REQ-GRADES-01**: Zakładki semestrów (Semestr 1, Semestr 2, Roczna) z filtrami.
@@ -48,7 +48,7 @@
 | MSG-01 | Phase 3 | Complete |
 | MSG-02 | Quick polish | Complete |
 | MSG-03 | Phase 3 | Complete |
-| REQ-AUTH-01 | Phase 4 | Pending |
+| REQ-AUTH-01 | Phase 4 | Complete |
 | REQ-GRADES-01 | Phase 5 | Pending |
 | REQ-GRADES-02 | Phase 5 | Pending |
 | REQ-GRADES-03 | Phase 5 | Pending |

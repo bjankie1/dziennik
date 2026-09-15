@@ -206,7 +206,7 @@ class MainNavigationScreen extends ConsumerWidget {
                 onTap: () async {
                   Navigator.pop(context);
                   ref.read(appUserProvider.notifier).setUser(null);
-                  await ref.read(librusConnectionStateProvider.notifier).disconnect();
+                  await ref.read(librusConnectionServiceProvider).clearLocalSession();
                   await ref.read(firebaseAuthServiceProvider).signOut();
                 },
               ),

@@ -14,36 +14,35 @@ class AuthGate extends ConsumerWidget {
     final authStateAsync = ref.watch(authStateProvider);
     final appUser = ref.watch(appUserProvider);
 
-    // 1. Check if user is authenticated with Firebase / Google
-    return authStateAsync.when(
-      data: (user) {
-        if (user == null && appUser == null) {
-          return const LoginScreen();
-        }
+    // 1. Check if user is authenticated with Firebase / Google or persistent session
+    final hasUser = authStateAsync.value != null || appUser != null;
 
-        // 2. User is authenticated, check Librus connection
-        final librusConnAsync = ref.watch(librusConnectionStateProvider);
-        return librusConnAsync.when(
-          data: (isConnected) {
-            if (isConnected) {
-              return const MainNavigationScreen();
-            }
-            return const LibrusConnectScreen();
-          },
-          loading: () => const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            ),
+    if (!hasUser) {
+      if (authStateAsync.isLoading) {
+        return const Scaffold(
+          body: Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
           ),
-          error: (_, _) => const LibrusConnectScreen(),
         );
+      }
+      return const LoginScreen();
+    }
+
+    // 2. User is authenticated, check Librus connection
+    final librusConnAsync = ref.watch(librusConnectionStateProvider);
+    return librusConnAsync.when(
+      data: (isConnected) {
+        if (isConnected) {
+          return const MainNavigationScreen();
+        }
+        return const LibrusConnectScreen();
       },
       loading: () => const Scaffold(
         body: Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
       ),
-      error: (_, _) => const LoginScreen(),
+      error: (_, _) => const LibrusConnectScreen(),
     );
   }
 }
