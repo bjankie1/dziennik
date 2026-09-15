@@ -11,6 +11,7 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 - [x] **Phase 4: Bezpieczny autologin i trwałe powiązanie profilu Librus** — Zapisanie i automatyczne wczytywanie powiązania Librus z Firestore po zalogowaniu kontem Google, eliminacja wymogu ponownego podawania loginu, odporność na odświeżenie strony (F5).
 - [ ] **Phase 5: Nowy interfejs Ocen wg makiety** — Karta średniej ważonej z postępem stypendium i pozycją w klasie, pigułki ocen z wagami w wierszu przedmiotu bez konieczności rozwijania, szczegółowy akordeon ocen.
 - [ ] **Phase 6: Moduł usprawiedliwiania nieobecności wg makiety** — Kołowy wykres frekwencji, filtry, checkboxy lekcji pogrupowane dniami, dolny panel wyboru szybkiego powodu i wysyłanie usprawiedliwienia do Librus.
+- [ ] **Phase 7: Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)** — Widok wątku wiadomości w stylu Gmail, odpowiadanie na wiadomości oraz nowa wiadomość z autocomplete nauczyciela (nazwisko + przedmiot).
 
 ---
 
@@ -42,3 +43,12 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
   2. Filtry: Wszystkie, Do usprawiedliwienia (X), Usprawiedliwione.
   3. Kafelki dni z etykietami stanu (np. 2 DO DECYZJI) i możliwością zaznaczania checkboxów lekcji.
   4. Pływający dolny panel z licznikiem zaznaczonych lekcji, pigułkami szybkiego powodu (Choroba, Wizyta lekarska, Sprawy rodzinne) oraz akcją wysłania usprawiedliwienia.
+
+### Phase 7: Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)
+**Goal**: Pełna obsługa wiadomości Librus: widok wątku w stylu Gmail, odpowiadanie na wiadomości i pisanie nowych wiadomości z inteligentnym autocomplete nauczyciela (nazwisko oraz przedmiot).
+**Requirements**: REQ-MSG-04, REQ-MSG-05, REQ-MSG-06
+**Success Criteria**:
+  1. Widok wątku wiadomości na jednym ekranie (w stylu Gmail) z chronologiczną historią konwersacji i możliwością zwijania/rozwijania wiadomości.
+  2. Bezpośrednie pole szybkiej odpowiedzi w wątku wiadomości wysyłające odpowiedź do Librus Synergia.
+  3. Formularz nowej wiadomości z wyszukiwarką/autocomplete odbiorcy działającym zarówno po nazwisku nauczyciela, jak i po nauczanym przedmiocie (np. "Chemia", "Pietrzak").
+  4. Skuteczne wysyłanie wiadomości przez backend scraper Cloud Functions do Librus Synergia oraz natychmiastowe odświeżenie wątku.
