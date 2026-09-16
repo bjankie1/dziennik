@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/models/student_profile.dart';
 import '../providers/sync_provider.dart';
+import '../providers/school_providers.dart';
 
 class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
   final StudentProfile student;
@@ -24,6 +25,7 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final syncState = ref.watch(syncProvider);
+    final unreadMessagesCount = ref.watch(unreadMessagesCountProvider);
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest.withValues(alpha: 0.95),
@@ -153,7 +155,7 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                       color: AppColors.onSurface,
                       size: 24,
                     ),
-                    if (student.unreadMessagesCount > 0)
+                    if (unreadMessagesCount > 0)
                       Positioned(
                         right: -2,
                         top: -2,
@@ -165,7 +167,7 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                           ),
                           constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                           child: Text(
-                            '${student.unreadMessagesCount}',
+                            '$unreadMessagesCount',
                             style: const TextStyle(
                               color: AppColors.onError,
                               fontSize: 10,

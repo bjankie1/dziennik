@@ -35,12 +35,10 @@ class MainNavigationScreen extends ConsumerWidget {
         .where((r) => r.type == AttendanceType.absent && r.justificationStatus == JustificationStatus.none)
         .length;
 
-    // Unread messages / notifications count for Wiadomości badge
-    final unreadMessagesCount = (messagesAsync.value ?? [])
-        .where((m) => m.isUnread)
-        .length;
-    final unreadNotifs = studentAsync.value?.unreadMessagesCount ?? 0;
-    final messageBadgeCount = unreadMessagesCount > 0 ? unreadMessagesCount : unreadNotifs;
+    // Unread messages count for Wiadomości badge
+    final messageBadgeCount = messagesAsync.hasValue
+        ? (messagesAsync.value ?? []).where((m) => m.isUnread).length
+        : (studentAsync.value?.unreadMessagesCount ?? 0);
 
     final screens = const [
       DashboardScreen(),
@@ -109,13 +107,13 @@ class MainNavigationScreen extends ConsumerWidget {
             icon: Badge(
               isLabelVisible: messageBadgeCount > 0,
               label: Text('$messageBadgeCount'),
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.error,
               child: const Icon(Icons.mail_outline),
             ),
             selectedIcon: Badge(
               isLabelVisible: messageBadgeCount > 0,
               label: Text('$messageBadgeCount'),
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.error,
               child: const Icon(Icons.mail),
             ),
             label: 'Wiadomości',

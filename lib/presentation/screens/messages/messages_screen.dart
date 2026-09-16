@@ -51,8 +51,8 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                     0,
                     icon: Icons.inbox,
                     title: 'Wiadomości',
-                    badgeCount: unreadMessages > 0 ? unreadMessages : (messages.isNotEmpty ? messages.length : null),
-                    badgeColor: unreadMessages > 0 ? AppColors.error : AppColors.primary,
+                    badgeCount: unreadMessages > 0 ? unreadMessages : null,
+                    badgeColor: AppColors.error,
                   ),
                 ),
                 Expanded(
@@ -118,6 +118,57 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
 
           // 3. Tab Content
           if (_activeTab == 0) ...[
+            if (unreadMessages > 0)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Nowe wiadomości: $unreadMessages',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                    TextButton.icon(
+                      onPressed: () async {
+                        await ref.read(schoolRepositoryProvider).markAllMessagesAsRead();
+                        ref.invalidate(messagesProvider);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Wszystkie wiadomości oznaczono jako przeczytane'),
+                              duration: Duration(seconds: 2),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.done_all, size: 16, color: AppColors.primary),
+                      label: const Text('Oznacz jako przeczytane', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             messagesAsync.when(
               data: (threads) {
                 if (threads.isEmpty) {
@@ -270,20 +321,22 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
         color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: thread.isUnread ? AppColors.primaryFixed : AppColors.surfaceContainerHigh,
+          color: thread.isUnread ? AppColors.primary : AppColors.surfaceContainerHigh,
+          width: thread.isUnread ? 1.5 : 1.0,
         ),
         boxShadow: const [
           BoxShadow(color: Color(0x05000000), blurRadius: 8, offset: Offset(0, 2)),
         ],
       ),
       child: InkWell(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => MessageThreadScreen(thread: thread),
             ),
           );
+          ref.invalidate(messagesProvider);
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -299,7 +352,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
+                      color: thread.isUnread
+                          ? AppColors.primary.withValues(alpha: 0.18)
+                          : AppColors.primary.withValues(alpha: 0.08),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
@@ -314,14 +369,15 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                   ),
                   if (thread.isUnread)
                     Positioned(
-                      right: 0,
-                      top: 0,
+                      right: -2,
+                      top: -2,
                       child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: const BoxDecoration(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
                           color: AppColors.primary,
                           shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
                         ),
                       ),
                     ),
@@ -338,7 +394,10 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                         Flexible(
                           child: Text(
                             thread.senderName,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: thread.isUnread ? FontWeight.w800 : FontWeight.w600,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -357,6 +416,22 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                     Wrap(
                       spacing: 6,
                       children: [
+                        if (thread.isUnread)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryContainer,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'NOWA',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.onPrimaryContainer,
+                              ),
+                            ),
+                          ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
@@ -396,7 +471,11 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                     const SizedBox(height: 6),
                     Text(
                       thread.subject,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: thread.isUnread ? FontWeight.w800 : FontWeight.w600,
+                        color: thread.isUnread ? AppColors.onSurface : AppColors.onSurfaceVariant,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

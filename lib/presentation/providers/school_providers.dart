@@ -90,3 +90,9 @@ final teachersProvider = FutureProvider<List<TeacherContact>>((ref) async {
   final repo = ref.watch(schoolRepositoryProvider);
   return repo.getTeachers();
 });
+
+final unreadMessagesCountProvider = Provider<int>((ref) {
+  final messagesAsync = ref.watch(messagesProvider);
+  return messagesAsync.value?.where((m) => m.isUnread).length ?? 0;
+});
+

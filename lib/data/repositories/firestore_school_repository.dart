@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'school_repository.dart';
 import 'mock_school_repository.dart';
 import '../mock/mock_data.dart';
@@ -20,6 +21,31 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   Map<String, dynamic>? _memoryCache;
   DateTime? _lastCacheTime;
+
+  static final Map<String, bool> _localReadOverrides = {};
+  static bool _readOverridesLoaded = false;
+
+  Future<void> _loadReadOverrides() async {
+    if (_readOverridesLoaded) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString('edusync_read_messages_overrides');
+      if (jsonStr != null) {
+        final decoded = json.decode(jsonStr) as Map<String, dynamic>;
+        decoded.forEach((key, val) {
+          if (val is bool) _localReadOverrides[key] = val;
+        });
+      }
+      _readOverridesLoaded = true;
+    } catch (_) {}
+  }
+
+  Future<void> _saveReadOverrides() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('edusync_read_messages_overrides', json.encode(_localReadOverrides));
+    } catch (_) {}
+  }
 
   FirestoreSchoolRepository({
     FirebaseFirestore? firestore,
@@ -413,9 +439,17 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   @override
   Future<List<MessageThread>> getMessages() async {
+    await _loadReadOverrides();
     final data = await _getStudentData();
     if (data == null || data['messages'] == null) {
-      return _mockFallback.getMessages();
+      final mockList = await _mockFallback.getMessages();
+      return mockList.map((m) {
+        final override = _localReadOverrides[m.id];
+        if (override != null) {
+          return m.copyWith(isUnread: !override);
+        }
+        return m;
+      }).toList();
     }
 
     final rawList = data['messages'] as List<dynamic>? ?? [];
@@ -451,8 +485,12 @@ class FirestoreSchoolRepository implements SchoolRepository {
         dt = DateTime.now();
       }
 
+      final id = item['id'] as String? ?? UniqueKey().toString();
+      final isReadFromLibrus = item['isRead'] == true;
+      final isRead = _localReadOverrides[id] ?? isReadFromLibrus;
+
       return MessageThread(
-        id: item['id'] as String? ?? UniqueKey().toString(),
+        id: id,
         senderName: cleanName,
         senderInitials: initials,
         senderRole: role,
@@ -460,7 +498,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
         preview: item['preview'] as String? ?? subject,
         body: item['body'] as String? ?? item['preview'] as String? ?? subject,
         timestamp: dt,
-        isUnread: item['isRead'] == false,
+        isUnread: !isRead,
         isImportant: isImportant,
       );
     }).toList();
@@ -595,6 +633,81 @@ class FirestoreSchoolRepository implements SchoolRepository {
     } catch (_) {}
 
     return null;
+  }
+
+  @override
+  Future<void> markMessageAsRead(String msgId, {bool isRead = true}) async {
+    await _loadReadOverrides();
+    _localReadOverrides[msgId] = isRead;
+    await _saveReadOverrides();
+
+    // Update in-memory cache if available
+    if (_memoryCache != null && _memoryCache!['messages'] != null) {
+      final msgs = _memoryCache!['messages'] as List<dynamic>;
+      for (final m in msgs) {
+        if (m is Map && (m['id'] == msgId || m['id'].toString() == msgId)) {
+          m['isRead'] = isRead;
+        }
+      }
+    }
+
+    await _mockFallback.markMessageAsRead(msgId, isRead: isRead);
+
+    // Persist to Firestore document asynchronously
+    try {
+      final connectedLogin = await _connectionService.getConnectedLogin();
+      if (connectedLogin != null && connectedLogin.isNotEmpty) {
+        final docRef = _firestore.collection('students').doc(connectedLogin);
+        final doc = await docRef.get();
+        if (doc.exists) {
+          final msgs = List<dynamic>.from(doc.data()?['messages'] ?? []);
+          var changed = false;
+          for (final m in msgs) {
+            if (m is Map && (m['id'] == msgId || m['id'].toString() == msgId)) {
+              m['isRead'] = isRead;
+              changed = true;
+            }
+          }
+          if (changed) {
+            await docRef.update({'messages': msgs});
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Future<void> markAllMessagesAsRead() async {
+    await _loadReadOverrides();
+    final msgs = await getMessages();
+    for (final m in msgs) {
+      _localReadOverrides[m.id] = true;
+    }
+    await _saveReadOverrides();
+
+    if (_memoryCache != null && _memoryCache!['messages'] != null) {
+      final rawMsgs = _memoryCache!['messages'] as List<dynamic>;
+      for (final m in rawMsgs) {
+        if (m is Map) m['isRead'] = true;
+      }
+    }
+
+    await _mockFallback.markAllMessagesAsRead();
+
+    try {
+      final connectedLogin = await _connectionService.getConnectedLogin();
+      if (connectedLogin != null && connectedLogin.isNotEmpty) {
+        final docRef = _firestore.collection('students').doc(connectedLogin);
+        final doc = await docRef.get();
+        if (doc.exists) {
+          final rawMsgs = List<dynamic>.from(doc.data()?['messages'] ?? []);
+          for (final m in rawMsgs) {
+            if (m is Map) m['isRead'] = true;
+          }
+          await docRef.update({'messages': rawMsgs});
+        }
+      }
+    } catch (_) {}
   }
 }
 

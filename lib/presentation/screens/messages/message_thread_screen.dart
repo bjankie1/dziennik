@@ -34,7 +34,42 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
     if (_currentThread.messages.isNotEmpty) {
       _expandedMessageIds.add(_currentThread.messages.last.id);
     }
+    if (_currentThread.isUnread) {
+      _markAsReadOnOpen();
+    }
     _fetchBodyIfNeeded();
+  }
+
+  Future<void> _markAsReadOnOpen() async {
+    try {
+      await ref.read(schoolRepositoryProvider).markMessageAsRead(_currentThread.id, isRead: true);
+      if (mounted) {
+        setState(() {
+          _currentThread = _currentThread.copyWith(isUnread: false);
+        });
+        ref.invalidate(messagesProvider);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _toggleReadStatus() async {
+    final newIsUnread = !_currentThread.isUnread;
+    setState(() {
+      _currentThread = _currentThread.copyWith(isUnread: newIsUnread);
+    });
+    try {
+      await ref.read(schoolRepositoryProvider).markMessageAsRead(_currentThread.id, isRead: !newIsUnread);
+      ref.invalidate(messagesProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(newIsUnread ? 'Oznaczono jako nieprzeczytana' : 'Oznaczono jako przeczytana'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchBodyIfNeeded({bool force = false}) async {
@@ -195,12 +230,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
               size: 22,
             ),
             tooltip: _currentThread.isUnread ? 'Oznacz jako przeczytana' : 'Oznacz jako nieprzeczytana',
-            onPressed: () {
-              setState(() {
-                _currentThread = _currentThread.copyWith(isUnread: !_currentThread.isUnread);
-              });
-              ref.invalidate(messagesProvider);
-            },
+            onPressed: _toggleReadStatus,
           ),
           IconButton(
             icon: const Icon(Icons.refresh, color: AppColors.onSurfaceVariant, size: 22),
@@ -241,8 +271,33 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                         ),
                       ),
                     ),
+                    if (_currentThread.isUnread)
+                      Container(
+                        margin: const EdgeInsets.only(left: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryContainer,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.mark_email_unread, size: 12, color: AppColors.onPrimaryContainer),
+                            SizedBox(width: 4),
+                            Text(
+                              'NOWA',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.onPrimaryContainer,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     if (_currentThread.isImportant)
                       Container(
+                        margin: const EdgeInsets.only(left: 6),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
                           color: AppColors.errorContainer,

@@ -219,4 +219,19 @@ class MockSchoolRepository implements SchoolRepository {
     final thread = _messages.cast<MessageThread?>().firstWhere((t) => t?.id == msgId, orElse: () => null);
     return thread?.body;
   }
+
+  @override
+  Future<void> markMessageAsRead(String msgId, {bool isRead = true}) async {
+    final idx = _messages.indexWhere((t) => t.id == msgId);
+    if (idx != -1) {
+      _messages[idx] = _messages[idx].copyWith(isUnread: !isRead);
+    }
+  }
+
+  @override
+  Future<void> markAllMessagesAsRead() async {
+    for (int i = 0; i < _messages.length; i++) {
+      _messages[i] = _messages[i].copyWith(isUnread: false);
+    }
+  }
 }
