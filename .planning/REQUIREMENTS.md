@@ -39,6 +39,7 @@
 - [x] **REQ-MSG-04**: Widok wątku wiadomości na jednym ekranie w stylu Gmail (zwijalne/rozwijalne wiadomości, chronologia, czytelny nagłówek nadawcy).
 - [x] **REQ-MSG-05**: Odpowiadanie na wiadomość bezpośrednio w widoku wątku z wysyłaniem do Librus Synergia.
 - [x] **REQ-MSG-06**: Tworzenie nowej wiadomości z autocomplete odbiorcy po nazwisku nauczyciela oraz po nauczanym przedmiocie (np. "Chemia", "Pietrzak") oraz wysyłaniem do Librus Synergia.
+- [x] **REQ-MSG-07**: Pobieranie i prezentacja pełnej treści wiadomości z podstron szczegółów wiadomości Librus Synergia (zamiast powtórzonego tematu/podglądu), z automatycznym dociąganiem on-demand i trwałym cache'owaniem w Firestore.
 
 ## Traceability
 
@@ -63,3 +64,4 @@
 | REQ-MSG-04 | Phase 7 | Complete |
 | REQ-MSG-05 | Phase 7 | Complete |
 | REQ-MSG-06 | Phase 7 | Complete |
+| REQ-MSG-07 | Phase 7 | Complete |

@@ -30,6 +30,9 @@ Dostarczenie pełnej, dwukierunkowej obsługi wiadomości Librus Synergia w apli
 - **D-08:** Po wybraniu nauczyciel staje się usuwalnym „chipem” (pigułką z krzyżykiem `x`) w polu „Do:”.
 - **D-09:** Obsługa wielu odbiorców bez ograniczeń — możliwość dodania wielu pigułek nauczycieli w polu „Do:” jednej wiadomości.
 
+### Pobieranie i prezentacja pełnej treści wiadomości
+- **D-10:** Tabela skrzynki odbiorczej Librusa udostępnia jedynie nagłówki. Pełna treść wiadomości (`div.container-message-content`) musi być pobierana z podstron szczegółów wiadomości (zarówno automatycznie dla ostatnich wiadomości, jak i on-demand przez endpoint `/api/messageDetails`), trwale zapisywana w profilu ucznia w Firestore oraz prezentowana w `MessageThreadScreen` ze wskaźnikiem ładowania i możliwością odświeżenia.
+
 ### the agent's Discretion
 - Dokładny layout i animacja rozwijania/zwijania wiadomości w wątku.
 - Obsługa trybu offline / demo (optymistyczne dodawanie wiadomości do stanu lokalnego).

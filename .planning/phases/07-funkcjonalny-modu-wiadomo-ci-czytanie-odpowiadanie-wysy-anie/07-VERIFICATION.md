@@ -24,8 +24,9 @@ behavior_unverified: 0
 | 4 | Przycisk 'Napisz' na liście wiadomości otwiera ekran nowej wiadomości z autocomplete odbiorców reagującym na nazwisko nauczyciela i nazwę przedmiotu | ✓ VERIFIED | `NewMessageScreen` z wyszukiwarką `_onSearchChanged` filtrującą przez `TeacherContact.matches` |
 | 5 | Wielu nauczycieli może zostać wybranych jako usuwalne chipy (pigułki z x) w polu Do: | ✓ VERIFIED | `InputChip` z listą `_selectedRecipients` i możliwością usuwania |
 | 6 | Wysłanie nowej wiadomości lub odpowiedzi aktualizuje stan lokalny oraz odpytuje endpoint backendowy Librusa | ✓ VERIFIED | Metody `sendMessage` w `MockSchoolRepository`, `FirestoreSchoolRepository` oraz Cloud Function `/api/sendMessage` |
+| 7 | Otwarcie wątku wiadomości pobiera i wyświetla pełną treść wiadomości z Librus Synergia (a nie tylko powtórzony temat) z on-demand loading i trwałym cache w Firestore | ✓ VERIFIED | Endpoint `/api/messageDetails`, selektor `div.container-message-content`, metoda `getMessageBody` i wskaźnik ładowania w `MessageThreadScreen` |
 
-**Score:** 6/6 truths verified
+**Score:** 7/7 truths verified
 
 ### Required Artifacts
 
