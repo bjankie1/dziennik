@@ -1,74 +1,111 @@
 # Phase 8: Pełny design ekranu głównego w wersji web - Context
 
-**Created:** 2026-09-16  
-**Status:** In Progress (Context Initialized)  
-**Reference Design:**
-- Mockup Image: docs/start_page_web_v1/screen.png
-- HTML Prototype: docs/start_page_web_v1/code.html
-- Design Tokens & Specification: docs/start_page_web_v1/DESIGN.md
+**Gathered:** 2026-09-16
+**Status:** Ready for planning
+
+<domain>
+## Phase Boundary
+
+Faza 8 dostarcza kompletne wdrożenie nowego, nowoczesnego ekranu głównego (Pulpit / Dashboard) w wersji webowej i responsywnej, opartego na projekcie graficznym Stitch przygotowanym w `docs/start_page_web_v1/` (`screen.png`, `code.html`, `DESIGN.md`).
+Ekran integruje rzeczywiste dane ucznia (Oskar Jankiewicz, LO nr X) pobierane z Librusa / Firestore, zachowując spójność architektury aplikacji Flutter.
+
+</domain>
+
+<decisions>
+## Implementation Decisions
+
+### 1. Układ responsywny i nawigacja (Responsive Layout & Navigation)
+- **D-01:** Na ekranach desktopowych (szerokość >= 1024px) wdrażamy dedykowany lewy panel boczny (Sidebar, szerokość 256px / w-64) oraz górny nagłówek (Header, wysokość 64px / h-16) ze statusem semestru i profilem ucznia.
+- **D-02:** Główna przestrzeń pulpitu na desktopie wykorzystuje 3-kolumnowy Bento Grid (`lg:grid-cols-12`):
+  - Kolumna lewa (`lg:col-span-4`): Harmonogram lekcji na dziś + nadchodzący sprawdzian.
+  - Kolumna środkowa (`lg:col-span-5`): Wiadomości i komunikaty z pigułkami filtrów + szkolny komunikat specjalny.
+  - Kolumna prawa (`lg:col-span-3`): Ostatnie oceny + frekwencja z miernikiem i celem rocznym + szybkie akcje.
+- **D-03:** Na tabletach (768px – 1023px) układ adaptuje się płynnie do 2 kolumn, a na urządzeniach mobilnych (< 768px) zachowuje ergonomiczny układ jednokolumnowy z dolnym paskiem nawigacji (Bottom Navigation Bar).
+
+### 2. Pasek wyszukiwania w nagłówku (Header Global Search)
+- **D-04:** Pasek wyszukiwania w nagłówku ("Szukaj w ocenach, planie, wiadomościach...") odzwierciedla styl z makiety Stitch (`bg-surface-container-low`, zaokrąglenie `rounded-xl`, ikona lupy) i umożliwia dynamiczne filtrowanie oraz szybkie przejście (Command Palette / Search Modal) do pasujących lekcji, ocen i wiadomości.
+
+### 3. Harmonogram dnia i dynamiczny wskaźnik lekcji "W trakcie" (Real-time Lesson Progress)
+- **D-05:** Harmonogram dnia prezentuje lekcje z pionowym paskiem kategorii kolorystycznej (zielony dla planowych, pomarańczowy/tertiary dla zastępstw, czerwony dla odwołanych/sprawdzianów, indygo dla bieżącej).
+- **D-06:** System w czasie rzeczywistym porównuje aktualną godzinę systemową z przedziałami lekcji:
+  - Dla aktualnie trwającej lekcji wyświetla pulsujący badge `W trakcie` (`animate-ping`), oblicza i animuje pasek postępu (np. 65%) oraz czas do zakończenia (`Zostało X min`).
+  - Pokazuje temat lekcji oraz nauczyciela i numer sali (z uwzględnieniem ewentualnej zmiany sali / zastępstwa).
+
+### 4. Wiadomości i Komunikaty (Center Column Stream)
+- **D-07:** Sekcja wiadomości zawiera przełącznik filtrów (pigułki `Nieprzeczytane`, `Wszystkie`, `Ogłoszenia`), dynamicznie filtrujący listę.
+- **D-08:** Karty wiadomości posiadają wskaźnik nieprzeczytania (kropka primary), etykiety pilności (`PILNE`, `DYREKCJA`), nadawcę, datę/godzinę, podgląd treści oraz przycisk szybkiej akcji `Odpowiedz` (otwierający formularz odpowiedzi w wątku) oraz ikonę `Oznacz jako przeczytane`.
+- **D-09:** Pod listą wiadomości wyświetlany jest szkolny baner informacyjny (np. konferencja/dzień wolny) z przyciskiem akcji.
+
+### 5. Oceny, Frekwencja i Szybkie Skróty (Right Column Actions)
+- **D-10:** Karta ocen prezentuje wskaźnik trendu średniej ważonej (`+0.12 do średniej`), listę ostatnich ocen z kolorowymi kafelkami ocen (np. `5`, `4+`), wagami i przedmiotami oraz linkiem `Zobacz wszystkie oceny`.
+- **D-11:** Karta frekwencji zawiera dwukolorowy poziomy pasek postępu z progiem minimalnym 50% i celem rocznym 90%, ostrzeżenie o nieusprawiedliwionych godzinach oraz przycisk `Szybkie usprawiedliwienie (PIN)`.
+- **D-12:** Podpięcie kafelków szybkich akcji:
+  - Przycisk `Szybkie usprawiedliwienie (PIN)` oraz kafelek `Zgłoś nieobecność` otwierają modal e-Usprawiedliwień z obsługą PIN rodzica i wysyłką do Librusa.
+  - Kafelek `Czat / Kontakt z wychowawcą` otwiera formularz nowej wiadomości z automatycznie uzupełnionym wychowawcą.
+  - Kafelek `Zadania domowe` oraz `Pełny plan lekcji na cały tydzień` kierują bezpośrednio do widoku terminarza / planu lekcji.
+
+### the agent's Discretion
+- Dobór szczegółowych tokenów kolorystycznych i stylów w Flutterze na podstawie `DESIGN.md` (paleta *Academic Precision* oparta na Material 3, barwy `#3525cd`, `#f8f9ff`, `#006c4a`, `#703a00`, `#ba1a1a`).
+- Wykorzystanie istniejących providerów Riverpod (`studentProfileProvider`, `todayScheduleProvider`, `recentGradesProvider`, `attendanceProvider`, `messagesProvider`, `syncProvider`).
+
+</decisions>
+
+<canonical_refs>
+## Canonical References
+
+**Downstream agents MUST read these before planning or implementing.**
+
+### Visual & Prototype Specifications
+- `docs/start_page_web_v1/screen.png` — Główny zrzut ekranu docelowego designu pulpitu.
+- `docs/start_page_web_v1/code.html` — Kompletny prototyp HTML/Tailwind z 3-kolumnowym układem Bento Grid i komponentami.
+- `docs/start_page_web_v1/DESIGN.md` — Tokeny projektowe (kolory, typografia Plus Jakarta Sans, zaokrąglenia, cienie, wymiary siatki).
+
+### Codebase & Integrations
+- `lib/presentation/screens/dashboard/dashboard_screen.dart` — Istniejąca implementacja pulpitu (dane, widgety, obsługa pull-to-refresh i status synchronizacji).
+- `lib/presentation/screens/main_navigation_screen.dart` — Główny kontener nawigacyjny (obecnie z dolnym paskiem nawigacji).
+- `lib/presentation/screens/messages/compose_message_modal.dart` — Modal tworzenia wiadomości z autocomplete nauczycieli.
+- `lib/presentation/screens/attendance/quick_excuse_dialog.dart` — Dialog e-Usprawiedliwień z autoryzacją PIN rodzica.
+- `lib/core/theme/app_colors.dart` — Aktualne definicje kolorów aplikacji.
+
+</canonical_refs>
+
+<code_context>
+## Existing Code Insights
+
+### Reusable Assets
+- `todayScheduleProvider`: Dostarcza rzeczywiste lekcje na dany dzień (`LessonSlot`), w tym statusy odwołania i zastępstwa.
+- `studentProfileProvider`: Zapewnia dane ucznia (Oskar Jankiewicz, klasa, szkoła, frekwencja, średnia, szczęśliwy numerek).
+- `recentGradesProvider`: Zwraca najnowsze oceny z wagami i przedmiotami.
+- `messagesProvider`: Zwraca listę wątków wiadomości z flagą `isUnread` i datami.
+- `attendanceProvider`: Zwraca wpisy frekwencji i nieobecności kwalifikujące się do usprawiedliwienia.
+- `quick_excuse_dialog.dart`: Gotowy komponent dialogu do wysyłania e-Usprawiedliwień przez Cloud Function.
+
+### Established Patterns
+- Flutter Riverpod (`ConsumerWidget`, `ref.watch`) do reaktywnego bindowania stanu.
+- `LayoutBuilder` / `MediaQuery` do responsywnego przełączania układu w zależności od szerokości ekranu (`kDesktopBreakpoint = 1024`).
+
+### Integration Points
+- `MainNavigationScreen`: Rozbudowa o boczny `NavigationRail` / `Sidebar` na ekranach desktopowych (>=1024px) oraz ukrywanie dolnego `NavigationBar`.
+- `DashboardScreen`: Podział na komponenty desktopowe (Top Banner, ScheduleColumn, MessagesColumn, MetricsColumn) oraz responsywny kontener.
+
+</code_context>
+
+<specifics>
+## Specific Ideas
+- Wierne odwzorowanie layoutu, typografii i kolorystyki z `docs/start_page_web_v1/code.html`.
+- Dynamiczne przeliczanie paska postępu lekcji na żywo za pomocą timera / czasu zegarowego.
+- Płynne animacje i hover-states na kafelkach i przyciskach.
+
+</specifics>
+
+<deferred>
+## Deferred Ideas
+- Pełny czat grupowy z klasą (wymaga odrębnej infrastruktury czatu realtime; na razie skrót kieruje do kontaktu z wychowawcą).
+- Pobieranie załączników PDF z lekcji (wymaga dedykowanego scrapera materiałów Librus).
+
+</deferred>
 
 ---
 
-## 1. Vision & Architecture
-
-Ekran główny (Pulpit / Dashboard) w wersji webowej (desktop/tablet) zostaje kompleksowo dostosowany do dedykowanego projektu graficznego przygotowanego w docs/start_page_web_v1/.
-
-Główne założenia architektoniczne:
-1. **Dedykowany layout responsywny**:
-   - Na ekranach desktopowych (szerokość >= 1024px): 3-kolumnowy Bento Grid z lewym panelem nawigacji (Sidebar) i górnym nagłówkiem (Header).
-   - Na ekranach tabletowych (768px - 1023px): 2-kolumnowy Bento Grid z adaptacyjnym układem.
-   - Na ekranach mobilnych (< 768px): płynny, 1-kolumnowy scroll z zachowaniem dotychczasowego mobilnego paska nawigacji na dole.
-2. **Pełna integracja z rzeczywistymi danymi ucznia (Librus Synergia)**:
-   - Imię i nazwisko: Oskar Jankiewicz, klasa: 4 k Lic, szkoła: LO nr X we Wrocławiu.
-   - Harmonogram dnia: rzeczywiste lekcje na dany dzień z godzinami, numerami, salami i nauczycielami. Wskaźnik lekcji trwającej („W trakcie”) z paskiem postępu.
-   - Oceny: rzeczywiste najnowsze oceny z wagami i średnią ważoną.
-   - Frekwencja: rzeczywisty procent frekwencji, pasek celu rocznego (>90%) oraz licznik godzin do usprawiedliwienia z bezpośrednim wywołaniem modalu usprawiedliwiania.
-   - Wiadomości i komunikaty: rzeczywiste wątki wiadomości (w tym nieprzeczytane) z filtrami i bezpośrednim przejściem do odpowiedzi/wątku.
-   - Szczęśliwy numerek: rzeczywisty szczęśliwy numerek ze szkoły.
-
----
-
-## 2. Key Components Breakdown
-
-### A. Navigation Sidebar (Desktop >= 1024px)
-- Logo EduSync + nazwa szkoły ("LO nr X im. Stefanii Sempołowskiej").
-- Selektor semestru ("Semestr 1 / 2024-2025").
-- Menu nawigacji z ikonami i aktywnym stanem (fioletowe tło Color(0xFF3525CD) / Color(0xFF4F46E5)):
-  - Pulpit (aktywny)
-  - Oceny i Średnie
-  - Plan Lekcji
-  - Frekwencja
-  - Wiadomości i Ogłoszenia (z dynamicznym badge liczby nieprzeczytanych)
-- Dolny widżet: status synchronizacji dziennika ("Aktualizacja: Dzisiaj, HH:MM").
-
-### B. Header Bar
-- Wyszukiwarka globalna z placeholderem "Szukaj w ocenach, planie, wiadomościach...".
-- Ikona powiadomień z badge.
-- Pigułka profilu ucznia: Avatar, "Oskar Jankiewicz", "Klasa 4 k Lic" + menu wylogowania/przełączania.
-
-### C. Top Welcome & Metric Banner
-- Nagłówek: "Dzień dobry, Oskar! 👋" + pigułki stanu ("Tydzień B • Semestr 1", "Stan normalny").
-- Linia podsumowania dnia: aktualna data, godziny rozpoczęcia i zakończenia zajęć oraz liczba lekcji.
-- Kafelki mini-metryk:
-  - Średnia ważona (np. 4.82 / Top 5%)
-  - Frekwencja (np. 98.6% / Cel: >90%)
-  - Wiadomości (liczba nieprzeczytanych)
-  - Szczęśliwy numerek / Sprawdziany
-
-### D. 3-Column Bento Grid
-1. **Kolumna lewa: Harmonogram na dziś**
-   - Karta "Harmonogram na dziś" (licznik zrealizowanych lekcji).
-   - Lista lekcji dnia z wyróżnieniem lekcji trwającej, odwołanych, zastępstw i planowych.
-   - Przycisk "Pełny plan lekcji na cały tydzień →".
-   - Karta "Nadchodzący sprawdzian" (countdown, przedmiot, zakres).
-
-2. **Kolumna środkowa: Wiadomości i Komunikaty**
-   - Karta "Wiadomości i Komunikaty" z linkiem "Otwórz skrzynkę →".
-   - Pigułki filtrów: "Nieprzeczytane (X)", "Wszystkie", "Ogłoszenia (Y)".
-   - Wątki wiadomości ze statusem PILNE / DYREKCJA, nadawcą, datą i akcją "Odpowiedz".
-   - Karta wydarzenia szkolnego (np. Dzień Wolny / Konferencja).
-
-3. **Kolumna prawa: Oceny, Frekwencja i Szybkie Akcje**
-   - Karta "Ostatnie oceny" z trendem do średniej, pigułkami ocen z wagami i linkiem do wszystkich ocen.
-   - Karta "Frekwencja" z paskiem postępu celu rocznego, ostrzeżeniem o godzinach do usprawiedliwienia i przyciskiem "Szybkie usprawiedliwienie (PIN)".
-   - Skróty szybkich akcji: Zadania domowe, Kontakt z wychowawcą, Zgłoś nieobecność.
+*Phase: 08-pe-ny-design-ekranu-g-wnego-w-wersji-web*  
+*Context gathered: 2026-09-16*
