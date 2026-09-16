@@ -15,12 +15,12 @@ Ekran integruje rzeczywiste dane ucznia (Oskar Jankiewicz, LO nr X) pobierane z 
 ## Implementation Decisions
 
 ### 1. Układ responsywny i nawigacja (Responsive Layout & Navigation)
-- **D-01:** Na ekranach desktopowych (szerokość >= 1024px) wdrażamy dedykowany lewy panel boczny (Sidebar, szerokość 256px / w-64) oraz górny nagłówek (Header, wysokość 64px / h-16) ze statusem semestru i profilem ucznia.
+- **D-01:** Na ekranach desktopowych (szerokość >= 1024px) wdrażamy dedykowany lewy panel boczny (Sidebar, szerokość 256px / w-64) oraz górny nagłówek (Header, wysokość 64px / h-16) jako **wspólną powłokę nawigacyjną (Shell) dla wszystkich widoków aplikacji** (Pulpit, Plan Lekcji, Oceny i Średnie, Frekwencja, Wiadomości i Ogłoszenia), a nie tylko dla strony głównej.
 - **D-02:** Główna przestrzeń pulpitu na desktopie wykorzystuje 3-kolumnowy Bento Grid (`lg:grid-cols-12`):
   - Kolumna lewa (`lg:col-span-4`): Harmonogram lekcji na dziś + nadchodzący sprawdzian.
   - Kolumna środkowa (`lg:col-span-5`): Wiadomości i komunikaty z pigułkami filtrów + szkolny komunikat specjalny.
   - Kolumna prawa (`lg:col-span-3`): Ostatnie oceny + frekwencja z miernikiem i celem rocznym + szybkie akcje.
-- **D-03:** Na tabletach (768px – 1023px) układ adaptuje się płynnie do 2 kolumn, a na urządzeniach mobilnych (< 768px) zachowuje ergonomiczny układ jednokolumnowy z dolnym paskiem nawigacji (Bottom Navigation Bar).
+- **D-03:** Na tabletach (768px – 1023px) układ adaptuje się płynnie do 2 kolumn, a na urządzeniach mobilnych (< 768px) zachowuje ergonomiczny układ jednokolumnowy z dolnym paskiem nawigacji (Bottom Navigation Bar) i nagłówkiem mobilnym. Na desktopie dolny pasek nawigacji jest ukryty, a nawigację w 100% przejmuje Sidebar.
 
 ### 2. Pasek wyszukiwania w nagłówku (Header Global Search)
 - **D-04:** Pasek wyszukiwania w nagłówku ("Szukaj w ocenach, planie, wiadomościach...") odzwierciedla styl z makiety Stitch (`bg-surface-container-low`, zaokrąglenie `rounded-xl`, ikona lupy) i umożliwia dynamiczne filtrowanie oraz szybkie przejście (Command Palette / Search Modal) do pasujących lekcji, ocen i wiadomości.
