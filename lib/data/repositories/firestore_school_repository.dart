@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -621,6 +622,57 @@ class FirestoreSchoolRepository implements SchoolRepository {
       _localJustificationOverrides[id] = reason;
     }
     await _saveJustificationOverrides();
+
+    // Send directly to Librus Synergia e-Usprawiedliwienia through Cloud Function
+    try {
+      final records = await getAttendanceRecords();
+      final selected = records.where((r) => recordIds.contains(r.id)).toList();
+      if (selected.isNotEmpty) {
+        final Map<String, List<int>> hoursByDate = {};
+        for (final rec in selected) {
+          final dateStr =
+              "${rec.date.year.toString().padLeft(4, '0')}-${rec.date.month.toString().padLeft(2, '0')}-${rec.date.day.toString().padLeft(2, '0')}";
+          hoursByDate.putIfAbsent(dateStr, () => []).add(rec.lessonNumber);
+        }
+
+        final sortedDates = hoursByDate.keys.toList()..sort();
+        final firstDate = sortedDates.first;
+        final lastDate = sortedDates.last;
+
+        final payload = jsonEncode({
+          'reason': reason,
+          'dateFrom': firstDate,
+          'dateTo': lastDate,
+          'isByHours': true,
+          'hoursByDate': hoursByDate,
+          'notifyOthers': true,
+        });
+
+        http.Response? res;
+        try {
+          res = await http.post(
+            Uri.parse('/api/submitJustification'),
+            headers: {'Content-Type': 'application/json'},
+            body: payload,
+          );
+        } catch (_) {
+          res = await http.post(
+            Uri.parse('https://europe-west3-lepsza-szkola.cloudfunctions.net/submitJustification'),
+            headers: {'Content-Type': 'application/json'},
+            body: payload,
+          );
+        }
+
+        if (res.statusCode == 200) {
+          debugPrint('[FirestoreSchoolRepository] e-Usprawiedliwienie wysłane do Librusa: ${res.body}');
+        } else {
+          debugPrint('[FirestoreSchoolRepository] Błąd e-Usprawiedliwienia (${res.statusCode}): ${res.body}');
+        }
+      }
+    } catch (e) {
+      debugPrint('[FirestoreSchoolRepository] submitJustification error: $e');
+    }
+
     return _mockFallback.submitJustification(recordIds, reason);
   }
 

@@ -49,9 +49,10 @@ Przebudowa modułu frekwencji i e-usprawiedliwień (`AttendanceScreen`), aby by�
 - **D-02 (User Choice):** Panel usprawiedliwiania jest renderowany jako zadokowany pływający pasek u dołu ekranu dokładnie wg makiety. Pojawia się natychmiast po zaznaczeniu co najmniej jednej lekcji.
 - **D-03 (User Choice):** Użytkownik wybiera powód jednym kliknięciem z pigułek (`Choroba`, `Wizyta lekarska`, `Sprawy rodzinne`, `Zawody sportowe`) lub wpisuje własny tekst.
 
-### 3. Autoryzacja kodem PIN rodzica
-- **D-04 (User Choice):** Kliknięcie `Wyślij usprawiedliwienie` otwiera elegancki modal żądający 4-cyfrowego PIN-u rodzica (z domyślnym kodem "1234" i możliwością szybkiego zatwierdzenia).
-- **D-05:** Po wprowadzeniu PIN-u lekcje przechodzą w stan `JustificationStatus.requested` ("W TRAKCIE DECYZJI") lub `approved`, stan jest trwale zapisywany w `SharedPreferences` i pamięci repozytorium, a zaznaczenia są czyszczone.
+### 3. Autoryzacja kodem PIN rodzica i integracja z Librus Synergia
+- **D-04 (Librus e-Usprawiedliwienia):** Szkoła i konto rodzica (Bartosz Jankiewicz) posiadają aktywny moduł e-Usprawiedliwień na portalu `https://synergia.librus.pl/eusprawiedliwienia/dodaj`.
+- **D-05 (Rola PIN rodzica):** Portal Librus Synergia nie wymaga kodu PIN do złożenia e-usprawiedliwienia (wymaga jedynie zalogowania jako rodzic). Kod PIN w aplikacji (domyślnie "1234") pełni rolę zabezpieczenia rodzicielskiego (Parental Gate w aplikacji), uniemożliwiając uczniowi przypadkowe lub samowolne złożenie wniosku.
+- **D-06 (Automatyczna wysyłka do Librusa):** Zatwierdzenie wniosku w aplikacji wywołuje endpoint Cloud Functions `submitJustification`, który przesyła wniosek bezpośrednio do oficjalnego formularza Librus Synergia (`/eusprawiedliwienia/dodaj`) do wychowawcy Łukasza Soboty, po czym zapisuje stan w Firestore/SharedPreferences i odświeża interfejs.
 
 ### 4. Domyślny filtr widoku
 - **D-06 (User Choice):** Domyślnie aktywna zakładka to `• Do usprawiedliwienia`, aby po wejściu w ekran użytkownik od razu widział nieobecności wymagające uwagi. Użytkownik może w każdej chwili przełączyć na `Wszystkie` lub `Usprawiedliwione`.

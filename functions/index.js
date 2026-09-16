@@ -303,3 +303,50 @@ exports.getMessageDetails = onRequest(
     }
   }
 );
+
+/**
+ * Submit an e-Justification to Librus Synergia.
+ */
+exports.submitJustification = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 45,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const { LibrusClient } = require("./src/librus_client");
+      const login = req.query.login || req.body?.login || process.env.LIBRUS_LOGIN;
+      const pass = process.env.LIBRUS_PASSWORD;
+      const { dateFrom, dateTo, reason, isByHours, hoursByDate, notifyOthers } = req.body || {};
+
+      if (!reason || (!dateFrom && !hoursByDate)) {
+        return res.status(400).json({ error: "Brak wymaganych parametrów (powód, zakres dat lub lekcje)." });
+      }
+
+      if (login && pass) {
+        const client = new LibrusClient(login, pass);
+        const result = await client.submitJustification({
+          dateFrom,
+          dateTo,
+          reason,
+          isByHours: Boolean(isByHours),
+          hoursByDate: hoursByDate || {},
+          notifyOthers: notifyOthers !== false
+        });
+        return res.status(200).json(result);
+      }
+
+      return res.status(200).json({
+        success: true,
+        simulated: true,
+        message: "Wniosek o usprawiedliwienie zarejestrowany w trybie demonstracyjnym."
+      });
+    } catch (error) {
+      console.error("submitJustification error:", error);
+      res.status(500).json({ error: error.message || "Błąd wysyłania e-Usprawiedliwienia do Librusa." });
+    }
+  }
+);
+

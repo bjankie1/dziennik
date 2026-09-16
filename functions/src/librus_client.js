@@ -45,13 +45,14 @@ class LibrusClient {
   async fetchAll() {
     await this.authenticate();
 
-    const [infoData, annData, gradesData, ttData, attData, msgData] = await Promise.all([
+    const [infoData, annData, gradesData, ttData, attData, msgData, justData] = await Promise.all([
       this.fetchStudentInfo(),
       this.fetchAnnouncements(),
       this.fetchGrades(),
       this.fetchTimetable(),
       this.fetchAttendance(),
-      this.fetchMessages()
+      this.fetchMessages(),
+      this.fetchJustifications()
     ]);
 
     return {
@@ -66,7 +67,8 @@ class LibrusClient {
       timetable: ttData.timetable,
       attendance: attData.records,
       attendanceStats: attData.stats,
-      messages: msgData.messages
+      messages: msgData.messages,
+      justifications: justData
     };
   }
 
@@ -433,6 +435,123 @@ class LibrusClient {
         sentAt: new Date().toISOString(),
         recipients: Array.isArray(recipients) ? recipients : [recipients],
         subject,
+      };
+    }
+  }
+
+  async fetchJustifications() {
+    try {
+      const res = await this.client.get("https://synergia.librus.pl/eusprawiedliwienia");
+      const cheerio = require("cheerio");
+      const $ = cheerio.load(res.data);
+      const items = [];
+      $("table.decorated.stretch tr").each((i, tr) => {
+        const tds = $(tr).find("td");
+        if (tds.length >= 7) {
+          const period = $(tds[1]).text().trim();
+          const count = $(tds[2]).text().trim();
+          const content = $(tds[3]).text().trim();
+          const notified = $(tds[4]).text().trim();
+          const sentDate = $(tds[5]).text().trim();
+          const status = $(tds[6]).text().trim();
+          if (period && !period.includes("Brak")) {
+            items.push({
+              id: `just_${sentDate}_${i}`,
+              period,
+              count,
+              content,
+              notified,
+              sentDate,
+              status
+            });
+          }
+        }
+      });
+      return items;
+    } catch (e) {
+      console.warn("fetchJustifications error:", e.message);
+      return [];
+    }
+  }
+
+  async submitJustification({ dateFrom, dateTo, reason, isByHours = false, hoursByDate = {}, notifyOthers = true }) {
+    await this.authenticate();
+
+    if (isByHours && Object.keys(hoursByDate).length > 0) {
+      const dates = Object.keys(hoursByDate);
+      const results = [];
+      for (const date of dates) {
+        const hours = hoursByDate[date];
+        if (!hours || hours.length === 0) continue;
+
+        const formPage = await this.client.get("https://synergia.librus.pl/eusprawiedliwienia/dodaj");
+        const cheerio = require("cheerio");
+        const $ = cheerio.load(formPage.data);
+        const requestkey = $("input[name=\"requestkey\"]").val();
+        if (!requestkey) {
+          throw new Error("Nie znaleziono tokenu autoryzacji formularza e-Usprawiedliwień.");
+        }
+
+        const formData = new FormData();
+        formData.append("requestkey", requestkey);
+        formData.append("dodajUsprawiedliwienieDo", "1");
+        formData.append("datyLubLekcje", "wgGodzin");
+        formData.append("dataOd", date);
+        formData.append("dataDo", date);
+        formData.append("powodNieobecnosci", reason || "");
+        if (notifyOthers) {
+          formData.append("powiadomInnych", "1");
+        }
+        for (const h of hours) {
+          formData.append(`usprawiedliwienie[${date}][]`, String(h));
+        }
+
+        const res = await this.client.post("https://synergia.librus.pl/eusprawiedliwienia/dodaj", formData, {
+          headers: {
+            "Referer": "https://synergia.librus.pl/eusprawiedliwienia/dodaj"
+          },
+          maxRedirects: 5
+        });
+        results.push({ date, hours, status: res.status });
+      }
+      return {
+        success: true,
+        message: "Usprawiedliwienie zostało przesłane do wychowawcy (Sobota Łukasz) w Librus Synergia.",
+        results
+      };
+    } else {
+      const formPage = await this.client.get("https://synergia.librus.pl/eusprawiedliwienia/dodaj");
+      const cheerio = require("cheerio");
+      const $ = cheerio.load(formPage.data);
+      const requestkey = $("input[name=\"requestkey\"]").val();
+      if (!requestkey) {
+        throw new Error("Nie znaleziono tokenu autoryzacji formularza e-Usprawiedliwień.");
+      }
+
+      const formData = new FormData();
+      formData.append("requestkey", requestkey);
+      formData.append("dodajUsprawiedliwienieDo", "1");
+      formData.append("datyLubLekcje", "wgDat");
+      formData.append("dataOd", dateFrom || "");
+      formData.append("dataDo", dateTo || dateFrom || "");
+      formData.append("powodNieobecnosci", reason || "");
+      if (notifyOthers) {
+        formData.append("powiadomInnych", "1");
+      }
+
+      const res = await this.client.post("https://synergia.librus.pl/eusprawiedliwienia/dodaj", formData, {
+        headers: {
+          "Referer": "https://synergia.librus.pl/eusprawiedliwienia/dodaj"
+        },
+        maxRedirects: 5
+      });
+
+      return {
+        success: true,
+        message: "Usprawiedliwienie zostało przesłane do wychowawcy (Sobota Łukasz) w Librus Synergia.",
+        dateFrom,
+        dateTo: dateTo || dateFrom,
+        status: res.status
       };
     }
   }

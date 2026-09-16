@@ -61,6 +61,13 @@
         }
       },
       {
+        "source": "/api/submitJustification",
+        "function": {
+          "functionId": "submitJustification",
+          "region": "europe-west3"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
