@@ -25,8 +25,9 @@ behavior_unverified: 0
 | 5 | Wielu nauczycieli może zostać wybranych jako usuwalne chipy (pigułki z x) w polu Do: | ✓ VERIFIED | `InputChip` z listą `_selectedRecipients` i możliwością usuwania |
 | 6 | Wysłanie nowej wiadomości lub odpowiedzi aktualizuje stan lokalny oraz odpytuje endpoint backendowy Librusa | ✓ VERIFIED | Metody `sendMessage` w `MockSchoolRepository`, `FirestoreSchoolRepository` oraz Cloud Function `/api/sendMessage` |
 | 7 | Otwarcie wątku wiadomości pobiera i wyświetla pełną treść wiadomości z Librus Synergia (a nie tylko powtórzony temat) z on-demand loading i trwałym cache w Firestore | ✓ VERIFIED | Endpoint `/api/messageDetails`, selektor `div.container-message-content`, metoda `getMessageBody` i wskaźnik ładowania w `MessageThreadScreen` |
+| 8 | Oznaczanie wiadomości jako nowe i przeczytane (automatycznie i ręcznie) oraz precyzyjny licznik (badge) na ikonie wiadomości i w nagłówku | ✓ VERIFIED | Metody `markMessageAsRead` / `markAllMessagesAsRead`, `unreadMessagesCountProvider`, dynamiczny badge w `NavigationBar` i `AppHeader`, ukrywany gdy count == 0 |
 
-**Score:** 7/7 truths verified
+**Score:** 8/8 truths verified
 
 ### Required Artifacts
 
