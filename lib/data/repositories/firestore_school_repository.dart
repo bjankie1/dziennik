@@ -677,6 +677,16 @@ class FirestoreSchoolRepository implements SchoolRepository {
   }
 
   @override
+  Future<void> cancelJustification(List<String> recordIds) async {
+    await _loadJustificationOverrides();
+    for (final id in recordIds) {
+      _localJustificationOverrides.remove(id);
+    }
+    await _saveJustificationOverrides();
+    return _mockFallback.cancelJustification(recordIds);
+  }
+
+  @override
   Future<List<TeacherContact>> getTeachers() async {
     final subjects = await getSubjects();
     final list = <TeacherContact>[];

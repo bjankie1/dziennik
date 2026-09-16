@@ -71,6 +71,13 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
     await repo.submitJustification(recordIds, reason);
     state = AsyncValue.data(await repo.getAttendanceRecords());
   }
+
+  Future<void> cancelJustification(List<String> recordIds) async {
+    state = const AsyncValue.loading();
+    final repo = ref.read(schoolRepositoryProvider);
+    await repo.cancelJustification(recordIds);
+    state = AsyncValue.data(await repo.getAttendanceRecords());
+  }
 }
 
 final attendanceProvider =

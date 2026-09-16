@@ -129,6 +129,28 @@ class MockSchoolRepository implements SchoolRepository {
   }
 
   @override
+  Future<void> cancelJustification(List<String> recordIds) async {
+    await Future.delayed(const Duration(milliseconds: 50));
+    _attendance = _attendance.map((rec) {
+      if (recordIds.contains(rec.id)) {
+        return AttendanceRecord(
+          id: rec.id,
+          date: rec.date,
+          lessonNumber: rec.lessonNumber,
+          subjectName: rec.subjectName,
+          type: AttendanceType.absent,
+          timeSlot: rec.timeSlot,
+          justificationStatus: JustificationStatus.none,
+          justificationReason: null,
+          classroom: rec.classroom,
+          teacherName: rec.teacherName,
+        );
+      }
+      return rec;
+    }).toList();
+  }
+
+  @override
   Future<List<TeacherContact>> getTeachers() async {
     await Future.delayed(const Duration(milliseconds: 50));
     final list = <TeacherContact>[];

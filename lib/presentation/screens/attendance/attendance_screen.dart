@@ -99,6 +99,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   final unexcused = records
                       .where((r) => r.type == AttendanceType.absent && r.justificationStatus == JustificationStatus.none)
                       .toList();
+                  final pendingList = records
+                      .where((r) => r.justificationStatus == JustificationStatus.requested)
+                      .toList();
                   final excusedList = records
                       .where((r) => r.type == AttendanceType.excused || r.justificationStatus == JustificationStatus.approved)
                       .toList();
@@ -139,6 +142,53 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         ),
                       ),
                       const SizedBox(height: 14),
+
+                      if (pendingList.isNotEmpty) ...[
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFFBEB),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFFDE68A)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.hourglass_empty_rounded, color: Color(0xFFD97706), size: 18),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  '${pendingList.length} ${pendingList.length == 1 ? "wniosek czeka" : "wnioski czekają"} na wychowawcę (kliknij lekcję, aby zarządzać).',
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF92400E)),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () async {
+                                  final ids = pendingList.map((r) => r.id).toList();
+                                  await ref.read(attendanceProvider.notifier).cancelJustification(ids);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Przywrócono nieobecności do ponownego usprawiedliwienia.'),
+                                        backgroundColor: Color(0xFF3525CD),
+                                      ),
+                                    );
+                                  }
+                                },
+                                style: TextButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: const Text(
+                                  'Cofnij wnioski',
+                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFFB45309)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
 
                       // Nagłówek sekcji zgłoszeń
                       Row(
@@ -666,7 +716,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 }
               });
             }
-          : null,
+          : (isRequested ? () => _showRequestedDetailsModal(context, record) : null),
       child: Container(
         decoration: const BoxDecoration(
           border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
@@ -956,6 +1006,150 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showRequestedDetailsModal(BuildContext context, AttendanceRecord record) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBD5E1),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.hourglass_empty_rounded, color: Color(0xFFD97706), size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Lekcja ${record.lessonNumber}: ${record.subjectName}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                          ),
+                          Text(
+                            '${record.timeSlot} • ${record.teacherName ?? "Wychowawca"}',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Powód usprawiedliwienia:',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        record.justificationReason?.isNotEmpty == true
+                            ? record.justificationReason!
+                            : 'Brak podanego powodu',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await ref.read(attendanceProvider.notifier).cancelJustification([record.id]);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Cofnięto wniosek. Możesz teraz zaznaczyć i edytować.'),
+                                backgroundColor: Color(0xFF3525CD),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.undo_rounded, size: 18),
+                        label: const Text('Cofnij wniosek'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF475569),
+                          side: const BorderSide(color: Color(0xFFCBD5E1)),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          await ref.read(attendanceProvider.notifier).submitJustification(
+                                [record.id],
+                                record.justificationReason ?? 'Usprawiedliwienie od rodzica',
+                              );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Wysłano wniosek bezpośrednio do Librus Synergia!'),
+                                backgroundColor: Color(0xFF059669),
+                              ),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.send_rounded, size: 18),
+                        label: const Text('Wyślij do Librusa'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF3525CD),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

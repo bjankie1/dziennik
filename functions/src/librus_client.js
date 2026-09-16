@@ -454,7 +454,7 @@ class LibrusClient {
           const notified = $(tds[4]).text().trim();
           const sentDate = $(tds[5]).text().trim();
           const status = $(tds[6]).text().trim();
-          if (period && !period.includes("Brak")) {
+          if (period && !period.includes("Brak") && period !== "Okres usprawiedliwienia") {
             items.push({
               id: `just_${sentDate}_${i}`,
               period,
