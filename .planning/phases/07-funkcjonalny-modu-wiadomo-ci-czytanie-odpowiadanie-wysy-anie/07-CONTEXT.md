@@ -33,6 +33,14 @@ Dostarczenie pełnej, dwukierunkowej obsługi wiadomości Librus Synergia w apli
 ### Pobieranie i prezentacja pełnej treści wiadomości
 - **D-10:** Tabela skrzynki odbiorczej Librusa udostępnia jedynie nagłówki. Pełna treść wiadomości (`div.container-message-content`) musi być pobierana z podstron szczegółów wiadomości (zarówno automatycznie dla ostatnich wiadomości, jak i on-demand przez endpoint `/api/messageDetails`), trwale zapisywana w profilu ucznia w Firestore oraz prezentowana w `MessageThreadScreen` ze wskaźnikiem ładowania i możliwością odświeżenia.
 
+### Oznaczanie wiadomości jako nowe i przeczytane oraz licznik (badge)
+- **D-11:** Stan przeczytania wiadomości musi być w pełni dynamiczny i persystowany:
+  1. Otwarcie wątku wiadomości automatycznie oznacza go jako przeczytany (`isUnread: false`).
+  2. Przycisk w AppBarze `MessageThreadScreen` pozwala na ręczne przełączenie stanu (przeczytana / nieprzeczytana).
+  3. Lista wiadomości wyróżnia nieprzeczytane wątki wyraźną kropką i pogrubieniem, a dla przeczytanych wątków zachowuje neutralny wygląd.
+  4. Ikona wiadomości na dolnym pasku nawigacji (`NavigationBar`) oraz w nagłówku (`AppHeader`) wyświetla badge z dokładną liczbą nieprzeczytanych wiadomości (`unreadCount`). Gdy `unreadCount == 0`, badge jest całkowicie ukrywany.
+  5. Stan przeczytania jest persystowany w repozytorium (Firestore `students/{login}` i lokalny cache) oraz w `MockSchoolRepository`.
+
 ### the agent's Discretion
 - Dokładny layout i animacja rozwijania/zwijania wiadomości w wątku.
 - Obsługa trybu offline / demo (optymistyczne dodawanie wiadomości do stanu lokalnego).

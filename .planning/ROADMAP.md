@@ -45,11 +45,12 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
   4. Pływający dolny panel z licznikiem zaznaczonych lekcji, pigułkami szybkiego powodu (Choroba, Wizyta lekarska, Sprawy rodzinne) oraz akcją wysłania usprawiedliwienia.
 
 ### Phase 7: Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)
-**Goal**: Pełna obsługa wiadomości Librus: widok wątku w stylu Gmail, odpowiadanie na wiadomości i pisanie nowych wiadomości z inteligentnym autocomplete nauczyciela (nazwisko oraz przedmiot) oraz prezentacja pełnej treści wiadomości.
-**Requirements**: REQ-MSG-04, REQ-MSG-05, REQ-MSG-06, REQ-MSG-07
+**Goal**: Pełna obsługa wiadomości Librus: widok wątku w stylu Gmail, odpowiadanie na wiadomości i pisanie nowych wiadomości z inteligentnym autocomplete nauczyciela (nazwisko oraz przedmiot), prezentacja pełnej treści wiadomości oraz dynamiczne oznaczanie stanu przeczytania z licznikiem nieprzeczytanych.
+**Requirements**: REQ-MSG-04, REQ-MSG-05, REQ-MSG-06, REQ-MSG-07, REQ-MSG-08
 **Success Criteria**:
   1. Widok wątku wiadomości na jednym ekranie (w stylu Gmail) z chronologiczną historią konwersacji i możliwością zwijania/rozwijania wiadomości.
   2. Bezpośrednie pole szybkiej odpowiedzi w wątku wiadomości wysyłające odpowiedź do Librus Synergia.
   3. Formularz nowej wiadomości z wyszukiwarką/autocomplete odbiorcy działającym zarówno po nazwisku nauczyciela, jak i po nauczanym przedmiocie (np. "Chemia", "Pietrzak").
   4. Skuteczne wysyłanie wiadomości przez backend scraper Cloud Functions do Librus Synergia oraz natychmiastowe odświeżenie wątku.
   5. Pobieranie i prezentacja pełnej treści wiadomości z podstron Librusa (`div.container-message-content`) zamiast powtórzonego tematu, z automatycznym dociąganiem on-demand i trwałym zapisem w pamięci podręcznej Firestore.
+  6. Dynamiczne oznaczanie wiadomości jako nowe i przeczytane (automatycznie przy otwarciu wątku oraz ręcznie) oraz wyświetlanie liczby nieprzeczytanych wiadomości w postaci badge na ikonie wiadomości paska nawigacji i nagłówka (ukrywany gdy brak nieprzeczytanych).

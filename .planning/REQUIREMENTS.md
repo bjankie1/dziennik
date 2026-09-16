@@ -40,6 +40,7 @@
 - [x] **REQ-MSG-05**: Odpowiadanie na wiadomość bezpośrednio w widoku wątku z wysyłaniem do Librus Synergia.
 - [x] **REQ-MSG-06**: Tworzenie nowej wiadomości z autocomplete odbiorcy po nazwisku nauczyciela oraz po nauczanym przedmiocie (np. "Chemia", "Pietrzak") oraz wysyłaniem do Librus Synergia.
 - [x] **REQ-MSG-07**: Pobieranie i prezentacja pełnej treści wiadomości z podstron szczegółów wiadomości Librus Synergia (zamiast powtórzonego tematu/podglądu), z automatycznym dociąganiem on-demand i trwałym cache'owaniem w Firestore.
+- [ ] **REQ-MSG-08**: Oznaczanie wiadomości jako nowe i przeczytane (automatycznie przy otwarciu wątku oraz ręcznie) wraz z dynamicznym licznikiem nieprzeczytanych wiadomości na ikonie nawigacji dolnej i nagłówka (badge z liczbą, ukrywany gdy 0).
 
 ## Traceability
 
@@ -65,3 +66,4 @@
 | REQ-MSG-05 | Phase 7 | Complete |
 | REQ-MSG-06 | Phase 7 | Complete |
 | REQ-MSG-07 | Phase 7 | Complete |
+| REQ-MSG-08 | Phase 7 | In Progress |
