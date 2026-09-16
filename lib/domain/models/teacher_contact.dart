@@ -15,10 +15,25 @@ class TeacherContact {
 
   bool matches(String query) {
     if (query.isEmpty) return true;
-    final q = query.toLowerCase().trim();
-    return name.toLowerCase().contains(q) ||
-        subjectName.toLowerCase().contains(q) ||
-        role.toLowerCase().contains(q);
+    final q = _norm(query);
+    return _norm(name).contains(q) ||
+        _norm(subjectName).contains(q) ||
+        _norm(role).contains(q);
+  }
+
+  static String _norm(String s) {
+    return s
+        .toLowerCase()
+        .trim()
+        .replaceAll('ą', 'a')
+        .replaceAll('ć', 'c')
+        .replaceAll('ę', 'e')
+        .replaceAll('ł', 'l')
+        .replaceAll('ń', 'n')
+        .replaceAll('ó', 'o')
+        .replaceAll('ś', 's')
+        .replaceAll('ź', 'z')
+        .replaceAll('ż', 'z');
   }
 
   @override

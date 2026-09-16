@@ -327,10 +327,27 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
     if (validSubjects.isEmpty) return _mockFallback.getSubjects();
 
+    final rawTimetable = data['timetable'] as List<dynamic>? ?? [];
+    final ttTeachers = <String, String>{};
+    for (final t in rawTimetable) {
+      if (t is Map) {
+        final rawSubj = (t['subject'] as String? ?? '').trim();
+        final rawTeach = (t['teacher'] as String? ?? '').trim();
+        if (rawSubj.isNotEmpty && rawTeach.isNotEmpty) {
+          final cleanSubj = rawSubj.replaceFirst(RegExp(r'^(zastępstwo|odwołane)\s*', caseSensitive: false), '').trim();
+          final cleanTeach = rawTeach.replaceAll(RegExp(r'\s*\([^)]*\)'), '').trim();
+          ttTeachers.putIfAbsent(cleanSubj.toLowerCase(), () => cleanTeach);
+        }
+      }
+    }
+
     return validSubjects.map((s) {
       final sName = s['name'] as String? ?? 'Przedmiot';
       final avg = (s['currentAverage'] as num?)?.toDouble();
-      final teacher = s['teacher'] as String? ?? '';
+      var teacher = s['teacher'] as String? ?? '';
+      if (teacher.isEmpty) {
+        teacher = ttTeachers[sName.toLowerCase()] ?? '';
+      }
       final rawGrades = s['grades'] as List<dynamic>? ?? [];
 
       final grades = rawGrades.map((g) {
@@ -688,10 +705,56 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   @override
   Future<List<TeacherContact>> getTeachers() async {
-    final subjects = await getSubjects();
     final list = <TeacherContact>[];
     final seen = <String>{};
 
+    final data = await _getStudentData();
+
+    // 1. Educator (Wychowawca)
+    final studentMap = data?['student'] as Map<String, dynamic>?;
+    final educator = studentMap?['educator'] as String?;
+    if (educator != null && educator.isNotEmpty && !seen.contains(educator)) {
+      seen.add(educator);
+      final parts = educator.split(' ');
+      final initials = parts.map((p) => p.isNotEmpty ? p[0] : '').take(2).join().toUpperCase();
+      list.add(
+        TeacherContact(
+          id: 'educator',
+          name: educator,
+          subjectName: 'Wychowawstwo',
+          role: 'Wychowawca',
+          initials: initials.isNotEmpty ? initials : 'W',
+        ),
+      );
+    }
+
+    // 2. Active teachers from timetable (Matematyka, Historia, Język angielski, etc.)
+    final rawTimetable = data?['timetable'] as List<dynamic>? ?? [];
+    for (final t in rawTimetable) {
+      if (t is Map) {
+        final rawTeacher = (t['teacher'] as String? ?? '').trim();
+        final rawSubject = (t['subject'] as String? ?? '').trim();
+        if (rawTeacher.isNotEmpty && rawSubject.isNotEmpty) {
+          final cleanTeacher = rawTeacher.replaceAll(RegExp(r'\s*\([^)]*\)'), '').trim();
+          final cleanSubject = rawSubject.replaceFirst(RegExp(r'^(zastępstwo|odwołane)\s*', caseSensitive: false), '').trim();
+          if (cleanTeacher.isNotEmpty && !seen.contains(cleanTeacher)) {
+            seen.add(cleanTeacher);
+            final parts = cleanTeacher.split(' ');
+            final initials = parts.map((p) => p.isNotEmpty ? p[0] : '').take(2).join().toUpperCase();
+            list.add(TeacherContact(
+              id: cleanTeacher.toLowerCase().replaceAll(' ', '_'),
+              name: cleanTeacher,
+              subjectName: cleanSubject,
+              role: 'Nauczyciel',
+              initials: initials.isNotEmpty ? initials : 'N',
+            ));
+          }
+        }
+      }
+    }
+
+    // 3. Teachers from subjects
+    final subjects = await getSubjects();
     for (final s in subjects) {
       if (s.teacherName.isNotEmpty && !seen.contains(s.teacherName)) {
         seen.add(s.teacherName);
@@ -707,22 +770,25 @@ class FirestoreSchoolRepository implements SchoolRepository {
       }
     }
 
-    final data = await _getStudentData();
-    final studentMap = data?['student'] as Map<String, dynamic>?;
-    final educator = studentMap?['educator'] as String?;
-    if (educator != null && educator.isNotEmpty && !seen.contains(educator)) {
-      final parts = educator.split(' ');
-      final initials = parts.map((p) => p.isNotEmpty ? p[0] : '').take(2).join().toUpperCase();
-      list.insert(
-        0,
-        TeacherContact(
-          id: 'educator',
-          name: educator,
-          subjectName: 'Wychowawstwo',
-          role: 'Wychowawca',
-          initials: initials.isNotEmpty ? initials : 'W',
-        ),
-      );
+    // 4. Teachers from attendance
+    final rawAttendance = data?['attendance'] as List<dynamic>? ?? [];
+    for (final a in rawAttendance) {
+      if (a is Map) {
+        final rawTeacher = (a['teacher'] as String? ?? '').trim();
+        final rawSubject = (a['subjectName'] as String? ?? '').trim();
+        if (rawTeacher.isNotEmpty && !seen.contains(rawTeacher)) {
+          seen.add(rawTeacher);
+          final parts = rawTeacher.split(' ');
+          final initials = parts.map((p) => p.isNotEmpty ? p[0] : '').take(2).join().toUpperCase();
+          list.add(TeacherContact(
+            id: rawTeacher.toLowerCase().replaceAll(' ', '_'),
+            name: rawTeacher,
+            subjectName: rawSubject.isNotEmpty ? rawSubject : 'Lekcja',
+            role: 'Nauczyciel',
+            initials: initials.isNotEmpty ? initials : 'N',
+          ));
+        }
+      }
     }
 
     if (list.isEmpty) {

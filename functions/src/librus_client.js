@@ -55,6 +55,26 @@ class LibrusClient {
       this.fetchJustifications()
     ]);
 
+    // Enrich subjects with teachers from timetable if empty
+    const ttTeacherMap = {};
+    ttData.timetable.forEach(t => {
+      if (t.subject && t.teacher) {
+        const key = t.subject.toLowerCase().replace(/^(zastępstwo|odwołane)\s*/i, "").trim();
+        if (!ttTeacherMap[key]) {
+          ttTeacherMap[key] = t.teacher;
+        }
+      }
+    });
+
+    gradesData.subjects.forEach(s => {
+      if (!s.teacher) {
+        const key = s.name.toLowerCase().trim();
+        if (ttTeacherMap[key]) {
+          s.teacher = ttTeacherMap[key];
+        }
+      }
+    });
+
     return {
       login: this.login,
       lastSyncTime: new Date().toISOString(),
@@ -249,9 +269,13 @@ class LibrusClient {
           if (rawEntry && rawEntry.length > 2) {
             const isCancelled = rawEntry.toLowerCase().includes("odwołan");
             const cleanText = rawEntry.replace(/^odwołane\s*/i, "").trim();
-            const parts = cleanText.split("-");
-            const subject = parts[0]?.trim() || cleanText;
-            const teacher = parts[1]?.trim() || "";
+            const firstDash = cleanText.indexOf("-");
+            let subject = cleanText;
+            let teacher = "";
+            if (firstDash !== -1) {
+              subject = cleanText.slice(0, firstDash).trim();
+              teacher = cleanText.slice(firstDash + 1).replace(/\s*\([^)]*\)/g, "").replace(/\s+/g, " ").trim();
+            }
 
             timetable.push({
               dayOfWeek: d + 1,
