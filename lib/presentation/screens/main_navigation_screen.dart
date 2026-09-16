@@ -6,6 +6,8 @@ import '../providers/school_providers.dart';
 import '../providers/auth_providers.dart';
 import '../providers/sync_provider.dart';
 import '../widgets/app_header.dart';
+import '../widgets/app_sidebar.dart';
+import '../widgets/app_desktop_header.dart';
 import 'dashboard/dashboard_screen.dart';
 import 'grades/grades_screen.dart';
 import 'schedule/schedule_screen.dart';
@@ -48,78 +50,125 @@ class MainNavigationScreen extends ConsumerWidget {
       MessagesScreen(),
     ];
 
-    return Scaffold(
-      appBar: studentAsync.when(
-        data: (student) => AppHeader(
-          student: student,
-          currentSectionTitle: _screenTitles[currentIndex],
-          onNotificationsTap: () {
-            ref.read(currentNavIndexProvider.notifier).setIndex(4); // Messages
-          },
-          onProfileTap: () {
-            _showProfileSheet(context, ref);
-          },
-        ),
-        loading: () => null,
-        error: (err, stack) => null,
-      ),
-      body: IndexedStack(
-        index: currentIndex,
-        children: screens,
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (index) {
-          ref.read(currentNavIndexProvider.notifier).setIndex(index);
-        },
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Pulpit',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.calendar_month_outlined),
-            selectedIcon: Icon(Icons.calendar_month),
-            label: 'Plan',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.school_outlined),
-            selectedIcon: Icon(Icons.school),
-            label: 'Oceny',
-          ),
-          NavigationDestination(
-            icon: Badge(
-              isLabelVisible: unexcusedCount > 0,
-              label: Text('$unexcusedCount'),
-              backgroundColor: AppColors.error,
-              child: const Icon(Icons.rule_outlined),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 1024;
+
+        if (isDesktop) {
+          return Scaffold(
+            backgroundColor: AppColors.surface,
+            body: Row(
+              children: [
+                AppSidebar(
+                  currentIndex: currentIndex,
+                  onIndexSelected: (index) {
+                    ref.read(currentNavIndexProvider.notifier).setIndex(index);
+                  },
+                  unexcusedCount: unexcusedCount,
+                  unreadCount: messageBadgeCount,
+                  student: studentAsync.value,
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      AppDesktopHeader(
+                        student: studentAsync.value,
+                        unreadCount: messageBadgeCount,
+                        onNotificationsTap: () {
+                          ref.read(currentNavIndexProvider.notifier).setIndex(4); // Messages
+                        },
+                        onProfileTap: () {
+                          _showProfileSheet(context, ref);
+                        },
+                      ),
+                      Expanded(
+                        child: IndexedStack(
+                          index: currentIndex,
+                          children: screens,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            selectedIcon: Badge(
-              isLabelVisible: unexcusedCount > 0,
-              label: Text('$unexcusedCount'),
-              backgroundColor: AppColors.error,
-              child: const Icon(Icons.rule),
+          );
+        }
+
+        return Scaffold(
+          appBar: studentAsync.when(
+            data: (student) => AppHeader(
+              student: student,
+              currentSectionTitle: _screenTitles[currentIndex],
+              onNotificationsTap: () {
+                ref.read(currentNavIndexProvider.notifier).setIndex(4); // Messages
+              },
+              onProfileTap: () {
+                _showProfileSheet(context, ref);
+              },
             ),
-            label: 'Frekwencja',
+            loading: () => null,
+            error: (err, stack) => null,
           ),
-          NavigationDestination(
-            icon: Badge(
-              isLabelVisible: messageBadgeCount > 0,
-              label: Text('$messageBadgeCount'),
-              backgroundColor: AppColors.error,
-              child: const Icon(Icons.mail_outline),
-            ),
-            selectedIcon: Badge(
-              isLabelVisible: messageBadgeCount > 0,
-              label: Text('$messageBadgeCount'),
-              backgroundColor: AppColors.error,
-              child: const Icon(Icons.mail),
-            ),
-            label: 'Wiadomości',
+          body: IndexedStack(
+            index: currentIndex,
+            children: screens,
           ),
-        ],
-      ),
+          bottomNavigationBar: NavigationBar(
+            selectedIndex: currentIndex,
+            onDestinationSelected: (index) {
+              ref.read(currentNavIndexProvider.notifier).setIndex(index);
+            },
+            destinations: [
+              const NavigationDestination(
+                icon: Icon(Icons.dashboard_outlined),
+                selectedIcon: Icon(Icons.dashboard),
+                label: 'Pulpit',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.calendar_month_outlined),
+                selectedIcon: Icon(Icons.calendar_month),
+                label: 'Plan',
+              ),
+              const NavigationDestination(
+                icon: Icon(Icons.school_outlined),
+                selectedIcon: Icon(Icons.school),
+                label: 'Oceny',
+              ),
+              NavigationDestination(
+                icon: Badge(
+                  isLabelVisible: unexcusedCount > 0,
+                  label: Text('$unexcusedCount'),
+                  backgroundColor: AppColors.error,
+                  child: const Icon(Icons.rule_outlined),
+                ),
+                selectedIcon: Badge(
+                  isLabelVisible: unexcusedCount > 0,
+                  label: Text('$unexcusedCount'),
+                  backgroundColor: AppColors.error,
+                  child: const Icon(Icons.rule),
+                ),
+                label: 'Frekwencja',
+              ),
+              NavigationDestination(
+                icon: Badge(
+                  isLabelVisible: messageBadgeCount > 0,
+                  label: Text('$messageBadgeCount'),
+                  backgroundColor: AppColors.error,
+                  child: const Icon(Icons.mail_outline),
+                ),
+                selectedIcon: Badge(
+                  isLabelVisible: messageBadgeCount > 0,
+                  label: Text('$messageBadgeCount'),
+                  backgroundColor: AppColors.error,
+                  child: const Icon(Icons.mail),
+                ),
+                label: 'Wiadomości',
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
