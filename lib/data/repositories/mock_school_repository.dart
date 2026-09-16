@@ -120,6 +120,8 @@ class MockSchoolRepository implements SchoolRepository {
           timeSlot: rec.timeSlot,
           justificationStatus: JustificationStatus.requested,
           justificationReason: reason,
+          classroom: rec.classroom,
+          teacherName: rec.teacherName,
         );
       }
       return rec;

@@ -32,9 +32,10 @@
 - [x] **REQ-GRADES-04**: Rozwijany panel szczegółów ocen z dokładną datą, wagą, procentem i komentarzem nauczyciela.
 
 ### Attendance Justification (wg makiety)
-- [ ] **REQ-ATTN-03**: Nowoczesny widok frekwencji z kołowym wykresem, celem semestru i podsumowaniem obecności/spóźnień.
-- [ ] **REQ-ATTN-04**: Filtrowanie frekwencji (Wszystkie, Do usprawiedliwienia, Usprawiedliwione) z grupowaniem po dniach i etykietami stanu.
-- [ ] **REQ-ATTN-05**: Zaznaczanie wielu lekcji checkboxami i dolny wysuwany panel z szybkimi powodami usprawiedliwienia.
+- [x] **REQ-ATTN-03**: Nowoczesny widok frekwencji z kołowym wykresem, celem semestru i podsumowaniem obecności/spóźnień.
+- [x] **REQ-ATTN-04**: Filtrowanie frekwencji (Wszystkie, Do usprawiedliwienia, Usprawiedliwione) z grupowaniem po dniach i etykietami stanu.
+- [x] **REQ-ATTN-05**: Zaznaczanie wielu lekcji checkboxami i dolny wysuwany panel z szybkimi powodami usprawiedliwienia.
+- [x] **REQ-ATTN-06**: Autoryzacja kodem PIN rodzica i wysyłanie e-usprawiedliwienia do wychowawcy.
 ### Messages Functional Module (czytanie, odpowiadanie, wysyłanie)
 - [x] **REQ-MSG-04**: Widok wątku wiadomości na jednym ekranie w stylu Gmail (zwijalne/rozwijalne wiadomości, chronologia, czytelny nagłówek nadawcy).
 - [x] **REQ-MSG-05**: Odpowiadanie na wiadomość bezpośrednio w widoku wątku z wysyłaniem do Librus Synergia.
@@ -58,10 +59,10 @@
 | REQ-GRADES-02 | Phase 5 | Complete |
 | REQ-GRADES-03 | Phase 5 | Complete |
 | REQ-GRADES-04 | Phase 5 | Complete |
-| REQ-ATTN-03 | Phase 6 | Pending |
-| REQ-ATTN-04 | Phase 6 | Pending |
-| REQ-ATTN-05 | Phase 6 | Pending |
-| REQ-ATTN-06 | Phase 6 | Pending |
+| REQ-ATTN-03 | Phase 6 | Complete |
+| REQ-ATTN-04 | Phase 6 | Complete |
+| REQ-ATTN-05 | Phase 6 | Complete |
+| REQ-ATTN-06 | Phase 6 | Complete |
 | REQ-MSG-04 | Phase 7 | Complete |
 | REQ-MSG-05 | Phase 7 | Complete |
 | REQ-MSG-06 | Phase 7 | Complete |

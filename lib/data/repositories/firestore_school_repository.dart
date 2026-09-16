@@ -24,6 +24,8 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   static final Map<String, bool> _localReadOverrides = {};
   static bool _readOverridesLoaded = false;
+  static final Map<String, String> _localJustificationOverrides = {};
+  static bool _justificationOverridesLoaded = false;
 
   Future<void> _loadReadOverrides() async {
     if (_readOverridesLoaded) return;
@@ -44,6 +46,28 @@ class FirestoreSchoolRepository implements SchoolRepository {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('edusync_read_messages_overrides', json.encode(_localReadOverrides));
+    } catch (_) {}
+  }
+
+  Future<void> _loadJustificationOverrides() async {
+    if (_justificationOverridesLoaded) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString('edusync_justifications_overrides');
+      if (jsonStr != null) {
+        final decoded = json.decode(jsonStr) as Map<String, dynamic>;
+        decoded.forEach((key, val) {
+          if (val is String) _localJustificationOverrides[key] = val;
+        });
+      }
+      _justificationOverridesLoaded = true;
+    } catch (_) {}
+  }
+
+  Future<void> _saveJustificationOverrides() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('edusync_justifications_overrides', json.encode(_localJustificationOverrides));
     } catch (_) {}
   }
 
@@ -389,9 +413,28 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   @override
   Future<List<AttendanceRecord>> getAttendanceRecords() async {
+    await _loadJustificationOverrides();
     final data = await _getStudentData();
     if (data == null || data['attendance'] == null) {
-      return _mockFallback.getAttendanceRecords();
+      final list = await _mockFallback.getAttendanceRecords();
+      return list.map((rec) {
+        final reason = _localJustificationOverrides[rec.id];
+        if (reason != null) {
+          return AttendanceRecord(
+            id: rec.id,
+            date: rec.date,
+            lessonNumber: rec.lessonNumber,
+            subjectName: rec.subjectName,
+            type: rec.type,
+            timeSlot: rec.timeSlot,
+            justificationStatus: JustificationStatus.requested,
+            justificationReason: reason,
+            classroom: rec.classroom,
+            teacherName: rec.teacherName,
+          );
+        }
+        return rec;
+      }).toList();
     }
 
     final rawList = data['attendance'] as List<dynamic>? ?? [];
@@ -429,16 +472,25 @@ class FirestoreSchoolRepository implements SchoolRepository {
         dt = DateTime.now();
       }
 
+      final id = item['id'] ?? UniqueKey().toString();
+      final reason = _localJustificationOverrides[id];
+      final isOverridden = reason != null;
+
       return AttendanceRecord(
-        id: item['id'] ?? UniqueKey().toString(),
+        id: id,
         date: dt,
         lessonNumber: lessonNum,
         subjectName: item['subjectName'] as String? ?? 'Lekcja',
         type: type,
         timeSlot: slotTimes[lessonNum] ?? 'Lekcja $lessonNum',
-        justificationStatus: type == AttendanceType.excused
-            ? JustificationStatus.approved
-            : JustificationStatus.none,
+        justificationStatus: isOverridden
+            ? JustificationStatus.requested
+            : (type == AttendanceType.excused
+                ? JustificationStatus.approved
+                : JustificationStatus.none),
+        justificationReason: reason,
+        classroom: item['classroom'] as String?,
+        teacherName: item['teacherName'] as String?,
       );
     }).toList();
   }
@@ -450,18 +502,18 @@ class FirestoreSchoolRepository implements SchoolRepository {
       final s = data['attendanceStats'] as Map<String, dynamic>;
       return {
         'presenceCount': s['presenceCount'] ?? 142,
-        'absenceCount': s['absenceCount'] ?? 2,
-        'lateCount': s['lateCount'] ?? 0,
-        'excusedCount': s['excusedCount'] ?? 0,
-        'percentage': (s['percentage'] as num?)?.toDouble() ?? 98.6,
+        'absenceCount': s['absenceCount'] ?? 6,
+        'lateCount': s['lateCount'] ?? 2,
+        'excusedCount': s['excusedCount'] ?? 3,
+        'percentage': (s['percentage'] as num?)?.toDouble() ?? 94.2,
       };
     }
     return {
       'presenceCount': 142,
-      'absenceCount': 2,
-      'lateCount': 0,
-      'excusedCount': 0,
-      'percentage': 98.6,
+      'absenceCount': 6,
+      'lateCount': 2,
+      'excusedCount': 3,
+      'percentage': 94.2,
     };
   }
 
@@ -564,6 +616,11 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   @override
   Future<void> submitJustification(List<String> recordIds, String reason) async {
+    await _loadJustificationOverrides();
+    for (final id in recordIds) {
+      _localJustificationOverrides[id] = reason;
+    }
+    await _saveJustificationOverrides();
     return _mockFallback.submitJustification(recordIds, reason);
   }
 

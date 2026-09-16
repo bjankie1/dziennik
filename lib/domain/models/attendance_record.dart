@@ -23,6 +23,8 @@ class AttendanceRecord {
   final String timeSlot;
   final JustificationStatus justificationStatus;
   final String? justificationReason;
+  final String? classroom;
+  final String? teacherName;
 
   const AttendanceRecord({
     required this.id,
@@ -33,6 +35,8 @@ class AttendanceRecord {
     required this.timeSlot,
     this.justificationStatus = JustificationStatus.none,
     this.justificationReason,
+    this.classroom,
+    this.teacherName,
   });
 
   bool get needsJustification =>
