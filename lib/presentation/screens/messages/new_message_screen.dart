@@ -5,7 +5,14 @@ import '../../../domain/models/teacher_contact.dart';
 import '../../providers/school_providers.dart';
 
 class NewMessageScreen extends ConsumerStatefulWidget {
-  const NewMessageScreen({super.key});
+  final TeacherContact? initialRecipient;
+  final String? initialSubject;
+
+  const NewMessageScreen({
+    super.key,
+    this.initialRecipient,
+    this.initialSubject,
+  });
 
   @override
   ConsumerState<NewMessageScreen> createState() => _NewMessageScreenState();
@@ -21,6 +28,17 @@ class _NewMessageScreenState extends ConsumerState<NewMessageScreen> {
   bool _isSending = false;
   List<TeacherContact> _filteredSuggestions = [];
   bool _showSuggestions = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialRecipient != null) {
+      _selectedRecipients.add(widget.initialRecipient!);
+    }
+    if (widget.initialSubject != null) {
+      _subjectController.text = widget.initialSubject!;
+    }
+  }
 
   @override
   void dispose() {

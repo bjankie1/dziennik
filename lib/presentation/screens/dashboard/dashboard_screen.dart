@@ -1,28 +1,57 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../domain/models/lesson_slot.dart';
-import '../../../domain/models/grade.dart';
-import '../../providers/school_providers.dart';
-import '../../providers/sync_provider.dart';
-import '../grades/grade_details_modal.dart';
+import "package:flutter/material.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:intl/intl.dart";
+import "../../../core/theme/app_colors.dart";
+import "../../../domain/models/lesson_slot.dart";
+import "../../../domain/models/grade.dart";
+import "../../../domain/models/message_thread.dart";
+import "../../../domain/models/attendance_record.dart";
+import "../../../domain/models/teacher_contact.dart";
+import "../../../domain/models/student_profile.dart";
+import "../../providers/school_providers.dart";
+import "../../providers/sync_provider.dart";
+import "../grades/grade_details_modal.dart";
+import "../attendance/justification_modal.dart";
+import "../messages/new_message_screen.dart";
+import "../messages/message_thread_screen.dart";
 
-class DashboardScreen extends ConsumerWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
+  int _selectedMessageTab = 0; // 0: Nieprzeczytane, 1: Wszystkie, 2: Ogłoszenia
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 1024) {
+          return _buildDesktopDashboard(context);
+        }
+        return _buildMobileDashboard(context);
+      },
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // DESKTOP DASHBOARD (>= 1024px)
+  // ---------------------------------------------------------------------------
+  Widget _buildDesktopDashboard(BuildContext context) {
     final studentAsync = ref.watch(studentProfileProvider);
-    final examAsync = ref.watch(upcomingExamProvider);
     final scheduleAsync = ref.watch(todayScheduleProvider);
     final recentGradesAsync = ref.watch(recentGradesProvider);
-    final syncState = ref.watch(syncProvider);
+    final messagesAsync = ref.watch(messagesProvider);
+    final attendanceAsync = ref.watch(attendanceProvider);
+    final teachersAsync = ref.watch(teachersProvider);
 
     final now = DateTime.now();
-    final rawDate = DateFormat('EEEE, d MMMM', 'pl_PL').format(now);
+    final rawDate = DateFormat("EEEE, d MMMM y", "pl_PL").format(now);
     final formattedDate = rawDate.isNotEmpty
-        ? '${rawDate[0].toUpperCase()}${rawDate.substring(1)}'
+        ? "${rawDate[0].toUpperCase()}${rawDate.substring(1)}"
         : rawDate;
 
     final lessons = scheduleAsync.value ?? [];
@@ -30,13 +59,1730 @@ class DashboardScreen extends ConsumerWidget {
     final lastLesson = lessons.isNotEmpty ? lessons.last : null;
     final cancelledLessons = lessons.where((l) => l.status == LessonStatus.canceled).toList();
     final effectiveCount = lessons.length - cancelledLessons.length;
-    final startTimeStr = firstLesson != null ? 'Początek ${firstLesson.startTime}' : 'Brak lekcji';
-    final endTimeStr = lastLesson != null ? 'Koniec zajęć: ${lastLesson.endTime} • $effectiveCount lekcji efektywnych' : 'Dzień wolny';
-    final statusNoteStr = cancelledLessons.isNotEmpty
-        ? 'Lekcja ${cancelledLessons.first.lessonNumber} odwołana'
-        : (lessons.any((l) => l.status == LessonStatus.substituted) ? 'Zastępstwo w planie' : 'Zgodnie z planem');
+    final startTimeStr = firstLesson != null ? firstLesson.startTime : "08:00";
+    final endTimeStr = lastLesson != null ? lastLesson.endTime : "14:25";
+
+    final student = studentAsync.value;
+    final grades = recentGradesAsync.value ?? [];
+    final allMessages = messagesAsync.value ?? [];
+    final unreadMessages = allMessages.where((m) => m.isUnread).toList();
+    final announcementMessages = allMessages.where((m) {
+      final s = m.subject.toLowerCase();
+      final r = m.senderRole.toLowerCase();
+      return s.contains("ogłoszen") || s.contains("komunikat") || r.contains("dyrekcj");
+    }).toList();
+
+    final unexcusedRecords = (attendanceAsync.value ?? [])
+        .where((r) => r.type == AttendanceType.absent && r.justificationStatus == JustificationStatus.none)
+        .toList();
+
+    // Filtered messages by tab
+    final displayedMessages = _selectedMessageTab == 0
+        ? (unreadMessages.isNotEmpty ? unreadMessages : allMessages.take(3).toList())
+        : (_selectedMessageTab == 2 ? announcementMessages : allMessages);
 
     return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(syncProvider.notifier).syncNow();
+        },
+        color: AppColors.primary,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1400),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 1. Top Welcome & Daily Real-Time Banner
+                  _buildDesktopWelcomeBanner(
+                    context,
+                    student: student,
+                    formattedDate: formattedDate,
+                    startTimeStr: startTimeStr,
+                    endTimeStr: endTimeStr,
+                    effectiveCount: effectiveCount,
+                    cancelledLessons: cancelledLessons,
+                    unreadCount: unreadMessages.length,
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // 2. Main 3-Column Bento Grid
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Column 1: Harmonogram na dziś (~35% flex: 4)
+                      Expanded(
+                        flex: 4,
+                        child: _buildDesktopScheduleColumn(
+                          context,
+                          lessons: lessons,
+                          now: now,
+                        ),
+                      ),
+
+                      const SizedBox(width: 20),
+
+                      // Column 2: Wiadomości i Komunikaty (~40% flex: 5)
+                      Expanded(
+                        flex: 5,
+                        child: _buildDesktopMessagesColumn(
+                          context,
+                          displayedMessages: displayedMessages,
+                          unreadCount: unreadMessages.length,
+                          totalCount: allMessages.length,
+                          announcementCount: announcementMessages.length,
+                        ),
+                      ),
+
+                      const SizedBox(width: 20),
+
+                      // Column 3: Ostatnie oceny & Frekwencja & Skróty (~25% flex: 3)
+                      Expanded(
+                        flex: 3,
+                        child: _buildDesktopMetricsColumn(
+                          context,
+                          student: student,
+                          grades: grades,
+                          unexcusedRecords: unexcusedRecords,
+                          teachers: teachersAsync.value ?? [],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- Top Welcome Banner ---
+  Widget _buildDesktopWelcomeBanner(
+    BuildContext context, {
+    required StudentProfile? student,
+    required String formattedDate,
+    required String startTimeStr,
+    required String endTimeStr,
+    required int effectiveCount,
+    required List<LessonSlot> cancelledLessons,
+    required int unreadCount,
+  }) {
+    final firstName = (student != null && student.name.isNotEmpty)
+        ? student.name.split(" ").first
+        : "Oskar";
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.3),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x05000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          "Dzień dobry, $firstName! 👋",
+                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurface,
+                                letterSpacing: -0.5,
+                              ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.secondary,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                "Tydzień ${student?.currentWeek ?? "B"} • Semestr 1",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondaryContainer.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                size: 14,
+                                color: AppColors.onSecondaryContainer,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                "Stan normalny",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.onSecondaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      children: [
+                        Text(
+                          formattedDate,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                        const Text("•", style: TextStyle(color: AppColors.outlineVariant)),
+                        Text(
+                          "Początek lekcji: $startTimeStr",
+                          style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                        ),
+                        if (cancelledLessons.isNotEmpty) ...[
+                          Text(
+                            "(Lekcja ${cancelledLessons.first.lessonNumber} odwołana - ${cancelledLessons.first.subjectName})",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ],
+                        const Text("•", style: TextStyle(color: AppColors.outlineVariant)),
+                        Text(
+                          "Koniec: $endTimeStr ($effectiveCount lekcje efektywne)",
+                          style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 24),
+
+              // 4 Mini-metric chips
+              Row(
+                children: [
+                  _buildMetricMiniCard(
+                    title: "ŚREDNIA WAŻONA",
+                    value: (student?.overallAverage ?? 4.82).toStringAsFixed(2),
+                    badge: "Top 5%",
+                    badgeColor: AppColors.secondary,
+                    valueColor: AppColors.primary,
+                  ),
+                  const SizedBox(width: 10),
+                  _buildMetricMiniCard(
+                    title: "FREKWENCJA",
+                    value: "${(student?.attendancePercentage ?? 98.6).toStringAsFixed(1)}%",
+                    badge: "Cel: >90%",
+                    badgeColor: AppColors.secondary,
+                    valueColor: AppColors.secondary,
+                  ),
+                  const SizedBox(width: 10),
+                  _buildMetricMiniCard(
+                    title: "WIADOMOŚCI",
+                    value: "$unreadCount",
+                    badge: "nieprzeczytane",
+                    badgeColor: AppColors.primary,
+                    valueColor: AppColors.primary,
+                    bgColor: AppColors.primaryFixed.withValues(alpha: 0.4),
+                  ),
+                  const SizedBox(width: 10),
+                  _buildMetricMiniCard(
+                    title: "SZCZĘŚLIWY NUMEREK",
+                    value: "14",
+                    badge: "Dzisiaj",
+                    badgeColor: AppColors.primary,
+                    valueColor: AppColors.primary,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetricMiniCard({
+    required String title,
+    required String value,
+    required String badge,
+    required Color badgeColor,
+    required Color valueColor,
+    Color? bgColor,
+  }) {
+    return Container(
+      width: 130,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: bgColor ?? AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: AppColors.onSurfaceVariant,
+              letterSpacing: 0.4,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: valueColor,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  badge,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: badgeColor,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Column 1: Harmonogram dnia ---
+  Widget _buildDesktopScheduleColumn(
+    BuildContext context, {
+    required List<LessonSlot> lessons,
+    required DateTime now,
+  }) {
+    int completedCount = 0;
+    for (final l in lessons) {
+      if (l.status == LessonStatus.canceled) {
+        completedCount++;
+        continue;
+      }
+      try {
+        final endParts = l.endTime.split(":").map(int.parse).toList();
+        final end = DateTime(now.year, now.month, now.day, endParts[0], endParts[1]);
+        if (now.isAfter(end)) completedCount++;
+      } catch (_) {}
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Harmonogram Card
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x04000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_rounded,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Harmonogram na dziś",
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onSurface,
+                            ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      "$completedCount / ${lessons.length} zrealizowane",
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              if (lessons.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  alignment: Alignment.center,
+                  child: const Text(
+                    "Brak lekcji na dzisiaj • Dzień wolny 🎉",
+                    style: TextStyle(color: AppColors.onSurfaceVariant),
+                  ),
+                )
+              else
+                ...lessons.map((lesson) => _buildDesktopLessonItem(context, lesson, now)),
+
+              const SizedBox(height: 14),
+              ElevatedButton.icon(
+                onPressed: () {
+                  ref.read(currentNavIndexProvider.notifier).setIndex(1); // Plan Lekcji
+                },
+                icon: const Icon(Icons.arrow_forward_rounded, size: 16),
+                label: const Text("Pełny plan lekcji na cały tydzień"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.surfaceContainerLow,
+                  foregroundColor: AppColors.primary,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Nadchodzący Sprawdzian Card
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x04000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.timer_outlined, size: 18, color: AppColors.tertiary),
+                      SizedBox(width: 8),
+                      Text(
+                        "Nadchodzący sprawdzian",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.tertiaryFixed,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      "Za 3 dni",
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.onTertiaryFixed,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Matematyka rozszerzona",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                        Text(
+                          "Piątek, 19 Paź",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      "Zakres: Funkcja kwadratowa, równania i nierówności z parametrem",
+                      style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () {
+                        ref.read(currentNavIndexProvider.notifier).setIndex(1);
+                      },
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.attach_file, size: 14, color: AppColors.primary),
+                          SizedBox(width: 4),
+                          Text(
+                            "Notatki i wzory (PDF)",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLessonItem(BuildContext context, LessonSlot lesson, DateTime now) {
+    bool isInProgress = lesson.status == LessonStatus.inProgress;
+    double progress = lesson.progressFraction ?? 0.0;
+    int remainingMinutes = 0;
+
+    if (lesson.status != LessonStatus.canceled) {
+      try {
+        final sParts = lesson.startTime.split(":").map(int.parse).toList();
+        final eParts = lesson.endTime.split(":").map(int.parse).toList();
+        final start = DateTime(now.year, now.month, now.day, sParts[0], sParts[1]);
+        final end = DateTime(now.year, now.month, now.day, eParts[0], eParts[1]);
+
+        if (now.isAfter(start) && now.isBefore(end)) {
+          isInProgress = true;
+          final totalSec = end.difference(start).inSeconds;
+          final elapsedSec = now.difference(start).inSeconds;
+          progress = (elapsedSec / totalSec).clamp(0.0, 1.0);
+          remainingMinutes = end.difference(now).inMinutes;
+        }
+      } catch (_) {}
+    }
+
+    Color stripeColor = AppColors.outlineVariant;
+    if (lesson.status == LessonStatus.canceled) {
+      stripeColor = AppColors.error;
+    } else if (isInProgress) {
+      stripeColor = AppColors.primary;
+    } else if (lesson.status == LessonStatus.substituted) {
+      stripeColor = AppColors.tertiary;
+    } else {
+      stripeColor = AppColors.secondary;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isInProgress
+            ? AppColors.primaryFixed.withValues(alpha: 0.25)
+            : AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 4px vertical stripe
+          Container(
+            width: 4,
+            height: isInProgress ? 65 : 44,
+            decoration: BoxDecoration(
+              color: stripeColor,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "${lesson.startTime} - ${lesson.endTime}",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: isInProgress ? FontWeight.bold : FontWeight.w500,
+                        color: isInProgress ? AppColors.primary : AppColors.onSurfaceVariant,
+                        decoration: lesson.status == LessonStatus.canceled
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                    ),
+                    if (lesson.status == LessonStatus.canceled)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.errorContainer,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          "ODWOŁANE",
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.onErrorContainer,
+                          ),
+                        ),
+                      )
+                    else if (isInProgress)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.circle, size: 6, color: Colors.white),
+                            SizedBox(width: 4),
+                            Text(
+                              "W TRAKCIE",
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (lesson.status == LessonStatus.substituted)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.tertiaryFixed,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          "ZASTĘPSTWO",
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.onTertiaryFixed,
+                          ),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          "PLANOWO",
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "${lesson.lessonNumber}. ${lesson.subjectName}",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: isInProgress ? AppColors.primary : AppColors.onSurface,
+                        decoration: lesson.status == LessonStatus.canceled
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                    ),
+                    Text(
+                      lesson.room.isNotEmpty ? "Sala ${lesson.room}" : "",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+
+                if (lesson.status == LessonStatus.canceled) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    lesson.statusNote ?? "Lekcja odwołana",
+                    style: const TextStyle(fontSize: 11, color: AppColors.error),
+                  ),
+                ],
+
+                if (lesson.status == LessonStatus.substituted && lesson.substituteTeacher != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    "Zamiast ${lesson.teacher} prowadzi ${lesson.substituteTeacher}",
+                    style: const TextStyle(fontSize: 11, color: AppColors.tertiary),
+                  ),
+                ],
+
+                if (isInProgress) ...[
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 5,
+                      backgroundColor: AppColors.surfaceContainerHigh,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        lesson.teacher,
+                        style: const TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
+                      ),
+                      Text(
+                        "Zostało $remainingMinutes min",
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Column 2: Wiadomości i Komunikaty ---
+  Widget _buildDesktopMessagesColumn(
+    BuildContext context, {
+    required List<MessageThread> displayedMessages,
+    required int unreadCount,
+    required int totalCount,
+    required int announcementCount,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.3),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x04000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.mark_email_unread_outlined,
+                    size: 20,
+                    color: AppColors.primary,
+                  ),
+                  SizedBox(width: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Wiadomości i Komunikaty",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                      Text(
+                        "Skrzynka odbiorcza EduSync",
+                        style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              InkWell(
+                onTap: () {
+                  ref.read(currentNavIndexProvider.notifier).setIndex(4); // Wiadomości
+                },
+                child: const Row(
+                  children: [
+                    Text(
+                      "Otwórz skrzynkę",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primary),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // Filter Tab Pills
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                _buildFilterPill(
+                  index: 0,
+                  label: "Nieprzeczytane ($unreadCount)",
+                  isSelected: _selectedMessageTab == 0,
+                ),
+                _buildFilterPill(
+                  index: 1,
+                  label: "Wszystkie",
+                  isSelected: _selectedMessageTab == 1,
+                ),
+                _buildFilterPill(
+                  index: 2,
+                  label: "Ogłoszenia ($announcementCount)",
+                  isSelected: _selectedMessageTab == 2,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Messages List
+          if (displayedMessages.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(32),
+              alignment: Alignment.center,
+              child: const Text(
+                "Brak wiadomości w wybranej kategorii",
+                style: TextStyle(color: AppColors.onSurfaceVariant),
+              ),
+            )
+          else
+            ...displayedMessages.take(4).map((msg) => _buildDesktopMessageArticle(context, msg)),
+
+          const SizedBox(height: 12),
+
+          // School Bulletin Highlight Card
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.outlineVariant.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLowest,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.campaign, color: AppColors.primary, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "14 Listopada: Dzień Wolny",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                      Text(
+                        "Konferencja metodyczna rady pedagogicznej",
+                        style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    ref.read(currentNavIndexProvider.notifier).setIndex(1);
+                  },
+                  icon: const Icon(Icons.event, size: 14),
+                  label: const Text("Szczegóły"),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterPill({
+    required int index,
+    required String label,
+    required bool isSelected,
+  }) {
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedMessageTab = index;
+          });
+        },
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.surfaceContainerLowest : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: isSelected
+                ? const [
+                    BoxShadow(
+                      color: Color(0x08000000),
+                      blurRadius: 4,
+                      offset: Offset(0, 1),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              color: isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopMessageArticle(BuildContext context, MessageThread msg) {
+    final isUrgent = msg.subject.toLowerCase().contains("pilne") || msg.isUnread;
+    final isDirector = msg.senderRole.toLowerCase().contains("dyrekcj");
+    final timeStr = DateFormat("d MMM, HH:mm", "pl_PL").format(msg.timestamp);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  if (msg.isUnread)
+                    Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  Text(
+                    msg.senderName,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  if (msg.senderRole.isNotEmpty) ...[
+                    Text(
+                      " • ${msg.senderRole}",
+                      style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                    ),
+                  ],
+                ],
+              ),
+              Row(
+                children: [
+                  if (isUrgent)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.errorContainer,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        "PILNE",
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.onErrorContainer,
+                        ),
+                      ),
+                    )
+                  else if (isDirector)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryFixed,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        "DYREKCJA",
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.onPrimaryFixed,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(width: 8),
+                  Text(
+                    timeStr,
+                    style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            msg.subject,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.onSurface,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            msg.preview,
+            style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (msg.attachments.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLowest,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.description, size: 14, color: AppColors.primary),
+                      SizedBox(width: 4),
+                      Text("Załącznik PDF", style: TextStyle(fontSize: 11)),
+                    ],
+                  ),
+                )
+              else
+                const SizedBox.shrink(),
+              Row(
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MessageThreadScreen(thread: msg),
+                        ),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                    child: const Text("Odpowiedz"),
+                  ),
+                  const SizedBox(width: 6),
+                  IconButton(
+                    tooltip: "Szczegóły wątku",
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => MessageThreadScreen(thread: msg),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.chevron_right, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- Column 3: Oceny, Frekwencja & Szybkie Akcje ---
+  Widget _buildDesktopMetricsColumn(
+    BuildContext context, {
+    required StudentProfile? student,
+    required List<Grade> grades,
+    required List<AttendanceRecord> unexcusedRecords,
+    required List<TeacherContact> teachers,
+  }) {
+    final attendancePct = student?.attendancePercentage ?? 98.6;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // 1. Ostatnie oceny Card
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x04000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.military_tech_outlined, size: 20, color: AppColors.secondary),
+                      SizedBox(width: 8),
+                      Text(
+                        "Ostatnie oceny",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondaryContainer.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text(
+                      "+0.12 do średniej",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.onSecondaryContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              if (grades.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text("Brak najnowszych ocen", style: TextStyle(color: AppColors.outline)),
+                )
+              else
+                ...grades.take(3).map((g) => _buildDesktopGradeRow(context, g)),
+
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () {
+                  ref.read(currentNavIndexProvider.notifier).setIndex(2); // Oceny
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Zobacz wszystkie oceny",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primary),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // 2. Frekwencja Card
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x04000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.fact_check_outlined, size: 20, color: AppColors.secondary),
+                      SizedBox(width: 8),
+                      Text(
+                        "Frekwencja",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    "${attendancePct.toStringAsFixed(1)}%",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Wymóg min. 50%",
+                    style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                  ),
+                  Text(
+                    "Cel roczny: 90% (Osiągnięty)",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+
+              // 2-Color Attendance Bar
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: SizedBox(
+                  height: 8,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: (attendancePct * 10).toInt(),
+                        child: Container(color: AppColors.secondary),
+                      ),
+                      Expanded(
+                        flex: ((100 - attendancePct) * 10).toInt(),
+                        child: Container(color: AppColors.error),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              if (unexcusedRecords.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.tertiaryFixed.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.tertiary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "${unexcusedRecords.length} godz. do usprawiedliwienia",
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.onTertiaryFixed,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () {
+                  final recordIds = unexcusedRecords.map((r) => r.id).toList();
+                  JustificationModal.show(
+                    context,
+                    recordIds,
+                    "Wizyta lekarska",
+                    (reason, pin) async {
+                      await ref.read(attendanceProvider.notifier).submitJustification(recordIds, reason);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Wniosek o usprawiedliwienie został pomyślnie wysłany."),
+                            backgroundColor: Color(0xFF006C4A),
+                          ),
+                        );
+                      }
+                    },
+                  );
+                },
+                icon: const Icon(Icons.security, size: 16),
+                label: const Text("Szybkie usprawiedliwienie (PIN)"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // 3. Quick Action Widgets Mosaic
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.3),
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x04000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            children: [
+              _buildDesktopShortcutTile(
+                icon: Icons.assignment_outlined,
+                iconBg: AppColors.primaryFixed,
+                iconColor: AppColors.primary,
+                title: "Zadania domowe",
+                subtitle: "Terminarz i sprawdziany",
+                onTap: () {
+                  ref.read(currentNavIndexProvider.notifier).setIndex(1); // Plan
+                },
+              ),
+              const Divider(height: 12, color: AppColors.surfaceContainerHigh),
+              _buildDesktopShortcutTile(
+                icon: Icons.forum_outlined,
+                iconBg: AppColors.secondaryContainer,
+                iconColor: AppColors.secondary,
+                title: "Kontakt z wychowawcą",
+                subtitle: "Napisz nową wiadomość",
+                onTap: () {
+                  final homeroomTeacher = teachers.firstWhere(
+                    (t) => t.role.toLowerCase().contains("wychowawc") || t.subjectName.toLowerCase().contains("wychowawc"),
+                    orElse: () => teachers.isNotEmpty
+                        ? teachers.first
+                        : const TeacherContact(
+                            id: "1",
+                            name: "mgr Krzysztof Wiśniewski",
+                            subjectName: "Wychowawca",
+                            role: "Wychowawca",
+                            initials: "KW",
+                          ),
+                  );
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => NewMessageScreen(initialRecipient: homeroomTeacher),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 12, color: AppColors.surfaceContainerHigh),
+              _buildDesktopShortcutTile(
+                icon: Icons.event_busy_outlined,
+                iconBg: AppColors.surfaceContainerHigh,
+                iconColor: AppColors.onSurface,
+                title: "Zgłoś nieobecność",
+                subtitle: "e-Usprawiedliwienie",
+                onTap: () {
+                  final recordIds = unexcusedRecords.map((r) => r.id).toList();
+                  JustificationModal.show(
+                    context,
+                    recordIds,
+                    "Wizyta lekarska",
+                    (reason, pin) async {
+                      await ref.read(attendanceProvider.notifier).submitJustification(recordIds, reason);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Wniosek o usprawiedliwienie został pomyślnie wysłany."),
+                            backgroundColor: Color(0xFF006C4A),
+                          ),
+                        );
+                      }
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopGradeRow(BuildContext context, Grade grade) {
+    final dateStr = DateFormat("d MMM", "pl_PL").format(grade.date);
+
+    return InkWell(
+      onTap: () => GradeDetailsModal.show(context, grade),
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.secondaryContainer,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                grade.rawValue,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.onSecondaryContainer,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    grade.subjectName,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    "${grade.categoryName} • waga ${grade.weight}",
+                    style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              dateStr,
+              style: const TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopShortcutTile({
+    required IconData icon,
+    required Color iconBg,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: iconColor, size: 18),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 18, color: AppColors.outline),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // MOBILE DASHBOARD (< 1024px) - PRESERVED ERGONOMIC MOBILE VIEW
+  // ---------------------------------------------------------------------------
+  Widget _buildMobileDashboard(BuildContext context) {
+    final studentAsync = ref.watch(studentProfileProvider);
+    final scheduleAsync = ref.watch(todayScheduleProvider);
+    final recentGradesAsync = ref.watch(recentGradesProvider);
+    final syncState = ref.watch(syncProvider);
+
+    final now = DateTime.now();
+    final rawDate = DateFormat("EEEE, d MMMM", "pl_PL").format(now);
+    final formattedDate = rawDate.isNotEmpty
+        ? "${rawDate[0].toUpperCase()}${rawDate.substring(1)}"
+        : rawDate;
+
+    final lessons = scheduleAsync.value ?? [];
+    final firstLesson = lessons.isNotEmpty ? lessons.first : null;
+    final lastLesson = lessons.isNotEmpty ? lessons.last : null;
+    final cancelledLessons = lessons.where((l) => l.status == LessonStatus.canceled).toList();
+    final effectiveCount = lessons.length - cancelledLessons.length;
+    final startTimeStr = firstLesson != null ? "Początek ${firstLesson.startTime}" : "Brak lekcji";
+    final endTimeStr = lastLesson != null ? "Koniec zajęć: ${lastLesson.endTime} • $effectiveCount lekcji efektywnych" : "Dzień wolny";
+    final statusNoteStr = cancelledLessons.isNotEmpty
+        ? "Lekcja ${cancelledLessons.first.lessonNumber} odwołana"
+        : (lessons.any((l) => l.status == LessonStatus.substituted) ? "Zastępstwo w planie" : "Zgodnie z planem");
+
+    return Scaffold(
+      backgroundColor: AppColors.surface,
       body: RefreshIndicator(
         onRefresh: () async {
           await ref.read(syncProvider.notifier).syncNow();
@@ -45,7 +1791,7 @@ class DashboardScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           children: [
-            // 1. Top Academic Status Micro-Bar
+            // Top Academic Status Micro-Bar
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
@@ -74,7 +1820,7 @@ class DashboardScreen extends ConsumerWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    studentAsync.value?.currentWeek ?? 'Tydzień B',
+                    studentAsync.value?.currentWeek ?? "Tydzień B",
                     style: const TextStyle(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w700,
@@ -94,7 +1840,7 @@ class DashboardScreen extends ConsumerWidget {
                         const Icon(Icons.eco, size: 14, color: AppColors.secondary),
                         const SizedBox(width: 4),
                         Text(
-                          '${studentAsync.value?.attendancePercentage ?? 94.2}% Frekw.',
+                          "${studentAsync.value?.attendancePercentage ?? 98.6}% Frekw.",
                           style: const TextStyle(
                             color: AppColors.secondary,
                             fontWeight: FontWeight.bold,
@@ -148,8 +1894,8 @@ class DashboardScreen extends ConsumerWidget {
                           children: [
                             Text(
                               syncState.isDemoMode
-                                  ? 'Tryb demonstracyjny'
-                                  : 'Połączono z Librus Synergia',
+                                  ? "Tryb demonstracyjny"
+                                  : "Połączono z Librus Synergia",
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -162,7 +1908,7 @@ class DashboardScreen extends ConsumerWidget {
                               const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
-                                  '(${syncState.connectedLogin})',
+                                  "(${syncState.connectedLogin})",
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
@@ -175,7 +1921,7 @@ class DashboardScreen extends ConsumerWidget {
                           ],
                         ),
                         Text(
-                          'Ostatnia synchronizacja: ${syncState.formattedLastSync}',
+                          "Ostatnia synchronizacja: ${syncState.formattedLastSync}",
                           style: TextStyle(
                             fontSize: 11,
                             color: syncState.isDemoMode
@@ -195,792 +1941,184 @@ class DashboardScreen extends ConsumerWidget {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Zsynchronizowano dane z Librusem'),
+                                  content: Text("Zsynchronizowano dane z Librusem"),
                                   duration: Duration(seconds: 2),
                                   behavior: SnackBarBehavior.floating,
                                 ),
                               );
                             }
                           },
-                    borderRadius: BorderRadius.circular(10),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerLowest,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.outlineVariant),
+                        color: syncState.isDemoMode
+                            ? const Color(0xFFD97706).withValues(alpha: 0.1)
+                            : const Color(0xFF16A34A).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (syncState.isSyncing) ...[
-                            const SizedBox(
-                              width: 12,
-                              height: 12,
+                      child: syncState.isSyncing
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
                               child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                            )
+                          : Text(
+                              "Odśwież",
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: syncState.isDemoMode
+                                    ? const Color(0xFFB45309)
+                                    : const Color(0xFF16A34A),
+                              ),
                             ),
-                            const SizedBox(width: 6),
-                          ] else ...[
-                            const Icon(Icons.refresh, size: 14, color: AppColors.primary),
-                            const SizedBox(width: 4),
-                          ],
-                          Text(
-                            syncState.isSyncing ? 'Pobieram...' : 'Synchronizuj',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
 
-            // 2. Today at a Glance Alert Banner (Single Source of Truth)
+            // Daily Schedule Hero Card (Mobile)
             Container(
               decoration: BoxDecoration(
                 color: AppColors.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x06000000),
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ],
+                border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(width: 6, color: AppColors.primary),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(14.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.schedule, size: 18, color: AppColors.primary),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'PLAN DNIA: DZISIAJ',
-                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                        color: AppColors.onSurfaceVariant,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.8,
-                                      ),
-                                ),
-                                const Spacer(),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.secondaryContainer.withValues(alpha: 0.4),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Text(
-                                    'W normie',
-                                    style: TextStyle(
-                                      color: AppColors.onSecondaryContainer,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Wrap(
-                              crossAxisAlignment: WrapCrossAlignment.center,
-                              spacing: 8,
-                              children: [
-                                Text(
-                                  startTimeStr,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.onSurface,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: cancelledLessons.isNotEmpty
-                                        ? AppColors.errorContainer
-                                        : AppColors.secondaryContainer,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    statusNoteStr,
-                                    style: TextStyle(
-                                      color: cancelledLessons.isNotEmpty
-                                          ? AppColors.onErrorContainer
-                                          : AppColors.onSecondaryContainer,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              endTimeStr,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // 3. Next Upcoming Exam Card
-            examAsync.when(
-              data: (exam) => Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [
-                      AppColors.surfaceContainerLowest,
-                      AppColors.surfaceContainerLow,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x05000000),
-                      blurRadius: 8,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.upcoming, size: 18, color: AppColors.error),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'NAJBLIŻSZY SPRAWDZIAN',
-                          style: TextStyle(
-                            color: AppColors.error,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.errorContainer,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'Za ${exam.daysRemaining} dni',
-                            style: const TextStyle(
-                              color: AppColors.onErrorContainer,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${exam.subject} • ${exam.title}',
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.onSurface,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Sobota, 26 Października • ${exam.time} (${exam.room})',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Otwieranie materiałów powtórzeniowych...')),
-                            );
-                          },
-                          icon: const Icon(Icons.attachment, size: 16, color: AppColors.primary),
-                          label: const Text('Notatki'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            visualDensity: VisualDensity.compact,
-                            side: const BorderSide(color: AppColors.outlineVariant),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              loading: () => const SizedBox.shrink(),
-              error: (err, stack) => const SizedBox.shrink(),
-            ),
-            const SizedBox(height: 14),
-
-            // 4. Daily Schedule Timeline
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      'Harmonogram dnia',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceContainerHigh,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${lessons.length} ${lessons.length == 1 ? 'lekcja' : (lessons.length < 5 ? 'lekcje' : 'lekcji')}',
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-                TextButton(
-                  onPressed: () {
-                    ref.read(currentNavIndexProvider.notifier).setIndex(1); // Schedule tab
-                  },
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Pełny plan', style: TextStyle(fontWeight: FontWeight.w700)),
-                      Icon(Icons.chevron_right, size: 18),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Timeline Items
-            scheduleAsync.when(
-              data: (lessons) => Column(
-                children: lessons.map((slot) => _buildScheduleItem(context, slot)).toList(),
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Text('Błąd wczytywania: $err'),
-            ),
-            const SizedBox(height: 20),
-
-            // 5. Recent Grades Feed
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      'Ostatnio dodane oceny',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryFixed,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        '7 dni',
+                      const Text(
+                        "DZISIEJSZY PLAN ZAJĘĆ",
                         style: TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onPrimaryFixedVariant,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                TextButton(
-                  onPressed: () {
-                    ref.read(currentNavIndexProvider.notifier).setIndex(2); // Grades tab
-                  },
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('Wszystkie', style: TextStyle(fontWeight: FontWeight.w700)),
-                      Icon(Icons.chevron_right, size: 18),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Recent Grades List (Compact Grid)
-            recentGradesAsync.when(
-              data: (grades) => LayoutBuilder(
-                builder: (context, constraints) {
-                  final isWide = constraints.maxWidth > 550;
-                  final crossAxisCount = isWide ? 3 : 2;
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                      childAspectRatio: isWide ? 2.8 : 2.2,
-                    ),
-                    itemCount: grades.length,
-                    itemBuilder: (context, idx) => _buildRecentGradeItem(context, grades[idx]),
-                  );
-                },
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Text('Błąd: $err'),
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-
-  Widget _buildScheduleItem(BuildContext context, LessonSlot slot) {
-    if (slot.status == LessonStatus.canceled) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest.withValues(alpha: 0.7),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 58,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    slot.startTime,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      decoration: TextDecoration.lineThrough,
-                      color: AppColors.outline,
-                    ),
-                  ),
-                  Text(
-                    slot.endTime,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      decoration: TextDecoration.lineThrough,
-                      color: AppColors.outline,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        slot.subjectName,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          decoration: TextDecoration.lineThrough,
-                          color: AppColors.outline,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.errorContainer,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'ODWOŁANE',
-                          style: TextStyle(
-                            color: AppColors.onErrorContainer,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (slot.statusNote != null)
-                    Text(
-                      slot.statusNote!,
-                      style: const TextStyle(fontSize: 11, color: AppColors.outline),
-                    ),
-                ],
-              ),
-            ),
-            const Icon(Icons.event_busy, size: 20, color: AppColors.outline),
-          ],
-        ),
-      );
-    }
-
-    if (slot.status == LessonStatus.inProgress) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.primary, width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                SizedBox(
-                  width: 58,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        slot.startTime,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      Text(
-                        slot.endTime,
-                        style: const TextStyle(
-                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
                           color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            slot.subjectName,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.onSurface,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(
-                                  width: 6,
-                                  height: 6,
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  'Teraz trwa',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${slot.room} • ${slot.teacher}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primaryFixed,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.menu_book, color: AppColors.primary, size: 18),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: slot.progressFraction ?? 0.6,
-                minHeight: 6,
-                backgroundColor: AppColors.surfaceContainerHigh,
-                valueColor: const AlwaysStoppedAnimation(AppColors.primary),
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Minęło: 28 min', style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant)),
-                Text('Pozostało: 17 min', style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant)),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
-
-    // Normal or Substituted
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: slot.status == LessonStatus.substituted
-              ? AppColors.tertiary.withValues(alpha: 0.3)
-              : AppColors.surfaceContainerHigh,
-        ),
-      ),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 58,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  slot.startTime,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  slot.endTime,
-                  style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      slot.subjectName,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
-                    if (slot.status == LessonStatus.substituted) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.tertiaryFixed,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          'ZASTĘPSTWO',
-                          style: TextStyle(
-                            color: AppColors.onTertiaryFixed,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                Text(
-                  '${slot.room} • ${slot.substituteTeacher ?? slot.teacher}',
-                  style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-          const Icon(Icons.chevron_right, size: 18, color: AppColors.outlineVariant),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentGradeItem(BuildContext context, Grade grade) {
-    final dateStr = DateFormat('dd.MM').format(grade.date);
-    return InkWell(
-      onTap: () => GradeDetailsModal.show(context, grade),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.surfaceContainerHigh),
-          boxShadow: const [
-            BoxShadow(color: Color(0x04000000), blurRadius: 4, offset: Offset(0, 1)),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: AppColors.secondaryFixed,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                grade.rawValue,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.onSecondaryFixedVariant,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          grade.subjectName,
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          letterSpacing: 0.5,
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerHigh,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          dateStr,
-                          style: const TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0.5),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: AppColors.primaryFixed.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(3),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          'w.${grade.weight}',
+                          statusNoteStr,
                           style: const TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
                             color: AppColors.primary,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          grade.categoryName,
-                          style: const TextStyle(fontSize: 10, color: AppColors.outline),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    startTimeStr,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    endTimeStr,
+                    style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 12),
+                  if (lessons.isNotEmpty)
+                    ...lessons.take(4).map(
+                          (l) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                Text(
+                                  l.startTime,
+                                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    l.subjectName,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      decoration: l.status == LessonStatus.canceled
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Text(
+                                  l.room.isNotEmpty ? "Sala ${l.room}" : "",
+                                  style: const TextStyle(fontSize: 11, color: AppColors.outline),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Recent Grades (Mobile)
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.3)),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        "OSTATNIE OCENY",
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.onSurfaceVariant,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          ref.read(currentNavIndexProvider.notifier).setIndex(2); // Oceny
+                        },
+                        child: const Text("Wszystkie →"),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 4),
+                  if ((recentGradesAsync.value ?? []).isNotEmpty)
+                    ...recentGradesAsync.value!.take(3).map(
+                          (g) => ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                              backgroundColor: AppColors.secondaryContainer,
+                              child: Text(
+                                g.rawValue,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.onSecondaryContainer,
+                                ),
+                              ),
+                            ),
+                            title: Text(g.subjectName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                            subtitle: Text("${g.categoryName} • waga ${g.weight}", style: const TextStyle(fontSize: 11)),
+                            trailing: Text(DateFormat("d MMM", "pl_PL").format(g.date), style: const TextStyle(fontSize: 11, color: AppColors.outline)),
+                            onTap: () => GradeDetailsModal.show(context, g),
+                          ),
+                        ),
                 ],
               ),
             ),
