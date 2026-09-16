@@ -1,8 +1,8 @@
 # Project State
 
 **Current Milestone:** Milestone v2.0
-**Active Phase:** All Phases Complete in Milestone v2.0
-**Status:** Completed
+**Active Phase:** Phase 8: Pełny design ekranu głównego w wersji web
+**Status:** In Progress (Ready for Planning)
 **Last Updated:** 2026-09-16
 
 ## Completed in v2.0
@@ -16,3 +16,8 @@
 - [x] **Phase 5**: Nowy interfejs Ocen wg makiety
 - [x] **Phase 6**: Moduł usprawiedliwiania nieobecności wg makiety
 - [x] **Phase 7**: Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)
+- [ ] **Phase 8**: Pełny design ekranu głównego w wersji web
+
+## Accumulated Context
+### Roadmap Evolution
+- Phase 8 added: Pełny design ekranu głównego w wersji web (nowoczesny pulpit webowy z Bento Grid dla wersji desktop/tablet).

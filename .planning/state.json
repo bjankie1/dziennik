@@ -1,0 +1,48 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": "v2.0",
+  "phases": [
+    {
+      "number": "1",
+      "name": "Naprawa nawigacji planu lekcji i kompaktowy pulpit ocen",
+      "status": "complete"
+    },
+    {
+      "number": "2",
+      "name": "Rzeczywista frekwencja (Librus Synergia)",
+      "status": "complete"
+    },
+    {
+      "number": "3",
+      "name": "Rzeczywiste wiadomości i powiadomienia",
+      "status": "complete"
+    },
+    {
+      "number": "4",
+      "name": "Bezpieczny autologin i trwałe powiązanie profilu Librus",
+      "status": "complete"
+    },
+    {
+      "number": "5",
+      "name": "Nowy interfejs Ocen wg makiety",
+      "status": "complete"
+    },
+    {
+      "number": "6",
+      "name": "Moduł usprawiedliwiania nieobecności wg makiety",
+      "status": "complete"
+    },
+    {
+      "number": "7",
+      "name": "Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)",
+      "status": "complete"
+    }
+  ],
+  "next": {
+    "command": "/gsd-discuss-phase",
+    "label": "Discuss the first phase",
+    "reason": "Project initialized — plan your first phase"
+  },
+  "updated_at": "2026-09-16T17:20:56.346Z"
+}
