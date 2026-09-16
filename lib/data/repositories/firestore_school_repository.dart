@@ -322,6 +322,33 @@ class FirestoreSchoolRepository implements SchoolRepository {
           dt = DateTime.now();
         }
 
+        final tooltip = g['rawTooltip'] as String? ?? '';
+        final pctMatch = RegExp(r'(\d{1,3})\s*%').firstMatch(tooltip);
+        int? pct = pctMatch != null ? int.tryParse(pctMatch.group(1)!) : null;
+        if (pct == null && numVal > 0) {
+          if (numVal >= 6.0) {
+            pct = 100;
+          } else if (numVal >= 5.0) {
+            pct = (90 + (numVal - 5.0) * 10).round();
+          } else if (numVal >= 4.0) {
+            pct = (75 + (numVal - 4.0) * 15).round();
+          } else if (numVal >= 3.0) {
+            pct = (60 + (numVal - 3.0) * 15).round();
+          } else if (numVal >= 2.0) {
+            pct = (45 + (numVal - 2.0) * 15).round();
+          } else {
+            pct = 30;
+          }
+        }
+
+        String cleanComment = '';
+        final commentMatch = RegExp(r'Komentarz:\s*([^<]+)', caseSensitive: false).firstMatch(tooltip);
+        if (commentMatch != null) {
+          cleanComment = commentMatch.group(1)!.trim();
+        } else if (!tooltip.contains('Kategoria:') && !tooltip.contains('Waga:')) {
+          cleanComment = tooltip.trim();
+        }
+
         return Grade(
           id: g['id'] ?? UniqueKey().toString(),
           subjectName: sName,
@@ -330,10 +357,11 @@ class FirestoreSchoolRepository implements SchoolRepository {
           weight: weight,
           category: GradeCategory.activity,
           categoryName: cat,
-          comment: g['rawTooltip'] ?? '',
+          comment: cleanComment.isNotEmpty ? cleanComment : 'Brak uwag',
           teacher: g['teacher'] ?? teacher,
           date: dt,
           term: 1,
+          percentage: pct,
         );
       }).toList();
 

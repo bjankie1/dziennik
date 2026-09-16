@@ -20,6 +20,7 @@ class Grade {
   final DateTime date;
   final int term; // 1 or 2
   final bool isCountedToAverage;
+  final int? percentage;
 
   const Grade({
     required this.id,
@@ -34,5 +35,6 @@ class Grade {
     required this.date,
     required this.term,
     this.isCountedToAverage = true,
+    this.percentage,
   });
 }

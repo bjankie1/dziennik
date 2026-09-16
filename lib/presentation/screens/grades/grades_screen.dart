@@ -7,6 +7,96 @@ import '../../providers/school_providers.dart';
 import 'grade_details_modal.dart';
 import 'average_simulator_modal.dart';
 
+class _GradePalette {
+  final Color bg;
+  final Color text;
+  final Color weightColor;
+  final Color circleBg;
+
+  const _GradePalette({
+    required this.bg,
+    required this.text,
+    required this.weightColor,
+    required this.circleBg,
+  });
+}
+
+_GradePalette _getGradePalette(Grade grade) {
+  final numVal = grade.numericValue;
+  if (numVal >= 4.75) {
+    // 5, 5+, 6
+    return const _GradePalette(
+      bg: Color(0xFFDCFCE7),
+      text: Color(0xFF15803D),
+      weightColor: Color(0xFF16A34A),
+      circleBg: Color(0xFFBBF7D0),
+    );
+  } else if (numVal >= 3.75) {
+    // 4, 4+
+    return const _GradePalette(
+      bg: Color(0xFFDBEAFE),
+      text: Color(0xFF1D4ED8),
+      weightColor: Color(0xFF2563EB),
+      circleBg: Color(0xFFBFDBFE),
+    );
+  } else if (numVal >= 2.75) {
+    // 3, 3+
+    return const _GradePalette(
+      bg: Color(0xFFFEF3C7),
+      text: Color(0xFFB45309),
+      weightColor: Color(0xFFD97706),
+      circleBg: Color(0xFFFDE68A),
+    );
+  } else {
+    // 1, 2
+    return const _GradePalette(
+      bg: Color(0xFFFEE2E2),
+      text: Color(0xFFB91C1C),
+      weightColor: Color(0xFFDC2626),
+      circleBg: Color(0xFFFECACA),
+    );
+  }
+}
+
+Color _getSubjectDotColor(String subjectName) {
+  final lower = subjectName.toLowerCase();
+  if (lower.contains('matemat')) return const Color(0xFF4F46E5); // indigo
+  if (lower.contains('polsk')) return const Color(0xFFB45309); // warm amber/brown
+  if (lower.contains('angiel')) return const Color(0xFF059669); // emerald
+  if (lower.contains('fizyk')) return const Color(0xFFD97706); // amber/orange
+  if (lower.contains('chem')) return const Color(0xFF7C3AED); // purple
+  if (lower.contains('biolog')) return const Color(0xFF16A34A); // green
+  if (lower.contains('geograf')) return const Color(0xFF0284C7); // sky blue
+  if (lower.contains('histor')) return const Color(0xFFC026D3); // fuchsia
+  if (lower.contains('informa')) return const Color(0xFF2563EB); // royal blue
+  return const Color(0xFF6366F1);
+}
+
+String _formatGradeDate(DateTime date) {
+  const months = [
+    'Stycznia',
+    'Lutego',
+    'Marca',
+    'Kwietnia',
+    'Maja',
+    'Czerwca',
+    'Lipca',
+    'Sierpnia',
+    'Września',
+    'Października',
+    'Listopada',
+    'Grudnia',
+  ];
+  final monthName = (date.month >= 1 && date.month <= 12) ? months[date.month - 1] : '';
+  return '${date.day} $monthName';
+}
+
+String _getGradesCountLabel(int count) {
+  if (count == 1) return 'ocena cząstkowa';
+  if (count >= 2 && count <= 4) return 'oceny cząstkowe';
+  return 'ocen cząstkowych';
+}
+
 class GradesScreen extends ConsumerStatefulWidget {
   const GradesScreen({super.key});
 
@@ -40,18 +130,21 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
       return true;
     }).toList();
 
+    final overallAvg = studentAsync.value?.overallAverage ?? 4.82;
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          // 1. Term Switcher & Simulator Button
+          // 1. Term Switcher & Simulator Filter Button (Matches Mockup)
           Row(
             children: [
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainer,
+                    color: const Color(0xFFEEF2F6),
                     borderRadius: BorderRadius.circular(24),
                   ),
                   child: Row(
@@ -64,185 +157,30 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton.filledTonal(
-                onPressed: () {
-                  final avg = studentAsync.value?.overallAverage ?? 4.82;
-                  if (cleanSubjects.isNotEmpty) {
-                    AverageSimulatorModal.show(context, cleanSubjects, avg);
-                  }
-                },
-                style: IconButton.styleFrom(
-                  backgroundColor: AppColors.surfaceContainerLow,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2F6),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-                icon: const Icon(Icons.calculate, color: AppColors.primary, size: 20),
-                tooltip: 'Symulator ocen',
+                child: IconButton(
+                  onPressed: () {
+                    if (cleanSubjects.isNotEmpty) {
+                      AverageSimulatorModal.show(context, cleanSubjects, overallAvg);
+                    }
+                  },
+                  icon: const Icon(Icons.tune, color: Color(0xFF475569), size: 20),
+                  tooltip: 'Symulator i filtry',
+                  constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                  padding: EdgeInsets.zero,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
 
-          // 2. Summary Stats Bento Banner
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x06000000),
-                  blurRadius: 10,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'ŚREDNIA WAŻONA OCEN',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.6,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              '${studentAsync.value?.overallAverage ?? 4.82}',
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
-                                letterSpacing: -1,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Row(
-                              children: [
-                                Icon(Icons.arrow_upward, size: 16, color: AppColors.secondary),
-                                Text(
-                                  '+0.14',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.secondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.secondaryContainer.withValues(alpha: 0.5),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.stars, size: 14, color: AppColors.onSecondaryContainer),
-                              SizedBox(width: 4),
-                              Text(
-                                'Top 5% w 3B',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.onSecondaryContainer,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Pozycja: 2 / 28',
-                          style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Scholarship Progress
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.school, size: 16, color: AppColors.primary),
-                          SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              'Stypendium naukowe (próg 4.75)',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          Text(
-                            'Spełniony (+0.07)',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.secondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 86,
-                              child: Container(height: 8, color: AppColors.primary),
-                            ),
-                            Expanded(
-                              flex: 14,
-                              child: Container(height: 8, color: AppColors.secondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Bazowa: 4.00', style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant)),
-                          Text('Cel: 4.75', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                          Text('Maks: 6.00', style: TextStyle(fontSize: 10, color: AppColors.onSurfaceVariant)),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // 2. Summary Stats Bento Banner (Matches Mockup)
+          _buildSummaryStatsCard(studentAsync.value?.className ?? '3B', overallAvg),
           const SizedBox(height: 16),
 
           // 3. Subjects Header
@@ -253,39 +191,57 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                 children: [
                   const Text(
                     'Przedmioty',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHigh,
+                      color: const Color(0xFFEEF2F6),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
                       '${cleanSubjects.isNotEmpty ? cleanSubjects.length : (subjectsAsync.value?.length ?? 12)}',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF475569),
+                      ),
                     ),
                   ),
                 ],
               ),
               const Text(
-                'Dotknij ocenę po szczegóły',
-                style: TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                'Kliknij, aby rozwinąć historię',
+                style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
 
           // 4. Subjects List
           subjectsAsync.when(
             data: (_) => Column(
               children: cleanSubjects.map((sub) => _buildSubjectCard(sub)).toList(),
             ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Text('Błąd: $err'),
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            error: (err, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text('Błąd pobierania ocen: $err'),
+              ),
+            ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -297,13 +253,17 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
       child: GestureDetector(
         onTap: () => setState(() => _selectedTerm = term),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.surfaceContainerLowest : Colors.transparent,
+            color: isSelected ? Colors.white : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
             boxShadow: isSelected
                 ? const [
-                    BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1)),
+                    BoxShadow(
+                      color: Color(0x0C000000),
+                      blurRadius: 4,
+                      offset: Offset(0, 1),
+                    ),
                   ]
                 : null,
           ),
@@ -312,8 +272,8 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
             label,
             style: TextStyle(
               fontSize: 12,
-              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+              color: isSelected ? const Color(0xFF0F172A) : const Color(0xFF64748B),
             ),
           ),
         ),
@@ -321,15 +281,29 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
     );
   }
 
-  Widget _buildSubjectCard(Subject subject) {
-    final isExpanded = _expandedSubjectIds.contains(subject.id);
-    final avg = subject.weightedAverageSem1 ?? 0.0;
+  Widget _buildSummaryStatsCard(String className, double overallAvg) {
+    final isEligible = overallAvg >= 4.75;
+    final diff = overallAvg - 4.75;
+    final diffText = isEligible
+        ? 'Spełniony (+${diff.toStringAsFixed(2)})'
+        : 'Brakuje -${(-diff).toStringAsFixed(2)}';
+
+    // Calculate progress segments for 4.00 .. 4.75 .. 6.00 bar (Total span = 2.0)
+    final clampedAvg = overallAvg.clamp(4.0, 6.0);
+    final bluePortion = (clampedAvg < 4.75 ? (clampedAvg - 4.0) : 0.75) / 2.0;
+    final greenPortion = (clampedAvg > 4.75 ? (clampedAvg - 4.75) : 0.0) / 2.0;
+    final remainingPortion = (1.0 - (bluePortion + greenPortion)).clamp(0.0, 1.0);
+
+    final blueFlex = (bluePortion * 1000).round();
+    final greenFlex = (greenPortion * 1000).round();
+    final remainingFlex = (remainingPortion * 1000).round();
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: const [
           BoxShadow(
             color: Color(0x04000000),
@@ -337,12 +311,211 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
             offset: Offset(0, 2),
           ),
         ],
-        border: Border.all(color: AppColors.surfaceContainerHigh),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'ŚREDNIA WAŻONA OCEN',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        overallAvg.toStringAsFixed(2),
+                        style: const TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F172A),
+                          letterSpacing: -1,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Row(
+                        children: [
+                          Icon(Icons.arrow_upward, size: 14, color: Color(0xFF16A34A)),
+                          SizedBox(width: 2),
+                          Text(
+                            '+0.14',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF16A34A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.star_rounded, size: 14, color: Color(0xFF15803D)),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Top 5% w $className',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF15803D),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Pozycja: 2 / 28',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // Scholarship Progress Card
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.school_outlined, size: 16, color: Color(0xFF4338CA)),
+                    const SizedBox(width: 6),
+                    const Expanded(
+                      child: Text(
+                        'Stypendium naukowe (próg 4.75)',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      diffText,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: isEligible ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Row(
+                    children: [
+                      if (blueFlex > 0)
+                        Expanded(
+                          flex: blueFlex,
+                          child: Container(height: 8, color: const Color(0xFF4338CA)),
+                        ),
+                      if (greenFlex > 0)
+                        Expanded(
+                          flex: greenFlex,
+                          child: Container(height: 8, color: const Color(0xFF10B981)),
+                        ),
+                      if (remainingFlex > 0)
+                        Expanded(
+                          flex: remainingFlex,
+                          child: Container(height: 8, color: const Color(0xFFE2E8F0)),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Bazowa: 4.00',
+                      style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                    ),
+                    Text(
+                      'Cel: 4.75',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF4338CA),
+                      ),
+                    ),
+                    Text(
+                      'Maks: 6.00',
+                      style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubjectCard(Subject subject) {
+    final isExpanded = _expandedSubjectIds.contains(subject.id);
+    final avg = subject.weightedAverageSem1 ?? 0.0;
+    final isHighAvg = avg >= 4.75;
+    final dotColor = _getSubjectDotColor(subject.name);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x04000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          // Accordion Header
+          // Accordion Header (Click anywhere to expand/collapse)
           InkWell(
             onTap: () {
               setState(() {
@@ -363,8 +536,8 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
+                        decoration: BoxDecoration(
+                          color: dotColor,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -375,11 +548,18 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                           children: [
                             Text(
                               subject.name,
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                              ),
                             ),
                             Text(
                               subject.teacherName,
-                              style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF64748B),
+                              ),
                             ),
                           ],
                         ),
@@ -387,23 +567,30 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryFixed,
+                          color: isHighAvg ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isHighAvg ? const Color(0xFFBBF7D0) : const Color(0xFFDBEAFE),
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
                               avg.toStringAsFixed(2),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.onPrimaryFixedVariant,
+                                color: isHighAvg ? const Color(0xFF15803D) : const Color(0xFF1D4ED8),
                               ),
                             ),
-                            const Text(
+                            Text(
                               'Ważona',
-                              style: TextStyle(fontSize: 8, color: AppColors.onSurfaceVariant),
+                              style: TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w600,
+                                color: isHighAvg ? const Color(0xFF16A34A) : const Color(0xFF3B82F6),
+                              ),
                             ),
                           ],
                         ),
@@ -411,45 +598,52 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                       const SizedBox(width: 6),
                       Icon(
                         isExpanded ? Icons.expand_less : Icons.expand_more,
-                        color: AppColors.outline,
+                        color: const Color(0xFF94A3B8),
                         size: 20,
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
 
-                  // Grade Badges Preview Row
+                  // In-Row Grade Badges Preview (Pills directly visible without expanding)
                   Wrap(
                     spacing: 6,
                     runSpacing: 4,
                     children: subject.grades.map((grade) {
-                      return InkWell(
-                        onTap: () => GradeDetailsModal.show(context, grade),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: AppColors.secondaryFixed,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: RichText(
-                            text: TextSpan(
-                              text: grade.rawValue,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.onSecondaryFixedVariant,
+                      final palette = _getGradePalette(grade);
+                      return Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => GradeDetailsModal.show(context, grade),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: palette.bg,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: palette.circleBg.withValues(alpha: 0.6),
                               ),
-                              children: [
-                                TextSpan(
-                                  text: ' (w:${grade.weight})',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.onSecondaryFixedVariant.withValues(alpha: 0.8),
-                                  ),
+                            ),
+                            child: RichText(
+                              text: TextSpan(
+                                text: grade.rawValue,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w800,
+                                  color: palette.text,
                                 ),
-                              ],
+                                children: [
+                                  TextSpan(
+                                    text: ' (w:${grade.weight})',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w600,
+                                      color: palette.weightColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -461,14 +655,38 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
             ),
           ),
 
-          // Expanded Content: Full Grade List with Details
+          // Expanded Content: Detailed Grade List (SZCZEGÓŁOWY WYKAZ OCEN)
           if (isExpanded) ...[
-            const Divider(height: 1, color: Color(0x10000000)),
+            const Divider(height: 1, color: Color(0xFFF1F5F9)),
             Container(
-              color: AppColors.surfaceContainerLow.withValues(alpha: 0.5),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              color: const Color(0xFFF8FAFC),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'SZCZEGÓŁOWY WYKAZ OCEN',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.6,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                      Text(
+                        '${subject.grades.length} ${_getGradesCountLabel(subject.grades.length)}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF94A3B8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
                   ...subject.grades.map((g) => _buildExpandedGradeRow(g)),
                   const SizedBox(height: 8),
                   SizedBox(
@@ -486,6 +704,7 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                         foregroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         padding: const EdgeInsets.symmetric(vertical: 8),
+                        backgroundColor: Colors.white,
                       ),
                     ),
                   ),
@@ -499,59 +718,102 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
   }
 
   Widget _buildExpandedGradeRow(Grade grade) {
-    return InkWell(
-      onTap: () => GradeDetailsModal.show(context, grade),
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 4.0),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: AppColors.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                grade.rawValue,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
+    final palette = _getGradePalette(grade);
+    final hasComment = grade.comment.isNotEmpty &&
+        grade.comment.trim().toLowerCase() != 'brak uwag' &&
+        grade.comment.trim().toLowerCase() != 'brak';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: InkWell(
+        onTap: () => GradeDetailsModal.show(context, grade),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Circular Grade Badge
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: palette.circleBg,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  grade.rawValue,
+                  style: TextStyle(
+                    color: palette.text,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        grade.categoryName,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+              const SizedBox(width: 12),
+
+              // Title, Date, Weight and Comment
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      grade.categoryName,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0F172A),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'waga ${grade.weight}',
-                        style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${_formatGradeDate(grade.date)} • Waga: ${grade.weight}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
                       ),
-                    ],
-                  ),
-                  Text(
-                    grade.comment,
-                    style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      hasComment ? '"${grade.comment}"' : 'Brak uwag',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic,
+                        color: hasComment ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Icon(Icons.info_outline, size: 16, color: AppColors.outline),
-          ],
+
+              // Percentage Badge (if available)
+              if (grade.percentage != null) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Text(
+                    '${grade.percentage}%',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF334155),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

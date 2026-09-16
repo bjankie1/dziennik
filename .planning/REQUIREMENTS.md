@@ -26,10 +26,10 @@
 - [x] **REQ-AUTH-01**: Trwałe powiązanie konta Librus pod profilem użytkownika Google w Firestore. Po wylogowaniu i ponownym zalogowaniu kontem Google aplikacja automatycznie rozpoznaje istniejące powiązanie i wchodzi do aplikacji bez ponownego wpisywania loginu Librus. Odświeżenie strony (F5) zachowuje sesję.
 
 ### Grades Interface (wg makiety)
-- [ ] **REQ-GRADES-01**: Zakładki semestrów (Semestr 1, Semestr 2, Roczna) z filtrami.
-- [ ] **REQ-GRADES-02**: Karta podsumowania średniej ważonej z pozycją w klasie i paskiem stypendium naukowego.
-- [ ] **REQ-GRADES-03**: Lista przedmiotów od razu prezentująca pigułki ocen cząstkowych z wagami w wierszu przedmiotu bez konieczności rozwijania.
-- [ ] **REQ-GRADES-04**: Rozwijany panel szczegółów ocen z dokładną datą, wagą, procentem i komentarzem nauczyciela.
+- [x] **REQ-GRADES-01**: Zakładki semestrów (Semestr 1, Semestr 2, Roczna) z filtrami.
+- [x] **REQ-GRADES-02**: Karta podsumowania średniej ważonej z pozycją w klasie i paskiem stypendium naukowego.
+- [x] **REQ-GRADES-03**: Lista przedmiotów od razu prezentująca pigułki ocen cząstkowych z wagami w wierszu przedmiotu bez konieczności rozwijania.
+- [x] **REQ-GRADES-04**: Rozwijany panel szczegółów ocen z dokładną datą, wagą, procentem i komentarzem nauczyciela.
 
 ### Attendance Justification (wg makiety)
 - [ ] **REQ-ATTN-03**: Nowoczesny widok frekwencji z kołowym wykresem, celem semestru i podsumowaniem obecności/spóźnień.
@@ -54,10 +54,10 @@
 | MSG-02 | Quick polish | Complete |
 | MSG-03 | Phase 3 | Complete |
 | REQ-AUTH-01 | Phase 4 | Complete |
-| REQ-GRADES-01 | Phase 5 | Pending |
-| REQ-GRADES-02 | Phase 5 | Pending |
-| REQ-GRADES-03 | Phase 5 | Pending |
-| REQ-GRADES-04 | Phase 5 | Pending |
+| REQ-GRADES-01 | Phase 5 | Complete |
+| REQ-GRADES-02 | Phase 5 | Complete |
+| REQ-GRADES-03 | Phase 5 | Complete |
+| REQ-GRADES-04 | Phase 5 | Complete |
 | REQ-ATTN-03 | Phase 6 | Pending |
 | REQ-ATTN-04 | Phase 6 | Pending |
 | REQ-ATTN-05 | Phase 6 | Pending |
