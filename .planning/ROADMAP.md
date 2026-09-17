@@ -91,3 +91,10 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
   4. Widok Siatki (Grid View): Tygodniowa tabela poniedziałek–piątek z kolumną godzin lekcyjnych (1–8+), kafelkami zajęć z salami, nauczycielami, tematami i kolorystycznymi znacznikami statusów (planowa, zastępstwo, odwołana, sprawdzian), z wyróżnieniem bieżącego dnia ("Dziś").
   5. Widok Agendy (Agenda View): Szczegółowa, czytelna oś czasu wybranego dnia z wyróżnieniem trwającej lekcji („Trwa teraz • Zostało X min”), rozszerzonymi informacjami o temacie, zadaniach domowych, powodach zastępstw lub odwołania lekcji.
   6. Responsywność i wspólna nawigacja: Pełna integracja ze wspólnym paskiem bocznym webowej nawigacji, responsywność na ekranach desktopowych, tabletach oraz urządzeniach mobilnych.
+
+**Plans:** 3 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — Rozszerzenie modelu i providerów planu lekcji (Data & State Layer)
+- [ ] 09-02-PLAN.md — Widok siatki tygodniowej na desktopie i tabletach (Grid View Component & Modal)
+- [ ] 09-03-PLAN.md — Widok agendy dziennej i integracja przełącznika (Agenda View & Screen Integration)
