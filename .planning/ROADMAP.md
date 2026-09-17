@@ -15,6 +15,7 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 - [x] **Phase 7: Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)** — Widok wątku wiadomości w stylu Gmail, odpowiadanie na wiadomości oraz nowa wiadomość z autocomplete nauczyciela (nazwisko + przedmiot).
 - [x] **Phase 8: Pełny design ekranu głównego w wersji web** — Nowoczesny dashboard webowy (desktop/tablet/mobile) z bento-grid, podsumowaniem dnia, nadchodzącymi sprawdzianami, planem dnia, statystykami ocen i frekwencji.
 - [x] **Phase 9: Plan lekcji w wersji web (Widok siatki i agendy)** — Nowoczesny desktopowy i responsywny plan lekcji z widokiem pełnej siatki tygodniowej oraz agendy wg makiet (docs/plan_lekcji_v1 i docs/plan lekcji agenda).
+- [ ] **Phase 10: Pełen panel ocen w wersji na przeglądarkę** — Nowoczesny dwukolumnowy panel ocen na desktopie z wyborem przedmiotu, szczegółami ocen, wykresem/statystykami i szufladą (drawer) szczegółów oceny wg makiet docs/panel_ocen i docs/szczegoly_oceny.
 
 ---
 
@@ -85,6 +86,7 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 **Requirements**: REQ-TIMETABLE-01, REQ-TIMETABLE-02, REQ-TIMETABLE-03, REQ-TIMETABLE-04
 **Depends on:** Phase 8
 **Success Criteria**:
+
   1. Przełącznik trybów widoku: Segmented control na górnym pasku (Siatka / Agenda) umożliwiający płynne przełączanie sposobu prezentacji planu.
   2. Pasek nawigacji tygodniowej: Wybór tygodnia (poprzedni / następny), wskaźnik aktualnego tygodnia, przycisk „Dzisiaj” oraz nagłówek klasy/profilu/wychowawcy.
   3. Kafelki podsumowania tygodnia: Pasek statystyk z łączną liczbą godzin, zastępstwami, sprawdzianami oraz odwołanymi lekcjami.
@@ -95,6 +97,28 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 **Plans:** 3 plans
 
 Plans:
+
 - [x] 09-01-PLAN.md — Rozszerzenie modelu i providerów planu lekcji (Data & State Layer)
 - [x] 09-02-PLAN.md — Widok siatki tygodniowej na desktopie i tabletach (Grid View Component & Modal)
 - [x] 09-03-PLAN.md — Widok agendy dziennej i integracja przełącznika (Agenda View & Screen Integration)
+
+### Phase 10: Pełen panel ocen w wersji na przeglądarkę
+
+**Goal**: Kompleksowe wdrożenie nowoczesnego, pełnego panelu ocen w wersji na przeglądarkę (desktop/tablet/mobile) w oparciu o makiety `docs/panel_ocen` oraz `docs/szczegoly_oceny`. Zawiera dwukolumnowy układ Master-Detail na desktopie (lista przedmiotów z pigułkami ocen po lewej, panel inspekcji wybranego przedmiotu z wykazem ocen po prawej), wykres rozkładu ocen i trajektorii średniej, oraz wysuwaną szufladę/modal szczegółów pojedynczej oceny ze statystykami i wpływem na średnią.
+**Requirements**: REQ-GRADES-05, REQ-GRADES-06, REQ-GRADES-07, REQ-GRADES-08
+**Depends on:** Phase 9
+**Success Criteria**:
+
+  1. Górny nagłówek akademicki: kontekst semestru, klasy i szkoły, pasek akcji (filtrowanie wag, eksport, przelicz GPA) oraz zakładki okresu (Semestr 1, Semestr 2, Klasyfikacja Roczna).
+  2. Kafelki metryk KPI: duża karta średniej ważonej z trendem i lokatą w klasie oraz karta rozkładu ocen cząstkowych ze słupkowym wykresem skali 1-6 i wskaźnikiem zagrożeń.
+  3. Master-Detail Ledger: po lewej tabela przedmiotów z wagami ocen, średnią ważoną, oceną przewidywaną i ostatnim wpisem; zaznaczenie przedmiotu aktywuje go i aktualizuje prawy panel inspekcji.
+  4. Prawy panel inspekcji przedmiotu: nagłówek wybranego przedmiotu z nauczycielem i średnią, wykaz ocen cząstkowych z wagami, procentami i komentarzami nauczyciela.
+  5. Szuflada / modal szczegółów oceny (docs/szczegoly_oceny): po kliknięciu na ocenę otwiera się szczegółowy widok z dużą oceną, kategorią, wagą, terminem, komentarzem nauczyciela oraz wizualizacją wpływu oceny na średnią.
+  6. Wykres trajektorii średniej: wizualizacja liniowa/krzywa postępu średniej ucznia na tle średniej klasy w trakcie semestru.
+  7. Responsywność i wspólna nawigacja: bezproblemowe działanie wewnątrz wspólnego `AppSidebar` na desktopie i płynne dostosowanie do tabletów i urządzeń mobilnych.
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 10 to break down)

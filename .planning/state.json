@@ -37,6 +37,16 @@
       "number": "7",
       "name": "Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)",
       "status": "complete"
+    },
+    {
+      "number": "8",
+      "name": "Pełny design ekranu głównego w wersji web",
+      "status": "complete"
+    },
+    {
+      "number": "9",
+      "name": "Plan lekcji w wersji web (Widok siatki i agendy)",
+      "status": "complete"
     }
   ],
   "next": {
@@ -44,5 +54,5 @@
     "label": "Discuss the first phase",
     "reason": "Project initialized — plan your first phase"
   },
-  "updated_at": "2026-09-16T17:20:56.346Z"
+  "updated_at": "2026-09-17T17:12:14.185Z"
 }

@@ -1,8 +1,8 @@
 # Project State
 
 **Current Milestone:** Milestone v2.0
-**Active Phase:** None (Milestone v2.0 Complete)
-**Status:** Complete
+**Active Phase:** Phase 10: Pełen panel ocen w wersji na przeglądarkę
+**Status:** Not planned yet
 **Last Updated:** 2026-09-17
 
 ## Completed in v2.0
@@ -20,8 +20,10 @@
 - [x] **Phase 7**: Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)
 - [x] **Phase 8**: Pełny design ekranu głównego w wersji web
 - [x] **Phase 9**: Plan lekcji w wersji web (Widok siatki i agendy)
+- [ ] **Phase 10**: Pełen panel ocen w wersji na przeglądarkę
 
 ## Accumulated Context
 ### Roadmap Evolution
 - Phase 8 added: Pełny design ekranu głównego w wersji web (nowoczesny pulpit webowy z Bento Grid dla wersji desktop/tablet).
 - Phase 9 added: Plan lekcji w wersji web (Widok siatki i agendy) na podstawie makiet docs/plan_lekcji_v1 i docs/plan lekcji agenda.
+- Phase 10 added: Pełen panel ocen w wersji na przeglądarkę na podstawie makiet docs/panel_ocen i docs/szczegoly_oceny.
