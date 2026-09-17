@@ -14,6 +14,7 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 - [x] **Phase 6: Moduł usprawiedliwiania nieobecności wg makiety** — Kołowy wykres frekwencji, filtry, checkboxy lekcji pogrupowane dniami, dolny panel wyboru szybkiego powodu i wysyłanie usprawiedliwienia do Librus.
 - [x] **Phase 7: Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)** — Widok wątku wiadomości w stylu Gmail, odpowiadanie na wiadomości oraz nowa wiadomość z autocomplete nauczyciela (nazwisko + przedmiot).
 - [x] **Phase 8: Pełny design ekranu głównego w wersji web** — Nowoczesny dashboard webowy (desktop/tablet/mobile) z bento-grid, podsumowaniem dnia, nadchodzącymi sprawdzianami, planem dnia, statystykami ocen i frekwencji.
+- [ ] **Phase 9: Plan lekcji w wersji web (Widok siatki i agendy)** — Nowoczesny desktopowy i responsywny plan lekcji z widokiem pełnej siatki tygodniowej oraz agendy wg makiet (docs/plan_lekcji_v1 i docs/plan lekcji agenda).
 
 ---
 
@@ -70,6 +71,7 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 **Goal**: Kompleksowe przeprojektowanie pulpitu głównego (Home / Dashboard) dla przeglądarek webowych na desktopie i tabletach (z zachowaniem pełnej responsywności mobilnej), z wykorzystaniem nowoczesnego układu Bento Grid, karty profilu ucznia ze szczęśliwym numerkiem, osi czasu dzisiejszych zajęć, skrótów do najnowszych ocen, frekwencji oraz szybkich akcji.
 **Requirements**: REQ-DASH-02
 **Success Criteria**:
+
   1. Responsywny układ Bento Grid optymalnie zagospodarowujący szerokość ekranu powyżej 900px i 1200px.
   2. Karta nagłówkowa z powitaniem, profilem ucznia, klasą, datą i szczęśliwym numerkiem.
   3. Sekcja planu dnia (harmonogram dzisiejszych lekcji z salami, nauczycielami i wyróżnieniem trwającej/najbliższej lekcji).
@@ -77,3 +79,15 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
   5. Widżet frekwencji (procent obecności, licznik nieobecności do usprawiedliwienia z bezpośrednim przejściem).
   6. Szybkie skróty: nowa wiadomość, usprawiedliwienie, pełny plan lekcji.
 
+### Phase 9: Plan lekcji w wersji web (Widok siatki i agendy)
+
+**Goal**: Implementacja nowoczesnego, desktopowego i responsywnego planu lekcji w wersji web z dwoma widokami (Siatka tygodniowa oraz Agenda dzienna) zgodnie z makietami graficznymi (`docs/plan_lekcji_v1` oraz `docs/plan lekcji agenda`).
+**Requirements**: REQ-TIMETABLE-01, REQ-TIMETABLE-02, REQ-TIMETABLE-03, REQ-TIMETABLE-04
+**Depends on:** Phase 8
+**Success Criteria**:
+  1. Przełącznik trybów widoku: Segmented control na górnym pasku (Siatka / Agenda) umożliwiający płynne przełączanie sposobu prezentacji planu.
+  2. Pasek nawigacji tygodniowej: Wybór tygodnia (poprzedni / następny), wskaźnik aktualnego tygodnia, przycisk „Dzisiaj” oraz nagłówek klasy/profilu/wychowawcy.
+  3. Kafelki podsumowania tygodnia: Pasek statystyk z łączną liczbą godzin, zastępstwami, sprawdzianami oraz odwołanymi lekcjami.
+  4. Widok Siatki (Grid View): Tygodniowa tabela poniedziałek–piątek z kolumną godzin lekcyjnych (1–8+), kafelkami zajęć z salami, nauczycielami, tematami i kolorystycznymi znacznikami statusów (planowa, zastępstwo, odwołana, sprawdzian), z wyróżnieniem bieżącego dnia ("Dziś").
+  5. Widok Agendy (Agenda View): Szczegółowa, czytelna oś czasu wybranego dnia z wyróżnieniem trwającej lekcji („Trwa teraz • Zostało X min”), rozszerzonymi informacjami o temacie, zadaniach domowych, powodach zastępstw lub odwołania lekcji.
+  6. Responsywność i wspólna nawigacja: Pełna integracja ze wspólnym paskiem bocznym webowej nawigacji, responsywność na ekranach desktopowych, tabletach oraz urządzeniach mobilnych.
