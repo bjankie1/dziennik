@@ -9,6 +9,8 @@ import 'average_simulator_modal.dart';
 import 'widgets/academic_kpi_row.dart';
 import 'widgets/subject_ledger_table.dart';
 import 'widgets/subject_inspector_card.dart';
+import 'widgets/average_trajectory_card.dart';
+import 'widgets/grade_details_side_sheet.dart';
 
 class _GradePalette {
   final Color bg;
@@ -370,11 +372,19 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                           ref.read(selectedGradesSubjectProvider.notifier).select(s);
                         },
                         onTapGrade: (grade, subject) {
-                          GradeDetailsModal.show(context, grade);
+                          // D-05: clicking a grade pill directly opens GradeDetailsSideSheet WITHOUT changing selected subject in inspector
+                          GradeDetailsSideSheet.show(
+                            context,
+                            grade: grade,
+                            subject: subject,
+                            onContactTeacher: () {
+                              ref.read(currentNavIndexProvider.notifier).setIndex(4);
+                            },
+                          );
                         },
                       ),
                       const SizedBox(height: 16),
-                      // Trajectory chart will be added in Plan 10-02 Task 1
+                      const AverageTrajectoryCard(),
                     ],
                   ),
                 ),
@@ -386,7 +396,14 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                   child: SubjectInspectorCard(
                     subject: selectedSubject,
                     onTapGrade: (grade, subject) {
-                      GradeDetailsModal.show(context, grade);
+                      GradeDetailsSideSheet.show(
+                        context,
+                        grade: grade,
+                        subject: subject,
+                        onContactTeacher: () {
+                          ref.read(currentNavIndexProvider.notifier).setIndex(4);
+                        },
+                      );
                     },
                     onSimulateGpa: () {
                       if (cleanSubjects.isNotEmpty) {

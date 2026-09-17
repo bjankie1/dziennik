@@ -2,18 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/grade.dart';
+import '../../../domain/models/subject.dart';
+import 'widgets/grade_details_side_sheet.dart';
 
 class GradeDetailsModal extends StatelessWidget {
   final Grade grade;
 
   const GradeDetailsModal({super.key, required this.grade});
 
-  static void show(BuildContext context, Grade grade) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => GradeDetailsModal(grade: grade),
+  static void show(
+    BuildContext context,
+    Grade grade, {
+    Subject? subject,
+    VoidCallback? onContactTeacher,
+  }) {
+    final targetSubject = subject ??
+        Subject(
+          id: grade.id,
+          name: grade.subjectName,
+          teacherName: grade.teacher,
+          grades: [grade],
+        );
+    GradeDetailsSideSheet.show(
+      context,
+      grade: grade,
+      subject: targetSubject,
+      onContactTeacher: onContactTeacher,
     );
   }
 
