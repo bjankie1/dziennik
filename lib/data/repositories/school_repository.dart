@@ -11,6 +11,7 @@ abstract class SchoolRepository {
   Future<UpcomingEvent> getUpcomingExam();
   Future<List<LessonSlot>> getTodaySchedule();
   Future<List<LessonSlot>> getScheduleForDay(int dayOfWeek);
+  Future<Map<int, List<LessonSlot>>> getWeekSchedule({DateTime? weekStart});
   Future<List<Subject>> getSubjects();
   Future<List<Grade>> getRecentGrades();
   Future<List<AttendanceRecord>> getAttendanceRecords();

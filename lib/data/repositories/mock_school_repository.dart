@@ -62,7 +62,13 @@ class MockSchoolRepository implements SchoolRepository {
   @override
   Future<List<LessonSlot>> getScheduleForDay(int dayOfWeek) async {
     await Future.delayed(const Duration(milliseconds: 50));
-    return MockData.todaySchedule;
+    return MockData.weekSchedule[dayOfWeek] ?? MockData.todaySchedule;
+  }
+
+  @override
+  Future<Map<int, List<LessonSlot>>> getWeekSchedule({DateTime? weekStart}) async {
+    await Future.delayed(const Duration(milliseconds: 50));
+    return MockData.weekSchedule;
   }
 
   @override

@@ -19,6 +19,11 @@ class LessonSlot {
   final LessonStatus status;
   final String? statusNote; // e.g. "Zwolnienie lekarskie nauczyciela"
   final double? progressFraction; // 0.0 to 1.0 for currently in progress
+  final String? topic;
+  final String? homework;
+  final String? materials;
+  final String? eventType;
+  final String? eventTitle;
 
   const LessonSlot({
     required this.lessonNumber,
@@ -33,6 +38,11 @@ class LessonSlot {
     required this.status,
     this.statusNote,
     this.progressFraction,
+    this.topic,
+    this.homework,
+    this.materials,
+    this.eventType,
+    this.eventTitle,
   });
 }
 

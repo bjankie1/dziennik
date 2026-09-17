@@ -289,12 +289,20 @@ class FirestoreSchoolRepository implements SchoolRepository {
       return LessonSlot(
         lessonNumber: item['lessonNumber'] as int? ?? 1,
         subjectName: subject,
+        originalSubjectName: item['originalSubjectName'] as String?,
         startTime: start,
         endTime: end,
-        room: 'Sala szkolna',
+        room: (item['room'] as String?)?.isNotEmpty == true ? (item['room'] as String) : 'Sala szkolna',
+        originalRoom: item['originalRoom'] as String?,
         teacher: item['teacher'] as String? ?? '',
+        substituteTeacher: item['substituteTeacher'] as String?,
         status: status,
         statusNote: isCancelled ? 'Lekcja odwołana' : (isSubstituted ? 'Zastępstwo' : null),
+        topic: item['topic'] as String?,
+        homework: item['homework'] as String?,
+        materials: item['materials'] as String?,
+        eventType: item['eventType'] as String?,
+        eventTitle: item['eventTitle'] as String?,
       );
     }).toList();
   }
@@ -308,10 +316,8 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
     final rawList = data['timetable'] as List<dynamic>? ?? [];
     final now = DateTime.now();
-    int targetDay = now.weekday;
-    if (targetDay > 5) targetDay = 2; // Default to Tuesday on weekends
-
-    final lessons = _parseTimetableForDay(rawList, targetDay);
+    final dayOfWeek = now.weekday; // 1 = Monday, 7 = Sunday
+    final lessons = _parseTimetableForDay(rawList, dayOfWeek);
     return lessons.isNotEmpty ? lessons : _mockFallback.getTodaySchedule();
   }
 
@@ -324,7 +330,27 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
     final rawList = data['timetable'] as List<dynamic>? ?? [];
     final lessons = _parseTimetableForDay(rawList, dayOfWeek);
-    return lessons;
+    return lessons.isNotEmpty ? lessons : _mockFallback.getScheduleForDay(dayOfWeek);
+  }
+
+  @override
+  Future<Map<int, List<LessonSlot>>> getWeekSchedule({DateTime? weekStart}) async {
+    final data = await _getStudentData();
+    if (data == null || data['timetable'] == null) {
+      return _mockFallback.getWeekSchedule(weekStart: weekStart);
+    }
+
+    final rawList = data['timetable'] as List<dynamic>? ?? [];
+    if (rawList.isEmpty) {
+      return _mockFallback.getWeekSchedule(weekStart: weekStart);
+    }
+
+    final result = <int, List<LessonSlot>>{};
+    for (int day = 1; day <= 5; day++) {
+      final lessons = _parseTimetableForDay(rawList, day);
+      result[day] = lessons.isNotEmpty ? lessons : await _mockFallback.getScheduleForDay(day);
+    }
+    return result;
   }
 
   @override

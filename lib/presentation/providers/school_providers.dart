@@ -43,6 +43,85 @@ final dayScheduleProvider = FutureProvider.family<List<LessonSlot>, int>((ref, d
   return repo.getScheduleForDay(dayOfWeek);
 });
 
+final weekScheduleProvider = FutureProvider<Map<int, List<LessonSlot>>>((ref) async {
+  final repo = ref.watch(schoolRepositoryProvider);
+  return repo.getWeekSchedule();
+});
+
+enum WeekScheduleFilter { none, substitutions, exams, canceled }
+
+class WeekScheduleFilterNotifier extends Notifier<WeekScheduleFilter> {
+  @override
+  WeekScheduleFilter build() => WeekScheduleFilter.none;
+
+  void setFilter(WeekScheduleFilter filter) => state = filter;
+  void toggleFilter(WeekScheduleFilter filter) {
+    state = state == filter ? WeekScheduleFilter.none : filter;
+  }
+}
+
+final weekScheduleFilterProvider =
+    NotifierProvider<WeekScheduleFilterNotifier, WeekScheduleFilter>(WeekScheduleFilterNotifier.new);
+
+class SelectedScheduleDayNotifier extends Notifier<int> {
+  @override
+  int build() {
+    final now = DateTime.now();
+    return (now.weekday - 1).clamp(0, 4); // 0=Pn .. 4=Pt
+  }
+
+  void setDay(int dayIndex) => state = dayIndex;
+}
+
+final selectedScheduleDayProvider =
+    NotifierProvider<SelectedScheduleDayNotifier, int>(SelectedScheduleDayNotifier.new);
+
+class WeeklyScheduleStats {
+  final int totalHours;
+  final int substitutionsCount;
+  final int examsCount;
+  final int canceledCount;
+
+  const WeeklyScheduleStats({
+    required this.totalHours,
+    required this.substitutionsCount,
+    required this.examsCount,
+    required this.canceledCount,
+  });
+}
+
+final weeklyScheduleStatsProvider = Provider<WeeklyScheduleStats>((ref) {
+  final weekAsync = ref.watch(weekScheduleProvider);
+  return weekAsync.when(
+    data: (weekMap) {
+      int total = 0;
+      int substitutions = 0;
+      int exams = 0;
+      int canceled = 0;
+
+      for (final lessons in weekMap.values) {
+        total += lessons.length;
+        for (final slot in lessons) {
+          if (slot.status == LessonStatus.substituted) substitutions++;
+          if (slot.status == LessonStatus.canceled) canceled++;
+          if (slot.eventType != null || (slot.topic != null && slot.topic!.toLowerCase().contains('sprawdzian'))) {
+            exams++;
+          }
+        }
+      }
+
+      return WeeklyScheduleStats(
+        totalHours: total,
+        substitutionsCount: substitutions,
+        examsCount: exams,
+        canceledCount: canceled,
+      );
+    },
+    loading: () => const WeeklyScheduleStats(totalHours: 32, substitutionsCount: 2, examsCount: 2, canceledCount: 1),
+    error: (err, stack) => const WeeklyScheduleStats(totalHours: 0, substitutionsCount: 0, examsCount: 0, canceledCount: 0),
+  );
+});
+
 final attendanceStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final repo = ref.watch(schoolRepositoryProvider);
   return repo.getAttendanceStats();
