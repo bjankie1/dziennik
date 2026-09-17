@@ -47,6 +47,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final messagesAsync = ref.watch(messagesProvider);
     final attendanceAsync = ref.watch(attendanceProvider);
     final teachersAsync = ref.watch(teachersProvider);
+    final examAsync = ref.watch(upcomingExamProvider);
 
     final now = DateTime.now();
     final rawDate = DateFormat("EEEE, d MMMM y", "pl_PL").format(now);
@@ -106,7 +107,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     endTimeStr: endTimeStr,
                     effectiveCount: effectiveCount,
                     cancelledLessons: cancelledLessons,
-                    unreadCount: unreadMessages.length,
                   ),
 
                   const SizedBox(height: 24),
@@ -122,6 +122,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           context,
                           lessons: lessons,
                           now: now,
+                          exam: examAsync.value,
                         ),
                       ),
 
@@ -172,7 +173,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required String endTimeStr,
     required int effectiveCount,
     required List<LessonSlot> cancelledLessons,
-    required int unreadCount,
   }) {
     final firstName = (student != null && student.name.isNotEmpty)
         ? student.name.split(" ").first
@@ -193,226 +193,157 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Left Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
-                    Row(
-                      children: [
-                        Text(
-                          "Dzień dobry, $firstName! 👋",
-                          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                fontSize: 26,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.onSurface,
-                                letterSpacing: -0.5,
-                              ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.secondary,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                "Tydzień ${student?.currentWeek ?? "B"} • Semestr 1",
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.secondaryContainer.withValues(alpha: 0.7),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.check_circle,
-                                size: 14,
-                                color: AppColors.onSecondaryContainer,
-                              ),
-                              SizedBox(width: 4),
-                              Text(
-                                "Stan normalny",
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.onSecondaryContainer,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 8,
-                      children: [
-                        Text(
-                          formattedDate,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                    Text(
+                      "Dzień dobry, $firstName! 👋",
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w700,
                             color: AppColors.onSurface,
+                            letterSpacing: -0.5,
                           ),
-                        ),
-                        const Text("•", style: TextStyle(color: AppColors.outlineVariant)),
-                        Text(
-                          "Początek lekcji: $startTimeStr",
-                          style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
-                        ),
-                        if (cancelledLessons.isNotEmpty) ...[
-                          Text(
-                            "(Lekcja ${cancelledLessons.first.lessonNumber} odwołana - ${cancelledLessons.first.subjectName})",
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.error,
+                    ),
+                    // Lucky number pill (single place, clean number)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text("🍀", style: TextStyle(fontSize: 13)),
+                          const SizedBox(width: 6),
+                          RichText(
+                            text: TextSpan(
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.onPrimaryContainer,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              children: [
+                                const TextSpan(text: "Szczęśliwy numerek: "),
+                                TextSpan(
+                                  text: "${student?.luckyNumber ?? 9}",
+                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                                ),
+                              ],
                             ),
                           ),
                         ],
-                        const Text("•", style: TextStyle(color: AppColors.outlineVariant)),
-                        Text(
-                          "Koniec: $endTimeStr ($effectiveCount lekcje efektywne)",
-                          style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
-                        ),
-                      ],
+                      ),
+                    ),
+                    // Semester / Week pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: AppColors.secondary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            "${student?.currentWeek ?? "Tydzień A"} • Semestr 1",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // State pill
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondaryContainer.withValues(alpha: 0.7),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.check_circle,
+                            size: 14,
+                            color: AppColors.onSecondaryContainer,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            "Stan normalny",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onSecondaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-
-              const SizedBox(width: 24),
-
-              // 4 Mini-metric chips
-              Row(
-                children: [
-                  _buildMetricMiniCard(
-                    title: "ŚREDNIA WAŻONA",
-                    value: (student?.overallAverage ?? 4.82).toStringAsFixed(2),
-                    badge: "Top 5%",
-                    badgeColor: AppColors.secondary,
-                    valueColor: AppColors.primary,
-                  ),
-                  const SizedBox(width: 10),
-                  _buildMetricMiniCard(
-                    title: "FREKWENCJA",
-                    value: "${(student?.attendancePercentage ?? 98.6).toStringAsFixed(1)}%",
-                    badge: "Cel: >90%",
-                    badgeColor: AppColors.secondary,
-                    valueColor: AppColors.secondary,
-                  ),
-                  const SizedBox(width: 10),
-                  _buildMetricMiniCard(
-                    title: "WIADOMOŚCI",
-                    value: "$unreadCount",
-                    badge: "nieprzeczytane",
-                    badgeColor: AppColors.primary,
-                    valueColor: AppColors.primary,
-                    bgColor: AppColors.primaryFixed.withValues(alpha: 0.4),
-                  ),
-                  const SizedBox(width: 10),
-                  _buildMetricMiniCard(
-                    title: "SZCZĘŚLIWY NUMEREK",
-                    value: "14",
-                    badge: "Dzisiaj",
-                    badgeColor: AppColors.primary,
-                    valueColor: AppColors.primary,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetricMiniCard({
-    required String title,
-    required String value,
-    required String badge,
-    required Color badgeColor,
-    required Color valueColor,
-    Color? bgColor,
-  }) {
-    return Container(
-      width: 130,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: bgColor ?? AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: AppColors.onSurfaceVariant,
-              letterSpacing: 0.4,
+                const SizedBox(height: 10),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    Text(
+                      formattedDate,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    const Text("•", style: TextStyle(color: AppColors.outlineVariant)),
+                    Text(
+                      "Początek lekcji: $startTimeStr",
+                      style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                    ),
+                    if (cancelledLessons.isNotEmpty) ...[
+                      Text(
+                        "(Lekcja ${cancelledLessons.first.lessonNumber} odwołana - ${cancelledLessons.first.subjectName})",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.error,
+                        ),
+                      ),
+                    ],
+                    const Text("•", style: TextStyle(color: AppColors.outlineVariant)),
+                    Text(
+                      "Koniec: $endTimeStr ($effectiveCount lekcje efektywne)",
+                      style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: valueColor,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  badge,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: badgeColor,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -424,6 +355,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     BuildContext context, {
     required List<LessonSlot> lessons,
     required DateTime now,
+    UpcomingEvent? exam,
   }) {
     int completedCount = 0;
     for (final l in lessons) {
@@ -574,82 +506,118 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.tertiaryFixed,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      "Za 3 dni",
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.onTertiaryFixed,
+                  if (exam != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.tertiaryFixed,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        exam.daysRemaining == 0
+                            ? "Dzisiaj"
+                            : exam.daysRemaining == 1
+                                ? "Jutro"
+                                : "Za ${exam.daysRemaining} dni",
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.onTertiaryFixed,
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          "Matematyka rozszerzona",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.onSurface,
-                          ),
+              if (exam == null)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.check_circle_outline, size: 18, color: AppColors.secondary),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Brak zaplanowanych sprawdzianów w najbliższym czasie 🎉",
+                          style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
                         ),
-                        Text(
-                          "Piątek, 19 Paź",
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      "Zakres: Funkcja kwadratowa, równania i nierówności z parametrem",
-                      style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 8),
-                    InkWell(
-                      onTap: () {
-                        ref.read(currentNavIndexProvider.notifier).setIndex(1);
-                      },
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.attach_file, size: 14, color: AppColors.primary),
-                          SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              "${exam.subject} (${exam.type.toLowerCase()})",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurface,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                           Text(
-                            "Notatki i wzory (PDF)",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
+                            DateFormat("d MMMM", "pl_PL").format(exam.date),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        "Zakres: ${exam.title}",
+                        style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                      ),
+                      if (exam.room.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          exam.room,
+                          style: const TextStyle(fontSize: 11, color: AppColors.outline),
+                        ),
+                      ],
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () {
+                          ref.read(currentNavIndexProvider.notifier).setIndex(1);
+                        },
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.calendar_month, size: 14, color: AppColors.primary),
+                            SizedBox(width: 4),
+                            Text(
+                              "Zobacz w terminarzu",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -1359,6 +1327,98 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ],
               ),
               const SizedBox(height: 14),
+
+              // Kolorowy pasek średniej ważonej
+              Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primaryContainer.withValues(alpha: 0.6),
+                      AppColors.secondaryContainer.withValues(alpha: 0.35),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.trending_up, size: 16, color: AppColors.primary),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "ŚREDNIA WAŻONA",
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurfaceVariant,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  (student?.overallAverage ?? 5.0).toStringAsFixed(2),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.secondary,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: const Text(
+                                    "Top 5%",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Text(
+                      student != null && student.overallAverage >= 4.75
+                          ? "Wyróżnienie 🏅"
+                          : "Bardzo dobry wynik",
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
               if (grades.isEmpty)
                 const Padding(

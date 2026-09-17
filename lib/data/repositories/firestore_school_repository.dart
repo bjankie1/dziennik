@@ -198,7 +198,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
     }
 
     final studentMap = data['student'] as Map<String, dynamic>? ?? {};
-    final lucky = data['luckyNumber'] ?? 18;
+    final lucky = (data['luckyNumber'] as num?)?.toInt() ?? 9;
     final avg = (data['overallAverage'] as num?)?.toDouble() ?? 5.0;
 
     final attStats = data['attendanceStats'] as Map<String, dynamic>?;
@@ -216,12 +216,44 @@ class FirestoreSchoolRepository implements SchoolRepository {
       classRank: 1,
       totalStudentsInClass: 28,
       unreadMessagesCount: (data['unreadNotificationsCount'] as num?)?.toInt() ?? 0,
-      currentWeek: 'Szczęśliwy numerek: $lucky',
+      currentWeek: 'Tydzień A',
+      luckyNumber: lucky,
     );
   }
 
   @override
   Future<UpcomingEvent> getUpcomingExam() async {
+    final data = await _getStudentData();
+    if (data != null) {
+      final upcomingExamMap = data['upcomingExam'] as Map<String, dynamic>?;
+      if (upcomingExamMap != null) {
+        final dateStr = upcomingExamMap['date'] as String? ?? '';
+        final date = DateTime.tryParse(dateStr) ?? DateTime.now().add(const Duration(days: 7));
+        final now = DateTime.now();
+        final diff = DateTime(date.year, date.month, date.day)
+            .difference(DateTime(now.year, now.month, now.day))
+            .inDays;
+        final subject = upcomingExamMap['subject'] as String? ?? 'Wydarzenie';
+        final rawType = upcomingExamMap['type'] as String? ?? 'sprawdzian';
+        final type = rawType.isNotEmpty
+            ? '${rawType[0].toUpperCase()}${rawType.substring(1)}'
+            : 'Sprawdzian';
+        final desc = upcomingExamMap['description'] as String? ?? '';
+        final teacher = upcomingExamMap['teacher'] as String? ?? '';
+        final lesson = upcomingExamMap['lessonNumber'] as num? ?? 0;
+
+        return UpcomingEvent(
+          title: desc.isNotEmpty ? desc : '$type: $subject',
+          subject: subject,
+          date: date,
+          time: lesson > 0 ? 'Lekcja $lesson' : '09:00',
+          room: teacher.isNotEmpty ? 'Nauczyciel: $teacher' : 'Sala lekcyjna',
+          type: type,
+          daysRemaining: diff >= 0 ? diff : 0,
+          hasNotes: true,
+        );
+      }
+    }
     return _mockFallback.getUpcomingExam();
   }
 

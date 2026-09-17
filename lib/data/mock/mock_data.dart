@@ -19,6 +19,7 @@ class MockData {
     totalStudentsInClass: 28,
     unreadMessagesCount: 3,
     currentWeek: 'Tydzień B',
+    luckyNumber: 14,
   );
 
   static final upcomingExam = UpcomingEvent(

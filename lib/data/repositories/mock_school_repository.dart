@@ -39,7 +39,8 @@ class MockSchoolRepository implements SchoolRepository {
         classRank: 1,
         totalStudentsInClass: 28,
         unreadMessagesCount: 0,
-        currentWeek: 'Szczęśliwy numerek: 18',
+        currentWeek: 'Tydzień B',
+        luckyNumber: 18,
       );
     }
 
