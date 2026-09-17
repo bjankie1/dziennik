@@ -121,5 +121,5 @@ Plans:
 
 Plans:
 
-- [ ] 10-01-PLAN.md — Layout Master-Detail, tokeny, Riverpod providery, KPI (histogram) i tabela ocen
-- [ ] 10-02-PLAN.md — Wykres trajektorii średniej, szuflada (drawer) szczegółów oceny i pełna integracja
+- [x] 10-01-PLAN.md — Layout Master-Detail, tokeny, Riverpod providery, KPI (histogram) i tabela ocen
+- [x] 10-02-PLAN.md — Wykres trajektorii średniej, szuflada (drawer) szczegółów oceny i pełna integracja
