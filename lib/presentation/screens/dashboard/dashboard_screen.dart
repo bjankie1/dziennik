@@ -1292,36 +1292,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              const Row(
                 children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.military_tech_outlined, size: 20, color: AppColors.secondary),
-                      SizedBox(width: 8),
-                      Text(
-                        "Ostatnie oceny",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondaryContainer.withValues(alpha: 0.8),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text(
-                      "+0.12 do średniej",
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.onSecondaryContainer,
-                      ),
+                  Icon(Icons.military_tech_outlined, size: 20, color: AppColors.secondary),
+                  SizedBox(width: 8),
+                  Text(
+                    "Ostatnie oceny",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurface,
                     ),
                   ),
                 ],
