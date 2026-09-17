@@ -182,3 +182,133 @@ final unreadMessagesCountProvider = Provider<int>((ref) {
   return messagesAsync.value?.where((m) => m.isUnread).length ?? 0;
 });
 
+// ==========================================
+// Phase 10: Academic Grades Portal Providers
+// ==========================================
+
+class SelectedGradesSubjectNotifier extends Notifier<Subject?> {
+  @override
+  Subject? build() => null; // D-03: default null / empty
+
+  void select(Subject? subject) {
+    if (state?.id == subject?.id) {
+      state = null; // toggle off
+    } else {
+      state = subject;
+    }
+  }
+
+  void clear() => state = null;
+}
+
+final selectedGradesSubjectProvider =
+    NotifierProvider<SelectedGradesSubjectNotifier, Subject?>(SelectedGradesSubjectNotifier.new);
+
+class GradesSearchQueryNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void setQuery(String query) => state = query;
+  void clear() => state = '';
+}
+
+final gradesSearchQueryProvider =
+    NotifierProvider<GradesSearchQueryNotifier, String>(GradesSearchQueryNotifier.new);
+
+class GradesTermNotifier extends Notifier<int> {
+  @override
+  int build() => 1; // 1 = Semestr 1, 2 = Semestr 2, 3 = Roczna
+
+  void setTerm(int term) => state = term;
+}
+
+final gradesTermProvider =
+    NotifierProvider<GradesTermNotifier, int>(GradesTermNotifier.new);
+
+class GradesDistributionStats {
+  final Map<int, int> counts; // 1..6
+  final int totalGrades;
+  final bool hasThreats;
+  final int dangerCount;
+  final double positivePercentage;
+  final double overallAverage;
+
+  const GradesDistributionStats({
+    required this.counts,
+    required this.totalGrades,
+    required this.hasThreats,
+    required this.dangerCount,
+    required this.positivePercentage,
+    required this.overallAverage,
+  });
+
+  factory GradesDistributionStats.empty() {
+    return const GradesDistributionStats(
+      counts: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0},
+      totalGrades: 0,
+      hasThreats: false,
+      dangerCount: 0,
+      positivePercentage: 100.0,
+      overallAverage: 0.0,
+    );
+  }
+}
+
+final gradesDistributionStatsProvider = Provider<GradesDistributionStats>((ref) {
+  final subjectsAsync = ref.watch(subjectsProvider);
+  final term = ref.watch(gradesTermProvider);
+
+  return subjectsAsync.when(
+    data: (subjects) {
+      final Map<int, int> counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0};
+      int total = 0;
+      double weightedSum = 0;
+      int totalWeight = 0;
+
+      for (final subject in subjects) {
+        final grades = term == 3
+            ? subject.grades
+            : subject.grades.where((g) => g.term == term).toList();
+
+        for (final g in grades) {
+          final bucket = g.numericValue.round().clamp(1, 6);
+          counts[bucket] = (counts[bucket] ?? 0) + 1;
+          total++;
+
+          if (g.isCountedToAverage) {
+            weightedSum += g.numericValue * g.weight;
+            totalWeight += g.weight;
+          }
+        }
+      }
+
+      final int threatCount = counts[1] ?? 0;
+      final int positiveCount = (counts[2] ?? 0) +
+          (counts[3] ?? 0) +
+          (counts[4] ?? 0) +
+          (counts[5] ?? 0) +
+          (counts[6] ?? 0);
+      final double positivePct = total > 0 ? (positiveCount / total) * 100 : 100.0;
+      final double avg = totalWeight > 0 ? (weightedSum / totalWeight) : 0.0;
+
+      return GradesDistributionStats(
+        counts: counts,
+        totalGrades: total,
+        hasThreats: threatCount > 0,
+        dangerCount: threatCount + (counts[2] ?? 0),
+        positivePercentage: positivePct,
+        overallAverage: avg,
+      );
+    },
+    loading: () => const GradesDistributionStats(
+      counts: {1: 0, 2: 0, 3: 3, 4: 9, 5: 18, 6: 8},
+      totalGrades: 38,
+      hasThreats: false,
+      dangerCount: 0,
+      positivePercentage: 100.0,
+      overallAverage: 4.82,
+    ),
+    error: (_, stack) => GradesDistributionStats.empty(),
+  );
+});
+

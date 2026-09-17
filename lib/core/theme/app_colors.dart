@@ -24,6 +24,7 @@ class AppColors {
   static const Color primaryContainer = Color(0xFF4F46E5);
   static const Color onPrimaryContainer = Color(0xFFDAD7FF);
   static const Color primaryFixed = Color(0xFFE2DFFF);
+  static const Color primaryFixedDim = Color(0xFFC3C0FF);
   static const Color onPrimaryFixed = Color(0xFF0F0069);
   static const Color onPrimaryFixedVariant = Color(0xFF3323CC);
 
@@ -42,6 +43,7 @@ class AppColors {
   static const Color tertiaryContainer = Color(0xFF934E00);
   static const Color onTertiaryContainer = Color(0xFFFFD2B1);
   static const Color tertiaryFixed = Color(0xFFFFDCC3);
+  static const Color tertiaryFixedDim = Color(0xFFFFB77D);
   static const Color onTertiaryFixed = Color(0xFF2F1500);
 
   // Error (Red - Canceled Classes & Absences)

@@ -6,6 +6,9 @@ import '../../../domain/models/grade.dart';
 import '../../providers/school_providers.dart';
 import 'grade_details_modal.dart';
 import 'average_simulator_modal.dart';
+import 'widgets/academic_kpi_row.dart';
+import 'widgets/subject_ledger_table.dart';
+import 'widgets/subject_inspector_card.dart';
 
 class _GradePalette {
   final Color bg;
@@ -130,8 +133,319 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
       return true;
     }).toList();
 
+    final selectedSubject = ref.watch(selectedGradesSubjectProvider);
+    final desktopTerm = ref.watch(gradesTermProvider);
+
     final overallAvg = studentAsync.value?.overallAverage ?? 4.82;
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= 1024; // D-01
+        if (isDesktop) {
+          return _buildDesktopLayout(
+            context,
+            cleanSubjects,
+            overallAvg,
+            selectedSubject,
+            desktopTerm,
+          );
+        }
+        return _buildMobileLayout(
+          context,
+          cleanSubjects,
+          overallAvg,
+          subjectsAsync,
+          studentAsync.value?.className ?? '3B',
+        );
+      },
+    );
+  }
+
+  Widget _buildDesktopLayout(
+    BuildContext context,
+    List<Subject> cleanSubjects,
+    double overallAvg,
+    Subject? selectedSubject,
+    int term,
+  ) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FF),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Top Academic Context & Breadcrumbs
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.school_rounded, size: 16, color: AppColors.primary),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Semestr $term / 2024-2025',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text('•', style: TextStyle(color: AppColors.outline)),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.circle, size: 8, color: AppColors.secondary),
+                          SizedBox(width: 6),
+                          Text(
+                            'Klasa 3B LO • Profil Mat-Fiz-Chem',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 8),
+                      child: Text('•', style: TextStyle(color: AppColors.outline)),
+                    ),
+                    const Text(
+                      'Liceum Ogólnokształcące im. KEN',
+                      style: TextStyle(
+                        fontSize: 11,
+                        letterSpacing: 0.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                // Action Toolbar
+                Row(
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.filter_list_rounded, size: 16),
+                      label: const Text('Filtruj wg wag'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.onSurface,
+                        backgroundColor: AppColors.surfaceContainerLowest,
+                        side: const BorderSide(color: AppColors.surfaceContainerHigh),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.download_rounded, size: 16),
+                      label: const Text('Eksportuj (PDF/XLS)'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.onSurface,
+                        backgroundColor: AppColors.surfaceContainerLowest,
+                        side: const BorderSide(color: AppColors.surfaceContainerHigh),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.print_rounded, size: 16),
+                      label: const Text('Drukuj'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.onSurface,
+                        backgroundColor: AppColors.surfaceContainerLowest,
+                        side: const BorderSide(color: AppColors.surfaceContainerHigh),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton.icon(
+                      onPressed: () {
+                        if (cleanSubjects.isNotEmpty) {
+                          AverageSimulatorModal.show(context, cleanSubjects, overallAvg);
+                        }
+                      },
+                      icon: const Icon(Icons.calculate_rounded, size: 18),
+                      label: const Text('Przelicz GPA'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primaryContainer,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // 2. Title & Period Tabs
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Oceny i Średnie',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Zestawienie wyników akademickich, wag cząstkowych i symulacja klasyfikacji rocznej',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildDesktopPeriodTab(1, 'Semestr 1 (Trwający)', term),
+                      _buildDesktopPeriodTab(2, 'Semestr 2', term),
+                      _buildDesktopPeriodTab(3, 'Klasyfikacja Roczna', term),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            // 3. Academic Performance Metric Banners (Top KPI Row)
+            const AcademicKpiRow(),
+            const SizedBox(height: 24),
+
+            // 4. Master-Detail Desktop Layout (8 cols + 4 cols)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left Column: Ledger Table (~68% / 8 cols)
+                Expanded(
+                  flex: 8,
+                  child: Column(
+                    children: [
+                      SubjectLedgerTable(
+                        subjects: cleanSubjects,
+                        selectedSubject: selectedSubject,
+                        onSelectSubject: (s) {
+                          ref.read(selectedGradesSubjectProvider.notifier).select(s);
+                        },
+                        onTapGrade: (grade, subject) {
+                          GradeDetailsModal.show(context, grade);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // Trajectory chart will be added in Plan 10-02 Task 1
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 20),
+
+                // Right Column: Subject Inspector Card (~32% / 4 cols)
+                Expanded(
+                  flex: 4,
+                  child: SubjectInspectorCard(
+                    subject: selectedSubject,
+                    onTapGrade: (grade, subject) {
+                      GradeDetailsModal.show(context, grade);
+                    },
+                    onSimulateGpa: () {
+                      if (cleanSubjects.isNotEmpty) {
+                        AverageSimulatorModal.show(context, cleanSubjects, overallAvg);
+                      }
+                    },
+                    onContactTeacher: () {
+                      ref.read(currentNavIndexProvider.notifier).setIndex(4);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDesktopPeriodTab(int termIndex, String label, int activeTerm) {
+    final isSelected = activeTerm == termIndex;
+    return GestureDetector(
+      onTap: () {
+        ref.read(gradesTermProvider.notifier).setTerm(termIndex);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.surfaceContainerLowest : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? AppColors.primary : AppColors.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout(
+    BuildContext context,
+    List<Subject> cleanSubjects,
+    double overallAvg,
+    AsyncValue<List<Subject>> subjectsAsync,
+    String className,
+  ) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: ListView(
@@ -180,7 +494,7 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
           const SizedBox(height: 12),
 
           // 2. Summary Stats Bento Banner (Matches Mockup)
-          _buildSummaryStatsCard(studentAsync.value?.className ?? '3B', overallAvg),
+          _buildSummaryStatsCard(className, overallAvg),
           const SizedBox(height: 16),
 
           // 3. Subjects Header
