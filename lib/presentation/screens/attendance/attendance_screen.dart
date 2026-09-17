@@ -953,9 +953,13 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                     context,
                     _selectedIds.toList(),
                     _selectedQuickReason,
-                    (reason, pin) async {
+                    (reason, pin, selectedDate) async {
                       final selectedList = _selectedIds.toList();
-                      await ref.read(attendanceProvider.notifier).submitJustification(selectedList, reason);
+                      await ref.read(attendanceProvider.notifier).submitJustification(
+                            selectedList,
+                            reason,
+                            date: selectedDate,
+                          );
                       setState(() => _selectedIds.clear());
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

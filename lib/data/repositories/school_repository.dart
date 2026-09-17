@@ -17,7 +17,7 @@ abstract class SchoolRepository {
   Future<Map<String, dynamic>> getAttendanceStats();
   Future<List<MessageThread>> getMessages();
   Future<List<Announcement>> getAnnouncements();
-  Future<void> submitJustification(List<String> recordIds, String reason);
+  Future<void> submitJustification(List<String> recordIds, String reason, {DateTime? date});
   Future<void> cancelJustification(List<String> recordIds);
   Future<List<TeacherContact>> getTeachers();
   Future<void> sendMessage({

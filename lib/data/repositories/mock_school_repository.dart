@@ -108,10 +108,14 @@ class MockSchoolRepository implements SchoolRepository {
   }
 
   @override
-  Future<void> submitJustification(List<String> recordIds, String reason) async {
+  Future<void> submitJustification(List<String> recordIds, String reason, {DateTime? date}) async {
     await Future.delayed(const Duration(milliseconds: 150));
     _attendance = _attendance.map((rec) {
-      if (recordIds.contains(rec.id)) {
+      final matchesDate = date != null &&
+          rec.date.year == date.year &&
+          rec.date.month == date.month &&
+          rec.date.day == date.day;
+      if (recordIds.contains(rec.id) || matchesDate) {
         return AttendanceRecord(
           id: rec.id,
           date: rec.date,

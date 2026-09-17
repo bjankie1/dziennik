@@ -665,19 +665,44 @@ class FirestoreSchoolRepository implements SchoolRepository {
   }
 
   @override
-  Future<void> submitJustification(List<String> recordIds, String reason) async {
+  Future<void> submitJustification(List<String> recordIds, String reason, {DateTime? date}) async {
     await _loadJustificationOverrides();
     for (final id in recordIds) {
       _localJustificationOverrides[id] = reason;
     }
-    await _saveJustificationOverrides();
 
     // Send directly to Librus Synergia e-Usprawiedliwienia through Cloud Function
     try {
       final records = await getAttendanceRecords();
       final selected = records.where((r) => recordIds.contains(r.id)).toList();
-      if (selected.isNotEmpty) {
-        final Map<String, List<int>> hoursByDate = {};
+
+      String? dateFromStr;
+      String? dateToStr;
+      Map<String, List<int>> hoursByDate = {};
+      bool isByHours = true;
+
+      if (date != null) {
+        final dStr =
+            "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+        dateFromStr = dStr;
+        dateToStr = dStr;
+
+        final matchingRecords = records.where((r) =>
+            r.date.year == date.year &&
+            r.date.month == date.month &&
+            r.date.day == date.day).toList();
+
+        for (final rec in matchingRecords) {
+          _localJustificationOverrides[rec.id] = reason;
+        }
+
+        if (matchingRecords.isNotEmpty) {
+          hoursByDate[dStr] = matchingRecords.map((r) => r.lessonNumber).toList();
+          isByHours = true;
+        } else {
+          isByHours = false;
+        }
+      } else if (selected.isNotEmpty) {
         for (final rec in selected) {
           final dateStr =
               "${rec.date.year.toString().padLeft(4, '0')}-${rec.date.month.toString().padLeft(2, '0')}-${rec.date.day.toString().padLeft(2, '0')}";
@@ -685,14 +710,19 @@ class FirestoreSchoolRepository implements SchoolRepository {
         }
 
         final sortedDates = hoursByDate.keys.toList()..sort();
-        final firstDate = sortedDates.first;
-        final lastDate = sortedDates.last;
+        dateFromStr = sortedDates.first;
+        dateToStr = sortedDates.last;
+        isByHours = true;
+      }
 
+      await _saveJustificationOverrides();
+
+      if (dateFromStr != null) {
         final payload = jsonEncode({
           'reason': reason,
-          'dateFrom': firstDate,
-          'dateTo': lastDate,
-          'isByHours': true,
+          'dateFrom': dateFromStr,
+          'dateTo': dateToStr ?? dateFromStr,
+          'isByHours': isByHours,
           'hoursByDate': hoursByDate,
           'notifyOthers': true,
         });
@@ -722,7 +752,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
       debugPrint('[FirestoreSchoolRepository] submitJustification error: $e');
     }
 
-    return _mockFallback.submitJustification(recordIds, reason);
+    return _mockFallback.submitJustification(recordIds, reason, date: date);
   }
 
   @override

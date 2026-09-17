@@ -1560,8 +1560,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     context,
                     recordIds,
                     "Wizyta lekarska",
-                    (reason, pin) async {
-                      await ref.read(attendanceProvider.notifier).submitJustification(recordIds, reason);
+                    (reason, pin, selectedDate) async {
+                      await ref.read(attendanceProvider.notifier).submitJustification(
+                            recordIds,
+                            reason,
+                            date: selectedDate,
+                          );
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -1662,8 +1666,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     context,
                     recordIds,
                     "Wizyta lekarska",
-                    (reason, pin) async {
-                      await ref.read(attendanceProvider.notifier).submitJustification(recordIds, reason);
+                    (reason, pin, selectedDate) async {
+                      await ref.read(attendanceProvider.notifier).submitJustification(
+                            recordIds,
+                            reason,
+                            date: selectedDate,
+                          );
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(

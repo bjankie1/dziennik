@@ -65,10 +65,10 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
     return repo.getAttendanceRecords();
   }
 
-  Future<void> submitJustification(List<String> recordIds, String reason) async {
+  Future<void> submitJustification(List<String> recordIds, String reason, {DateTime? date}) async {
     state = const AsyncValue.loading();
     final repo = ref.read(schoolRepositoryProvider);
-    await repo.submitJustification(recordIds, reason);
+    await repo.submitJustification(recordIds, reason, date: date);
     state = AsyncValue.data(await repo.getAttendanceRecords());
   }
 

@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 
 class JustificationModal extends StatefulWidget {
   final List<String> selectedRecordIds;
   final String initialReason;
-  final Function(String reason, String pin) onConfirm;
+  final DateTime? initialDate;
+  final void Function(String reason, String pin, DateTime? selectedDate) onConfirm;
 
   const JustificationModal({
     super.key,
     required this.selectedRecordIds,
     this.initialReason = 'Wizyta lekarska',
+    this.initialDate,
     required this.onConfirm,
   });
 
@@ -17,8 +20,9 @@ class JustificationModal extends StatefulWidget {
     BuildContext context,
     List<String> recordIds,
     String initialReason,
-    Function(String reason, String pin) onConfirm,
-  ) {
+    void Function(String reason, String pin, DateTime? selectedDate) onConfirm, {
+    DateTime? initialDate,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -26,6 +30,7 @@ class JustificationModal extends StatefulWidget {
       builder: (context) => JustificationModal(
         selectedRecordIds: recordIds,
         initialReason: initialReason,
+        initialDate: initialDate,
         onConfirm: onConfirm,
       ),
     );
@@ -39,11 +44,13 @@ class _JustificationModalState extends State<JustificationModal> {
   late final TextEditingController _reasonController;
   final _pinController = TextEditingController(text: '1234');
   bool _pinError = false;
+  DateTime? _selectedDate;
 
   @override
   void initState() {
     super.initState();
     _reasonController = TextEditingController(text: widget.initialReason);
+    _selectedDate = widget.initialDate;
   }
 
   @override
@@ -53,8 +60,99 @@ class _JustificationModalState extends State<JustificationModal> {
     super.dispose();
   }
 
+  bool _isSameDay(DateTime? a, DateTime? b) {
+    if (a == null || b == null) return false;
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  Future<void> _pickCustomDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 1),
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Widget _buildDateChip({
+    required String label,
+    IconData? icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFEEF2FF) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF3525CD) : const Color(0xFFE2E8F0),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected ? const Color(0xFF3525CD) : const Color(0xFF64748B),
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? const Color(0xFF3525CD) : const Color(0xFF334155),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final tomorrow = now.add(const Duration(days: 1));
+    final yesterday = now.subtract(const Duration(days: 1));
+
+    final isCustomSelected = _selectedDate != null &&
+        !_isSameDay(_selectedDate, now) &&
+        !_isSameDay(_selectedDate, tomorrow) &&
+        !_isSameDay(_selectedDate, yesterday);
+
+    String subtitleText;
+    if (_selectedDate != null) {
+      final isToday = _isSameDay(_selectedDate, now);
+      final isTom = _isSameDay(_selectedDate, tomorrow);
+      final isYest = _isSameDay(_selectedDate, yesterday);
+      final label = isToday
+          ? 'dzisiaj'
+          : isTom
+              ? 'jutro'
+              : isYest
+                  ? 'wczoraj'
+                  : DateFormat('dd.MM.yyyy').format(_selectedDate!);
+      subtitleText = 'Zgłoszenie na $label (${DateFormat('dd.MM.yyyy').format(_selectedDate!)})';
+    } else if (widget.selectedRecordIds.isNotEmpty) {
+      subtitleText = 'Zgłoszenie dla ${widget.selectedRecordIds.length} wybranych lekcji';
+    } else {
+      subtitleText = 'Zgłoszenie nieobecności';
+    }
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -103,7 +201,7 @@ class _JustificationModalState extends State<JustificationModal> {
                         style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                       ),
                       Text(
-                        'Zgłoszenie dla ${widget.selectedRecordIds.length} wybranych lekcji',
+                        subtitleText,
                         style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                       ),
                     ],
@@ -112,6 +210,70 @@ class _JustificationModalState extends State<JustificationModal> {
               ],
             ),
             const SizedBox(height: 18),
+
+            // Wybór dnia (opcjonalnie)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Dzień nieobecności (opcjonalnie):',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                ),
+                if (_selectedDate != null)
+                  GestureDetector(
+                    onTap: () => setState(() => _selectedDate = null),
+                    child: const Text(
+                      'Wyczyść dzień',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF3525CD)),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildDateChip(
+                    label: 'Dzisiaj',
+                    isSelected: _isSameDay(_selectedDate, now),
+                    onTap: () {
+                      setState(() {
+                        _selectedDate = _isSameDay(_selectedDate, now) ? null : now;
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _buildDateChip(
+                    label: 'Jutro',
+                    isSelected: _isSameDay(_selectedDate, tomorrow),
+                    onTap: () {
+                      setState(() {
+                        _selectedDate = _isSameDay(_selectedDate, tomorrow) ? null : tomorrow;
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _buildDateChip(
+                    label: 'Wczoraj',
+                    isSelected: _isSameDay(_selectedDate, yesterday),
+                    onTap: () {
+                      setState(() {
+                        _selectedDate = _isSameDay(_selectedDate, yesterday) ? null : yesterday;
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _buildDateChip(
+                    label: isCustomSelected ? DateFormat('dd.MM.yyyy').format(_selectedDate!) : 'Wybierz datę...',
+                    icon: Icons.calendar_month_outlined,
+                    isSelected: isCustomSelected,
+                    onTap: _pickCustomDate,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
 
             // Powód nieobecności
             const Text(
@@ -205,7 +367,7 @@ class _JustificationModalState extends State<JustificationModal> {
                     return;
                   }
                   final reason = _reasonController.text.trim();
-                  widget.onConfirm(reason.isNotEmpty ? reason : 'Wizyta lekarska', pin);
+                  widget.onConfirm(reason.isNotEmpty ? reason : 'Wizyta lekarska', pin, _selectedDate);
                   Navigator.pop(context);
                 },
                 icon: const Icon(Icons.send_rounded, size: 18),
