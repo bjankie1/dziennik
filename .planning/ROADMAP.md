@@ -117,8 +117,9 @@ Plans:
   6. Wykres trajektorii średniej: wizualizacja liniowa/krzywa postępu średniej ucznia na tle średniej klasy w trakcie semestru.
   7. Responsywność i wspólna nawigacja: bezproblemowe działanie wewnątrz wspólnego `AppSidebar` na desktopie i płynne dostosowanie do tabletów i urządzeń mobilnych.
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 10 to break down)
+- [ ] 10-01-PLAN.md — Layout Master-Detail, tokeny, Riverpod providery, KPI (histogram) i tabela ocen
+- [ ] 10-02-PLAN.md — Wykres trajektorii średniej, szuflada (drawer) szczegółów oceny i pełna integracja
