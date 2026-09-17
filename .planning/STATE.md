@@ -1,8 +1,8 @@
 # Project State
 
 **Current Milestone:** Milestone v2.0
-**Active Phase:** Phase 9: Plan lekcji w wersji web (Widok siatki i agendy)
-**Status:** Planned (3 plans ready for execution)
+**Active Phase:** None (Milestone v2.0 Complete)
+**Status:** Complete
 **Last Updated:** 2026-09-17
 
 ## Completed in v2.0
@@ -11,6 +11,7 @@
 - [x] **Phase 6**: Moduł usprawiedliwiania nieobecności wg makiety (kołowy wykres frekwencji, filtry, zgrupowane karty lekcji z salami i nauczycielami, pływający dock z szybkimi powodami i autoryzacja PIN rodzica).
 - [x] **Phase 7**: Funkcjonalny moduł wiadomości (widok Gmail, odpowiedź, nowa wiadomość z autocomplete, pełna treść Librus, stan przeczytany/nowy i dynamiczne badge).
 - [x] **Phase 8**: Pełny design ekranu głównego w wersji web (wspólny pasek boczny AppSidebar dla wszystkich widoków, AppDesktopHeader z wyszukiwarką, Bento Grid z 3 kolumnami, harmonogramem na żywo, wiadomościami i szybkimi akcjami).
+- [x] **Phase 9**: Plan lekcji w wersji web (Widok siatki i agendy) (nawigacja tygodnia, kafelki podsumowania, siatka Pn-Pt z modalem szczegółów, agenda z lekcją na żywo, wspólny sidebar i responsywność).
 
 ## Milestone v2.0 Roadmap
 - [x] **Phase 4**: Bezpieczny autologin i trwałe powiązanie profilu Librus
@@ -18,7 +19,7 @@
 - [x] **Phase 6**: Moduł usprawiedliwiania nieobecności wg makiety
 - [x] **Phase 7**: Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)
 - [x] **Phase 8**: Pełny design ekranu głównego w wersji web
-- [ ] **Phase 9**: Plan lekcji w wersji web (Widok siatki i agendy)
+- [x] **Phase 9**: Plan lekcji w wersji web (Widok siatki i agendy)
 
 ## Accumulated Context
 ### Roadmap Evolution

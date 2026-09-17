@@ -14,7 +14,7 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 - [x] **Phase 6: Moduł usprawiedliwiania nieobecności wg makiety** — Kołowy wykres frekwencji, filtry, checkboxy lekcji pogrupowane dniami, dolny panel wyboru szybkiego powodu i wysyłanie usprawiedliwienia do Librus.
 - [x] **Phase 7: Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)** — Widok wątku wiadomości w stylu Gmail, odpowiadanie na wiadomości oraz nowa wiadomość z autocomplete nauczyciela (nazwisko + przedmiot).
 - [x] **Phase 8: Pełny design ekranu głównego w wersji web** — Nowoczesny dashboard webowy (desktop/tablet/mobile) z bento-grid, podsumowaniem dnia, nadchodzącymi sprawdzianami, planem dnia, statystykami ocen i frekwencji.
-- [ ] **Phase 9: Plan lekcji w wersji web (Widok siatki i agendy)** — Nowoczesny desktopowy i responsywny plan lekcji z widokiem pełnej siatki tygodniowej oraz agendy wg makiet (docs/plan_lekcji_v1 i docs/plan lekcji agenda).
+- [x] **Phase 9: Plan lekcji w wersji web (Widok siatki i agendy)** — Nowoczesny desktopowy i responsywny plan lekcji z widokiem pełnej siatki tygodniowej oraz agendy wg makiet (docs/plan_lekcji_v1 i docs/plan lekcji agenda).
 
 ---
 
@@ -95,6 +95,6 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 **Plans:** 3 plans
 
 Plans:
-- [ ] 09-01-PLAN.md — Rozszerzenie modelu i providerów planu lekcji (Data & State Layer)
-- [ ] 09-02-PLAN.md — Widok siatki tygodniowej na desktopie i tabletach (Grid View Component & Modal)
-- [ ] 09-03-PLAN.md — Widok agendy dziennej i integracja przełącznika (Agenda View & Screen Integration)
+- [x] 09-01-PLAN.md — Rozszerzenie modelu i providerów planu lekcji (Data & State Layer)
+- [x] 09-02-PLAN.md — Widok siatki tygodniowej na desktopie i tabletach (Grid View Component & Modal)
+- [x] 09-03-PLAN.md — Widok agendy dziennej i integracja przełącznika (Agenda View & Screen Integration)

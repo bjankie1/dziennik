@@ -1,0 +1,886 @@
+<!DOCTYPE html><html class="h-full" lang="pl"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "on-error-container": "#93000a",
+          "on-secondary-container": "#00714e",
+          "inverse-on-surface": "#eaf1ff",
+          "surface-dim": "#cbdbf5",
+          "secondary": "#006c4a",
+          "surface": "#f8f9ff",
+          "on-tertiary-fixed-variant": "#6e3900",
+          "outline-variant": "#c7c4d8",
+          "background": "#f8f9ff",
+          "on-secondary-fixed": "#002114",
+          "tertiary-container": "#934e00",
+          "on-secondary": "#ffffff",
+          "on-primary-fixed-variant": "#3323cc",
+          "on-primary-fixed": "#0f0069",
+          "secondary-container": "#82f5c1",
+          "tertiary-fixed-dim": "#ffb77d",
+          "on-tertiary-fixed": "#2f1500",
+          "surface-tint": "#4d44e3",
+          "surface-container-lowest": "#ffffff",
+          "error": "#ba1a1a",
+          "primary-fixed-dim": "#c3c0ff",
+          "surface-container-high": "#dce9ff",
+          "secondary-fixed": "#85f8c4",
+          "secondary-fixed-dim": "#68dba9",
+          "on-primary": "#ffffff",
+          "tertiary-fixed": "#ffdcc3",
+          "on-surface-variant": "#464555",
+          "outline": "#777587",
+          "on-background": "#0b1c30",
+          "primary-fixed": "#e2dfff",
+          "surface-container": "#e5eeff",
+          "on-primary-container": "#dad7ff",
+          "error-container": "#ffdad6",
+          "primary": "#3525cd",
+          "on-error": "#ffffff",
+          "primary-container": "#4f46e5",
+          "surface-bright": "#f8f9ff",
+          "surface-container-highest": "#d3e4fe",
+          "tertiary": "#703a00",
+          "on-tertiary-container": "#ffd2b1",
+          "on-tertiary": "#ffffff",
+          "surface-variant": "#d3e4fe",
+          "inverse-surface": "#213145",
+          "on-surface": "#0b1c30",
+          "inverse-primary": "#c3c0ff",
+          "on-secondary-fixed-variant": "#005137",
+          "surface-container-low": "#eff4ff"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.125rem",
+          "lg": "0.25rem",
+          "xl": "0.5rem",
+          "full": "0.75rem"
+        },
+        "spacing": {
+          "gutter": "0.75rem",
+          "space-lg": "1rem",
+          "margin": "1rem",
+          "space-xs": "0.25rem",
+          "space-md": "0.75rem",
+          "space-xl": "1.5rem",
+          "space-sm": "0.5rem"
+        },
+        "fontFamily": {
+          "headline-lg-mobile": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-sm": [
+            "Plus Jakarta Sans"
+          ],
+          "body-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-md": [
+            "Plus Jakarta Sans"
+          ],
+          "label-md": [
+            "Plus Jakarta Sans"
+          ],
+          "body-sm": [
+            "Plus Jakarta Sans"
+          ],
+          "label-lg": [
+            "Plus Jakarta Sans"
+          ],
+          "body-md": [
+            "Plus Jakarta Sans"
+          ],
+          "label-sm": [
+            "Plus Jakarta Sans"
+          ],
+          "headline-lg": [
+            "Plus Jakarta Sans"
+          ]
+        },
+        "fontSize": {
+          "headline-lg-mobile": [
+            "24px",
+            {
+              "lineHeight": "30px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "700"
+            }
+          ],
+          "headline-sm": [
+            "16px",
+            {
+              "lineHeight": "22px",
+              "letterSpacing": "0em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-lg": [
+            "15px",
+            {
+              "lineHeight": "22px",
+              "letterSpacing": "0em",
+              "fontWeight": "400"
+            }
+          ],
+          "headline-md": [
+            "20px",
+            {
+              "lineHeight": "26px",
+              "letterSpacing": "-0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "label-md": [
+            "11px",
+            {
+              "lineHeight": "14px",
+              "letterSpacing": "0.02em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-sm": [
+            "11px",
+            {
+              "lineHeight": "15px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "400"
+            }
+          ],
+          "label-lg": [
+            "13px",
+            {
+              "lineHeight": "16px",
+              "letterSpacing": "0.01em",
+              "fontWeight": "600"
+            }
+          ],
+          "body-md": [
+            "13px",
+            {
+              "lineHeight": "18px",
+              "letterSpacing": "0em",
+              "fontWeight": "400"
+            }
+          ],
+          "label-sm": [
+            "10px",
+            {
+              "lineHeight": "12px",
+              "letterSpacing": "0.04em",
+              "fontWeight": "700"
+            }
+          ],
+          "headline-lg": [
+            "28px",
+            {
+              "lineHeight": "34px",
+              "letterSpacing": "-0.02em",
+              "fontWeight": "700"
+            }
+          ]
+        }
+      },
+    },
+  }</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-50 flex flex-col justify-between"><div class="flex flex-col"><div class="p-margin flex items-center gap-space-sm bg-surface-container-low/50"><img alt="Brand logo. - Primary color: #4f46e5
+- Font: plusJakartaSans
+- Mode: light
+- Roundness: rounded-sm
+" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1UWyiDm_1zqhVZkKNETi3NtGhHPeMmpklq483t4bv98cvA1lGYKVn5-7_jAoVCP9JiLTv8DN-tVrrMeQ4YehB5AoMoDT-XfOLoggNwYsx7Qmt47ryTZFBPM3V1YLv_4hgd12bDIoSzAOrd3b0BGWvBCF2Af3jjSuh9GmJCMejiBK2QX99K6XJ9xffV4ZRSvcSGAraXt2j3UM1u0p5waxXFX9EYuqlUNiPTuSIDVvyJ4sAXVQGZjyQBHvC8"><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-on-surface truncate leading-tight">EduSync</span><span class="font-label-sm text-label-sm text-on-surface-variant truncate">III LO im. M. Kopernika</span></div></div><div class="px-margin pt-space-md"><div class="flex items-center justify-between px-space-md py-space-sm rounded-xl bg-surface-container-low text-on-surface hover:bg-surface-container transition-colors cursor-pointer"><div class="flex items-center gap-space-xs min-w-0"><span class="material-symbols-outlined text-[18px] text-primary">calendar_month</span><span class="font-label-md text-label-md text-on-surface truncate">Semestr 1 / 2024-2025</span></div><span class="material-symbols-outlined text-[16px] text-on-surface-variant">unfold_more</span></div></div><div class="px-margin pt-space-lg"><span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider px-space-xs">Nawigacja Ucznia</span><nav class="flex flex-col gap-space-xs mt-space-xs" data-active-classes="bg-primary-container text-on-primary font-bold shadow-sm"><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="pulpit" href="#"><span class="material-symbols-outlined text-[20px]">space_dashboard</span><span class="font-body-md text-body-md">Pulpit</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="oceny-i-srednie" href="#"><span class="material-symbols-outlined text-[20px]">analytics</span><span class="font-body-md text-body-md">Oceny i Średnie</span></a><a aria-current="page" class="flex items-center gap-space-md px-space-md py-space-sm rounded-xl transition-all bg-primary-container text-on-primary font-bold shadow-sm" data-path="plan-lekcji" href="#"><span class="material-symbols-outlined text-[20px]">calendar_today</span><span class="font-body-md text-body-md">Plan Lekcji</span></a><a class="flex items-center gap-space-md px-space-md py-space-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="frekwencja" href="#"><span class="material-symbols-outlined text-[20px]">verified</span><span class="font-body-md text-body-md">Frekwencja</span></a><a class="flex items-center justify-between px-space-md py-space-sm rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="wiadomosci-i-ogloszenia" href="#"><div class="flex items-center gap-space-md min-w-0"><span class="material-symbols-outlined text-[20px]">chat</span><span class="font-body-md text-body-md truncate">Wiadomości i Ogłoszenia</span></div><span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded-full font-label-sm text-label-sm bg-primary-container text-on-primary font-bold">3</span></a></nav></div></div><div class="p-margin bg-surface-container-low/40"><div class="flex items-center justify-between p-space-sm rounded-xl bg-surface-container-lowest shadow-[0_1px_4px_rgba(0,0,0,0.03)]"><div class="flex items-center gap-space-xs"><span class="material-symbols-outlined text-[18px] text-on-surface-variant">school</span><span class="font-label-md text-label-md text-on-surface">Rada Rodziców &amp; Dziennik</span></div><span class="material-symbols-outlined text-[16px] text-on-surface-variant">open_in_new</span></div></div></aside><div class="pl-72 flex flex-col min-h-screen"><header class="fixed top-0 left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-space-xl gap-space-lg"><div class="flex-1 max-w-lg"><div class="relative flex items-center w-full"><span class="material-symbols-outlined absolute left-space-md text-[20px] text-on-surface-variant pointer-events-none">search</span><input class="w-full h-9 pl-10 pr-space-md bg-surface-container-low rounded-xl text-on-surface placeholder:text-on-surface-variant font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary transition-all" placeholder="Szukaj w ocenach, planie, wiadomościach..." type="search"></div></div><div class="flex items-center gap-space-lg"><button aria-label="Powiadomienia" class="relative p-space-xs rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-error text-on-error font-label-sm text-label-sm font-bold leading-none">3</span></button><div class="h-6 w-px bg-surface-container-highest"></div><div class="flex items-center gap-space-sm"><div class="flex flex-col text-right"><span class="font-label-lg text-label-lg text-on-surface leading-tight">Maja Kowalska</span><span class="font-label-sm text-label-sm text-on-surface-variant">Klasa 3B LO</span></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1VenDJayIAHz3d80Rd4-hGqOqyY7qsIdJeib_XfVCnzC2RdPb7e8epw9ace6nnR7Ru_Zgr2jBv4A5wxZu4XR0GRRku90zufLzB5pC6r-gWg5v5PIyg2vprUE8I8sYmgo62B8Qd0NaSLfOwpwFL6mARfUezbyaroiH3qtH-T5jy-UiszUCS4yogkUPRoNQ8NxcdBVHtJmCiemy6zr5r5YkjGBb-SoWfqIB0biT9xZkrbDtlBazAMfegK7JI"></div></div></header><main class="w-full pt-16 bg-background px-space-xl py-space-xl flex-1"><div class="flex flex-col w-full gap-space-lg">
+<!-- Top Controls & Action Bar -->
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md bg-surface-container-lowest p-space-md rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+<!-- Left: Title & Metadata -->
+<div class="flex flex-col">
+<div class="flex items-center gap-space-sm">
+<span class="font-headline-md text-headline-md text-on-surface">Plan Lekcji i Zmiany</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary font-label-sm text-label-sm uppercase">Tydzień B</span>
+</div>
+<div class="flex items-center gap-space-xs text-on-surface-variant font-body-sm text-body-sm mt-0.5">
+<span class="font-medium text-on-surface">Klasa 3B</span>
+<span class="">•</span>
+<span class="">Profil matematyczno-fizyczno-chemiczny</span>
+<span class="">•</span>
+<span class="inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">person</span>
+          Wychowawca: mgr K. Wiśniewski
+        </span>
+</div>
+</div>
+<!-- Center: Week Navigator -->
+<div class="flex items-center justify-between sm:justify-center gap-space-sm bg-surface-container-low px-space-md py-1.5 rounded-xl">
+<button class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors" title="Poprzedni tydzień" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_left</span>
+</button>
+<div class="flex items-center gap-space-xs px-space-xs">
+<span class="material-symbols-outlined text-[18px] text-primary">event_upcoming</span>
+<span class="font-label-lg text-label-lg text-on-surface">21 – 25 Października 2024</span>
+<span class="hidden md:inline-flex items-center px-1.5 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed font-label-sm text-label-sm font-semibold">Aktualny tydzień</span>
+</div>
+<button class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-container-highest text-on-surface-variant hover:text-on-surface transition-colors" title="Następny tydzień" type="button">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+<button class="ml-space-xs px-2.5 py-1 rounded-lg bg-surface-container-lowest text-primary font-label-sm text-label-sm font-bold shadow-xs hover:bg-surface-container transition-colors" type="button">
+        Dzisiaj
+      </button>
+</div>
+<!-- Right: View Modes & Action Utilities -->
+<div class="flex flex-wrap items-center gap-space-xs">
+<!-- Segmented View Mode -->
+<div class="inline-flex p-0.5 bg-surface-container-low rounded-lg">
+<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-surface-container-lowest text-primary font-label-sm text-label-sm font-semibold shadow-xs" type="button">
+<span class="material-symbols-outlined text-[16px]">grid_view</span>
+<span class="">Siatka</span>
+</button>
+<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">view_agenda</span>
+<span class="hidden sm:inline">Agenda</span>
+</button>
+<button class="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">event_note</span>
+<span class="hidden sm:inline">Mój kalendarz</span>
+</button>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-space-xs">
+<button class="flex items-center gap-1 h-8 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors" title="Drukuj / Zapisz plan jako PDF" type="button">
+<span class="material-symbols-outlined text-[16px]">print</span>
+<span class="hidden lg:inline">Drukuj</span>
+</button>
+<button class="flex items-center gap-1 h-8 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors" title="Synchronizuj z kalendarzem Google / Apple" type="button">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span class="hidden lg:inline">Synchronizuj</span>
+</button>
+<button class="flex items-center gap-1 h-8 px-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm transition-colors" title="Filtry widoku" type="button">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+<span class="hidden lg:inline">Filtry</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Weekly Status & Alert Quick Banner -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-space-sm bg-surface-container-lowest p-space-sm rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.03)]">
+<!-- Stat 1: Total Lessons -->
+<div class="flex items-center gap-space-sm px-space-sm py-1.5 bg-surface-container-low/60 rounded-lg">
+<div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">timelapse</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface leading-none">32 godz.</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Planowy tydzień lekcyjny</span>
+</div>
+</div>
+<!-- Stat 2: Substitutions & Room Changes -->
+<div class="flex items-center gap-space-sm px-space-sm py-1.5 bg-surface-container-low/60 rounded-lg">
+<div class="w-8 h-8 rounded-lg bg-tertiary-fixed-dim/40 text-tertiary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">swap_horiz</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface leading-none">2 Zastępstwa</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Wt: Geografia, Czw: Matematyka</span>
+</div>
+</div>
+<!-- Stat 3: Exams & Quizzes -->
+<div class="flex items-center gap-space-sm px-space-sm py-1.5 bg-surface-container-low/60 rounded-lg">
+<div class="w-8 h-8 rounded-lg bg-primary-fixed text-primary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">fact_check</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface leading-none">2 Sprawdziany</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Czw: Chemia, Pt: J. Polski</span>
+</div>
+</div>
+<!-- Stat 4: Cancellations -->
+<div class="flex items-center gap-space-sm px-space-sm py-1.5 bg-surface-container-low/60 rounded-lg">
+<div class="w-8 h-8 rounded-lg bg-error-container text-error flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">event_busy</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface leading-none">1 Lekcja odwołana</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">Czw: 08:00 Fizyka (start 08:50)</span>
+</div>
+</div>
+</div>
+<!-- Main Timetable Grid -->
+<div class="w-full bg-surface-container-lowest rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.03)] overflow-x-auto">
+<div class="min-w-[980px] flex flex-col">
+<!-- Grid Header: Columns with Days -->
+<div class="grid grid-cols-[100px_repeat(5,1fr)] bg-surface-container-low/50 sticky top-0 z-20"><div class="p-space-sm flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider min-w-0">Godzina</div><div class="p-space-sm flex items-center justify-between min-w-0"><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-on-surface truncate">Poniedziałek</span><span class="font-label-sm text-label-sm text-on-surface-variant truncate">21 Października</span></div><span class="w-2 h-2 rounded-full bg-secondary flex-shrink-0" title="Wszystkie lekcje planowo"></span></div><div class="p-space-sm flex items-center justify-between min-w-0"><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-on-surface truncate">Wtorek</span><span class="font-label-sm text-label-sm text-on-surface-variant truncate">22 Października</span></div><div class="flex items-center gap-1 flex-shrink-0"><span class="w-2 h-2 rounded-full bg-tertiary-container" title="1 zastępstwo"></span></div></div><div class="p-space-sm flex items-center justify-between min-w-0"><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-on-surface truncate">Środa</span><span class="font-label-sm text-label-sm text-on-surface-variant truncate">23 Października</span></div><span class="w-2 h-2 rounded-full bg-secondary flex-shrink-0" title="Wszystkie lekcje planowo"></span></div><div class="p-space-sm flex items-center justify-between bg-primary/5 rounded-t-lg min-w-0"><div class="flex flex-col min-w-0"><div class="flex items-center gap-1.5 min-w-0"><span class="font-headline-sm text-headline-sm text-primary truncate">Czwartek</span><span class="px-1.5 py-0.2 rounded-full bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-wider font-bold flex-shrink-0">Dziś</span></div><span class="font-label-sm text-label-sm text-primary font-medium truncate">24 Października</span></div><div class="flex items-center gap-1 flex-shrink-0"><span class="w-2 h-2 rounded-full bg-error" title="1 lekcja odwołana"></span><span class="w-2 h-2 rounded-full bg-tertiary-container" title="1 zmiana sali"></span><span class="w-2 h-2 rounded-full bg-primary" title="Sprawdzian"></span></div></div><div class="p-space-sm flex items-center justify-between min-w-0"><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-on-surface truncate">Piątek</span><span class="font-label-sm text-label-sm text-on-surface-variant truncate">25 Października</span></div><span class="w-2 h-2 rounded-full bg-primary flex-shrink-0" title="Sprawdzian z języka polskiego"></span></div></div>
+<!-- Grid Rows -->
+<!-- Lekcja 1: 08:00 - 08:45 -->
+<div class="grid grid-cols-[100px_repeat(5,1fr)] group hover:bg-surface/50 transition-colors min-h-[96px]">
+<!-- Time Column -->
+<div class="p-space-sm flex flex-col items-center justify-center bg-surface-container-low/20">
+<span class="font-label-sm text-label-sm font-bold text-on-surface">1. LEKCJA</span>
+<span class="font-body-md text-body-md text-on-surface leading-tight font-medium">08:00</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">08:45</span>
+</div>
+<!-- Poniedziałek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Język Polski</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 204</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr E. Dąbrowska</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Lektura: "Pan Tadeusz"</span>
+</div>
+</div>
+</div>
+<!-- Wtorek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Matematyka R</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 212</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr K. Wiśniewski</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Granice ciągów</span>
+</div>
+</div>
+</div>
+<!-- Środa -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Język Angielski</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 305</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr M. Zając (Gr. 1)</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">C1 Advanced Speaking</span>
+</div>
+</div>
+</div>
+<!-- Czwartek (Canceled Class Alert) -->
+<div class="p-space-xs bg-primary/5 min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-error-container/20 flex flex-col justify-between relative overflow-hidden shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<div class="flex flex-col min-w-0">
+<span class="font-label-lg text-label-lg font-bold text-on-surface/50 line-through truncate">Fizyka Rozszerzona</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant line-through truncate">dr R. Czarnecki</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-error text-on-error font-label-sm text-label-sm font-bold flex-shrink-0">ODWOŁANE</span>
+</div>
+<div class="flex items-center gap-1 mt-1 font-label-sm text-label-sm text-error">
+<span class="material-symbols-outlined text-[14px]">info</span>
+<span class="truncate font-medium">Zwolnienie lekarskie • Rozpoczęcie o 08:50</span>
+</div>
+</div>
+</div>
+<!-- Piątek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Historia</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 12</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr S. Borkowski</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Powstanie Listopadowe</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Lekcja 2: 08:50 - 09:35 -->
+<div class="grid grid-cols-[100px_repeat(5,1fr)] group hover:bg-surface/50 transition-colors min-h-[96px]">
+<!-- Time Column -->
+<div class="p-space-sm flex flex-col items-center justify-center bg-surface-container-low/20">
+<span class="font-label-sm text-label-sm font-bold text-on-surface">2. LEKCJA</span>
+<span class="font-body-md text-body-md text-on-surface leading-tight font-medium">08:50</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">09:35</span>
+</div>
+<!-- Poniedziałek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Język Polski</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 204</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr E. Dąbrowska</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Analiza aktu III</span>
+</div>
+</div>
+</div>
+<!-- Wtorek (Substitution) -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-tertiary-fixed/30 hover:bg-tertiary-fixed/40 transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Geografia</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary-container text-on-tertiary font-label-sm text-label-sm font-semibold">ZASTĘPSTWO</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="text-on-surface font-medium truncate">mgr T. Krawczyk <span class="text-on-surface-variant/60 line-through">s. 110</span> → s. 15</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Zajęcia filmowe</span>
+</div>
+</div>
+</div>
+<!-- Środa -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Biologia</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 102</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr J. Kamińska</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Ekologia i biosfera</span>
+</div>
+</div>
+</div>
+<!-- Czwartek (CURRENT ONGOING CLASS) -->
+<div class="p-space-xs bg-primary/5 min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface-container-lowest shadow-md flex flex-col justify-between relative overflow-hidden min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
+</span>
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Język Polski</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-secondary-container text-on-secondary-fixed font-label-sm text-label-sm font-semibold flex-shrink-0">OBECNA</span>
+</div>
+<div class="flex flex-col text-on-surface font-body-sm text-body-sm mt-1">
+<div class="flex items-center justify-between">
+<span class="truncate text-on-surface-variant">mgr E. Dąbrowska</span>
+<span class="font-bold text-primary text-[11px]">Sala 204</span>
+</div>
+<div class="flex items-center justify-between text-[11px] text-secondary font-medium mt-0.5">
+<span class="">W trakcie lekcji</span>
+<span class="">Zostało 15 min</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Piątek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Język Angielski C1</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 305</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr M. Zając</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Vocabulary quiz prep</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Lekcja 3: 09:45 - 10:30 -->
+<div class="grid grid-cols-[100px_repeat(5,1fr)] group hover:bg-surface/50 transition-colors min-h-[96px]">
+<!-- Time Column -->
+<div class="p-space-sm flex flex-col items-center justify-center bg-surface-container-low/20">
+<span class="font-label-sm text-label-sm font-bold text-on-surface">3. LEKCJA</span>
+<span class="font-body-md text-body-md text-on-surface leading-tight font-medium">09:45</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">10:30</span>
+</div>
+<!-- Poniedziałek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Matematyka R</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 212</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr K. Wiśniewski</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Ciągi monotoniczne</span>
+</div>
+</div>
+</div>
+<!-- Wtorek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Chemia R</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Lab 3</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">dr hab. P. Zieliński</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Ćwiczenia laboratoryjne</span>
+</div>
+</div>
+</div>
+<!-- Środa -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Wychowanie Fizyczne</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">SG A</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr Ł. Wróbel</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Piłka siatkowa</span>
+</div>
+</div>
+</div>
+<!-- Czwartek (Substitution + Room Change) -->
+<div class="p-space-xs bg-primary/5 min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-tertiary-fixed/30 hover:bg-tertiary-fixed/40 transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Matematyka R</span>
+<span class="px-1.5 py-0.5 rounded bg-tertiary-container text-on-tertiary font-label-sm text-label-sm font-semibold">ZASTĘPSTWO</span>
+</div>
+<div class="flex flex-col text-on-surface font-body-sm text-body-sm mt-1">
+<div class="flex items-center gap-1 font-semibold text-tertiary">
+<span class="text-on-surface-variant line-through text-[11px]">s. 212</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+<span class="text-primary font-bold">Nowa sala: Sala 108</span>
+</div>
+<span class="text-on-surface-variant text-[11px] truncate mt-0.5">mgr A. Nowak za mgr K. Wiśniewski</span>
+</div>
+</div>
+</div>
+<!-- Piątek (Major Exam) -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-primary-fixed/40 hover:bg-primary-fixed/50 transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-primary-container truncate">Język Polski</span>
+<span class="px-1.5 py-0.5 rounded bg-primary-container text-on-primary font-label-sm text-label-sm font-bold">SPRAWDZIAN</span>
+</div>
+<div class="flex flex-col text-on-surface font-body-sm text-body-sm mt-1">
+<span class="font-semibold text-primary truncate">Epoka romantyzmu w Polsce</span>
+<span class="text-on-surface-variant text-[10px] truncate">mgr E. Dąbrowska • Sala 204</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Lekcja 4: 10:45 - 11:30 -->
+<div class="grid grid-cols-[100px_repeat(5,1fr)] group hover:bg-surface/50 transition-colors min-h-[96px]">
+<!-- Time Column -->
+<div class="p-space-sm flex flex-col items-center justify-center bg-surface-container-low/20">
+<span class="font-label-sm text-label-sm font-bold text-on-surface">4. LEKCJA</span>
+<span class="font-body-md text-body-md text-on-surface leading-tight font-medium">10:45</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">11:30</span>
+</div>
+<!-- Poniedziałek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Fizyka Rozszerzona</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 114</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">dr R. Czarnecki</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Termodynamika zjawisk</span>
+</div>
+</div>
+</div>
+<!-- Wtorek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Fizyka Rozszerzona</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 114</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">dr R. Czarnecki</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Rozwiązywanie zadań CKE</span>
+</div>
+</div>
+</div>
+<!-- Środa -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Wychowanie Fizyczne</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">SG A</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr Ł. Wróbel</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Turniej grupowy</span>
+</div>
+</div>
+</div>
+<!-- Czwartek -->
+<div class="p-space-xs bg-primary/5 min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Informatyka</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Prac. 2</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr inż. D. Maj</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Python i algorytmy grafowe</span>
+</div>
+</div>
+</div>
+<!-- Piątek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Matematyka R</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 204</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr K. Wiśniewski</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Geometria analityczna</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Lekcja 5: 11:45 - 12:30 (Exam on Thursday) -->
+<div class="grid grid-cols-[100px_repeat(5,1fr)] group hover:bg-surface/50 transition-colors min-h-[96px]">
+<!-- Time Column -->
+<div class="p-space-sm flex flex-col items-center justify-center bg-surface-container-low/20">
+<span class="font-label-sm text-label-sm font-bold text-on-surface">5. LEKCJA</span>
+<span class="font-body-md text-body-md text-on-surface leading-tight font-medium">11:45</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">12:30</span>
+</div>
+<!-- Poniedziałek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Chemia R</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 210</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">dr hab. P. Zieliński</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Stechiometria</span>
+</div>
+</div>
+</div>
+<!-- Wtorek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Język Niemiecki</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 301</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr B. Adamczyk</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Wortschatz: Umwelt</span>
+</div>
+</div>
+</div>
+<!-- Środa -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Godzina Wych.</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 212</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr K. Wiśniewski</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Organizacja wycieczki</span>
+</div>
+</div>
+</div>
+<!-- Czwartek (CRITICAL EXAM ALERT) -->
+<div class="p-space-xs bg-primary/5 min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-primary-fixed/40 hover:bg-primary-fixed/50 transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<div class="flex items-center gap-1 min-w-0">
+<span class="material-symbols-outlined text-[16px] text-primary">psychology</span>
+<span class="font-label-lg text-label-lg font-bold text-primary truncate">Chemia R</span>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-primary-container text-on-primary font-label-sm text-label-sm font-bold flex-shrink-0">SPRAWDZIAN (WAGA 3)</span>
+</div>
+<div class="flex flex-col text-on-surface font-body-sm text-body-sm mt-1">
+<span class="font-semibold text-primary truncate">Reakcje redoks i bilansowanie</span>
+<div class="flex items-center justify-between text-[10px] text-on-surface-variant mt-0.5">
+<span class="">dr hab. P. Zieliński</span>
+<span class="font-semibold text-primary">Sala 210</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Piątek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Informatyka</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Prac. 2</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr inż. D. Maj</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Bazy danych SQL</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Lunch Break / Przerwa obiadowa -->
+<div class="grid grid-cols-[100px_repeat(5,1fr)] bg-surface-container-low/40"><div class="p-1 flex items-center justify-center font-label-sm text-label-sm text-on-surface-variant">12:30 - 12:40</div><div class="px-space-md py-1 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm [grid-column:2/-1]"><span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-tertiary">restaurant</span>Duża przerwa obiadowa (Stołówka szkolna - Piętro 0)</span><span class="text-[11px] text-on-surface-variant/70 hidden sm:inline">Dostępne ciepłe posiłki</span></div></div>
+<!-- Lekcja 6: 12:40 - 13:25 -->
+<div class="grid grid-cols-[100px_repeat(5,1fr)] group hover:bg-surface/50 transition-colors min-h-[96px]">
+<!-- Time Column -->
+<div class="p-space-sm flex flex-col items-center justify-center bg-surface-container-low/20">
+<span class="font-label-sm text-label-sm font-bold text-on-surface">6. LEKCJA</span>
+<span class="font-body-md text-body-md text-on-surface leading-tight font-medium">12:40</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">13:25</span>
+</div>
+<!-- Poniedziałek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Wiedza o Społ.</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 14</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">dr M. Piątek</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">System parlamentarny RP</span>
+</div>
+</div>
+</div>
+<!-- Wtorek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Fizyka Rozszerzona</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 114</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">dr R. Czarnecki</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Zasady dynamiki</span>
+</div>
+</div>
+</div>
+<!-- Środa -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Język Niemiecki</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 301</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">mgr B. Adamczyk</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Grammatik: Passiv</span>
+</div>
+</div>
+</div>
+<!-- Czwartek -->
+<div class="p-space-xs bg-primary/5 min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Fizyka (Konsultacje)</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">s. 114</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">dr R. Czarnecki</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Dla chętnych (Olimpiada)</span>
+</div>
+</div>
+</div>
+<!-- Piątek (Empty slot) -->
+<div class="p-space-xs flex items-center justify-center text-on-surface-variant/40 min-w-0 w-full">
+<span class="text-[11px] font-label-sm italic">Koniec zajęć (12:30)</span>
+</div>
+</div>
+<!-- Lekcja 7: 13:35 - 14:20 -->
+<div class="grid grid-cols-[100px_repeat(5,1fr)] group hover:bg-surface/50 transition-colors min-h-[96px]">
+<!-- Time Column -->
+<div class="p-space-sm flex flex-col items-center justify-center bg-surface-container-low/20">
+<span class="font-label-sm text-label-sm font-bold text-on-surface">7. LEKCJA</span>
+<span class="font-body-md text-body-md text-on-surface leading-tight font-medium">13:35</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">14:20</span>
+</div>
+<!-- Poniedziałek -->
+<div class="p-space-xs min-w-0 w-full">
+<div class="h-full p-space-xs rounded-lg bg-surface hover:bg-surface-container-low transition-all flex flex-col justify-between shadow-xs min-w-0 w-full">
+<div class="flex items-start justify-between gap-1">
+<span class="font-label-lg text-label-lg font-bold text-on-surface truncate">Koło Chemiczne</span>
+<span class="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">Lab 3</span>
+</div>
+<div class="flex flex-col text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="truncate">dr hab. P. Zieliński</span>
+<span class="text-on-surface-variant/80 text-[10px] truncate">Przygotowanie do OCh</span>
+</div>
+</div>
+</div>
+<!-- Wtorek (Empty slot) -->
+<div class="p-space-xs flex items-center justify-center text-on-surface-variant/40 min-w-0 w-full">
+<span class="text-[11px] font-label-sm italic">Koniec zajęć (13:25)</span>
+</div>
+<!-- Środa (Empty slot) -->
+<div class="p-space-xs flex items-center justify-center text-on-surface-variant/40 min-w-0 w-full">
+<span class="text-[11px] font-label-sm italic">Koniec zajęć (13:25)</span>
+</div>
+<!-- Czwartek (Empty slot) -->
+<div class="p-space-xs bg-primary/5 flex items-center justify-center text-on-surface-variant/40 min-w-0 w-full">
+<span class="text-[11px] font-label-sm italic">Koniec zajęć (13:25)</span>
+</div>
+<!-- Piątek (Empty slot) -->
+<div class="p-space-xs flex items-center justify-center text-on-surface-variant/40 min-w-0 w-full">
+<span class="text-[11px] font-label-sm italic">—</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Interactive Focus Section: Announcements & Critical Actions -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-md">
+<!-- Card 1: Exam Highlight with PDF Download -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-[0_1px_4px_rgba(0,0,0,0.03)] relative overflow-hidden">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">psychology</span>
+            SPRAWDZIAN CZWARTEK
+          </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Lekcja 5 (11:45)</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mt-1">Sprawdzian z Chemii: Redoks</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Zakres materiału: stopnie utlenienia pierwiastków, bilansowanie jonowo-elektronowe reakcji redoks w środowisku kwasowym i zasadowym oraz szereg napięciowy metali.
+        </p>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm font-bold hover:bg-primary/90 transition-colors shadow-xs" type="button">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span class="">Pobierz zagadnienia (PDF)</span>
+</button>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Waga oceny: 3.0</span>
+</div>
+</div>
+<!-- Card 2: Substitution Notice with Task Note -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-[0_1px_4px_rgba(0,0,0,0.03)] relative overflow-hidden">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tertiary-fixed-dim/40 text-tertiary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">meeting_room</span>
+            ZMIANA SALI &amp; NAUCZYCIELA
+          </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Dziś (09:45)</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mt-1">Matematyka R: Sala 108</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Zastępstwo prowadzi mgr A. Nowak. Obowiązkowo prosimy przynieść niebieskie zbiory zadań Kurczab / Świda z geometrii analitycznej oraz cyrkle.
+        </p>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm font-semibold transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">map</span>
+<span class="">Nawiguj do Sali 108</span>
+</button>
+<span class="font-label-sm text-label-sm text-tertiary font-semibold">Parter, Skrzydło B</span>
+</div>
+</div>
+<!-- Card 3: Language Groups Division & Teacher Info -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-lowest shadow-[0_1px_4px_rgba(0,0,0,0.03)] relative overflow-hidden">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-fixed font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">groups</span>
+            PODZIAŁ NA GRUPY
+          </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Piątek (08:50)</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mt-1">Język Angielski: Grupa C1</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Twoja grupa (zaawansowana) ma zajęcia w Sali 305 z mgr M. Zając. Grupa B2 spotyka się w Sali 302 z mgr J. Nowickim.
+        </p>
+</div>
+<div class="mt-space-md pt-space-sm flex items-center justify-between">
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-label-sm text-label-sm font-semibold transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">forum</span>
+<span class="">Wiadomość do nauczyciela</span>
+</button>
+<span class="font-label-sm text-label-sm text-secondary font-bold">Sala 305</span>
+</div>
+</div>
+</div>
+</div></main></div>
+
+</body></html>
