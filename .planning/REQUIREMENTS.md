@@ -43,6 +43,15 @@
 - [x] **REQ-MSG-07**: Pobieranie i prezentacja pełnej treści wiadomości z podstron szczegółów wiadomości Librus Synergia (zamiast powtórzonego tematu/podglądu), z automatycznym dociąganiem on-demand i trwałym cache'owaniem w Firestore.
 - [x] **REQ-MSG-08**: Oznaczanie wiadomości jako nowe i przeczytane (automatycznie przy otwarciu wątku oraz ręcznie) wraz z dynamicznym licznikiem nieprzeczytanych wiadomości na ikonie nawigacji dolnej i nagłówka (badge z liczbą, ukrywany gdy 0).
 
+### Desktop Dashboard Bento Grid
+- [x] **REQ-DASH-02**: Nowoczesny dashboard webowy (desktop/tablet/mobile) z bento-grid, harmonogramem na żywo, kartą powitalną ze statusem, podsumowaniem ocen, frekwencji i wspólną nawigacją AppSidebar.
+
+### Timetable Web Views (Siatka i Agenda)
+- [x] **REQ-TIMETABLE-01**: Segmented control trybów (Siatka / Agenda) na górnym pasku z synchronizacją wybranego dnia.
+- [x] **REQ-TIMETABLE-02**: Pasek nawigacji tygodniowej (zakres dat, dzisiaj, klasa) oraz interaktywne kafelki podsumowania tygodnia (godziny, zastępstwa, sprawdziany, odwołane).
+- [x] **REQ-TIMETABLE-03**: Tygodniowa siatka (Pn-Pt) z godzinami lekcyjnymi (1-8+), kafelkami statusów, podświetleniem "Dziś" i modalem szczegółów lekcji.
+- [x] **REQ-TIMETABLE-04**: Widok agendy dziennej z chronologiczną osią czasu, lekcją na żywo ("Trwa teraz • Zostało X min"), tematami, zadaniami domowymi i materiałami.
+
 ## Traceability
 
 | Requirement | Phase | Status |
@@ -68,3 +77,8 @@
 | REQ-MSG-06 | Phase 7 | Complete |
 | REQ-MSG-07 | Phase 7 | Complete |
 | REQ-MSG-08 | Phase 7 | Complete |
+| REQ-DASH-02 | Phase 8 | Complete |
+| REQ-TIMETABLE-01 | Phase 9 | Complete |
+| REQ-TIMETABLE-02 | Phase 9 | Complete |
+| REQ-TIMETABLE-03 | Phase 9 | Complete |
+| REQ-TIMETABLE-04 | Phase 9 | Complete |

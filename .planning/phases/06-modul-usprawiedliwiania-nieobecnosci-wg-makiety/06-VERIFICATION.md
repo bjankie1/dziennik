@@ -1,3 +1,11 @@
+---
+phase: 06-modul-usprawiedliwiania-nieobecnosci-wg-makiety
+verified: 2026-09-16T15:00:00Z
+status: passed
+score: 4/4 must-haves verified
+behavior_unverified: 0
+---
+
 # Phase 6: Moduł usprawiedliwiania nieobecności wg makiety - Verification
 
 **Date:** 2026-09-16
