@@ -3,6 +3,25 @@ const { wrapper } = require("axios-cookiejar-support");
 const { CookieJar } = require("tough-cookie");
 const cheerio = require("cheerio");
 
+const MODERN_BROWSER_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+  "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
+  "Sec-Ch-Ua": "\"Not(A:Brand\";v=\"99\", \"Google Chrome\";v=\"133\", \"Chromium\";v=\"133\"",
+  "Sec-Ch-Ua-Mobile": "?0",
+  "Sec-Ch-Ua-Platform": "\"Windows\"",
+  "Sec-Fetch-Dest": "document",
+  "Sec-Fetch-Mode": "navigate",
+  "Sec-Fetch-Site": "same-origin",
+  "Sec-Fetch-User": "?1",
+  "Upgrade-Insecure-Requests": "1"
+};
+
+const sleep = (minMs, maxMs) => new Promise(resolve => {
+  const ms = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+  setTimeout(resolve, ms);
+});
+
 class LibrusClient {
   constructor(login = process.env.LIBRUS_LOGIN, pass = process.env.LIBRUS_PASSWORD) {
     if (!login || !pass) {
@@ -11,17 +30,56 @@ class LibrusClient {
     this.login = login;
     this.pass = pass;
     this.jar = new CookieJar();
+    this._initAxios();
+  }
+
+  _initAxios() {
     this.client = wrapper(axios.create({
       jar: this.jar,
       withCredentials: true,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:10.0) Gecko/20100101 Firefox/10.0"
-      },
+      headers: { ...MODERN_BROWSER_HEADERS },
       timeout: 25000
     }));
   }
 
-  async authenticate() {
+  exportCookies() {
+    return this.jar.serializeSync();
+  }
+
+  importCookies(serializedJson) {
+    if (serializedJson) {
+      this.jar = CookieJar.deserializeSync(serializedJson);
+      this._initAxios();
+    }
+  }
+
+  async isSessionAlive() {
+    try {
+      const res = await this.client.get("https://synergia.librus.pl/uczen/index", {
+        maxRedirects: 0,
+        validateStatus: status => status >= 200 && status < 400
+      });
+      if (res.status === 302 && res.headers && res.headers.location && res.headers.location.includes("loguj")) {
+        return false;
+      }
+      if (typeof res.data === "string" && (res.data.includes("formLogowanie") || res.data.includes("action=\"/loguj\"") || res.data.includes("id=\"Login\""))) {
+        return false;
+      }
+      return res.status === 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async authenticate({ force = false } = {}) {
+    if (!force) {
+      const alive = await this.isSessionAlive();
+      if (alive) {
+        console.log("[LibrusClient] Existing session is valid, skipping OAuth flow.");
+        return true;
+      }
+    }
+
     await this.client.get("https://synergia.librus.pl/loguj/portalRodzina?v=1774820765");
     const authRes = await this.client.post(
       "https://api.librus.pl/OAuth/Authorization?client_id=46",
@@ -45,16 +103,51 @@ class LibrusClient {
   async fetchAll() {
     await this.authenticate();
 
-    const [infoData, annData, gradesData, ttData, attData, msgData, justData, terminarzData] = await Promise.all([
-      this.fetchStudentInfo(),
-      this.fetchAnnouncements(),
-      this.fetchGrades(),
-      this.fetchTimetable(),
-      this.fetchAttendance(),
-      this.fetchMessages(),
-      this.fetchJustifications(),
-      this.fetchTerminarz()
-    ]);
+    console.log("[LibrusClient] Starting sequential module fetching with human jitter...");
+
+    const infoData = await this.fetchStudentInfo();
+    await sleep(1000, 2200);
+
+    let annData = { luckyNumber: 18, announcements: [] };
+    try {
+      annData = await this.fetchAnnouncements();
+    } catch (err) {
+      console.warn("[LibrusClient] fetchAnnouncements error, using fallback:", err.message);
+    }
+    await sleep(1200, 2400);
+
+    const gradesData = await this.fetchGrades();
+    await sleep(1500, 2500);
+
+    const ttData = await this.fetchTimetable();
+    await sleep(1200, 2200);
+
+    const attData = await this.fetchAttendance();
+    await sleep(1300, 2300);
+
+    let msgData = { messages: [] };
+    try {
+      msgData = await this.fetchMessages();
+    } catch (err) {
+      console.warn("[LibrusClient] fetchMessages error, using fallback:", err.message);
+    }
+    await sleep(1000, 2000);
+
+    let justData = [];
+    try {
+      justData = await this.fetchJustifications();
+    } catch (err) {
+      console.warn("[LibrusClient] fetchJustifications error, using fallback:", err.message);
+    }
+    await sleep(1100, 2100);
+
+    let terminarzData = { events: [], upcomingExams: [], upcomingExam: null };
+    try {
+      terminarzData = await this.fetchTerminarz();
+    } catch (err) {
+      console.warn("[LibrusClient] fetchTerminarz error, using fallback:", err.message);
+    }
+
 
     // Enrich subjects with teachers from timetable if empty
     const ttTeacherMap = {};
