@@ -1,12 +1,32 @@
 const admin = require("firebase-admin");
-const { LibrusClient } = require("./librus_client");
+const { LibrusClient, deriveLibrusModule } = require("./librus_client");
 
-async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = process.env.LIBRUS_PASSWORD) {
+async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = process.env.LIBRUS_PASSWORD, options = {}) {
   if (!login || !password) {
     throw new Error("Brak danych logowania Librus. Ustaw zmienne LIBRUS_LOGIN i LIBRUS_PASSWORD.");
   }
   const db = admin.firestore();
-  const client = new LibrusClient(login, password);
+  const trigger = options.trigger || "manual";
+  const syncRunId = `${trigger}-${Date.now()}`;
+
+  const handleQueryLog = (logEntry) => {
+    try {
+      const entry = {
+        ...logEntry,
+        trigger,
+        syncRunId,
+        module: deriveLibrusModule(logEntry.endpoint || logEntry.url),
+        timestamp: admin.firestore.FieldValue.serverTimestamp()
+      };
+      db.collection("librus_query_logs").add(entry).catch(err => {
+        console.warn("[SyncService] Could not write query log to Firestore:", err.message);
+      });
+    } catch (err) {
+      console.warn("[SyncService] Error handling query log:", err.message);
+    }
+  };
+
+  const client = new LibrusClient(login, password, { onQueryLog: handleQueryLog });
 
   // 1. Check dynamic rate-limit backoff lock
   const rateLimitRef = db.collection("system_status").doc("librus_rate_limit");
@@ -18,6 +38,21 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
         console.warn(`[SyncService] Rate limit active until ${limit.lockedUntil.toDate().toISOString()} (${limit.reason}). Serving cached data.`);
         const cachedDoc = await db.collection("students").doc(login).get();
         if (cachedDoc.exists) {
+          db.collection("librus_query_logs").add({
+            url: `cache://students/${login}`,
+            endpoint: "/cache/students",
+            method: "CACHE",
+            status: 200,
+            statusText: "Served from Cache (Rate limit lock active)",
+            durationMs: 4,
+            responseSizeBytes: 0,
+            login,
+            trigger,
+            syncRunId,
+            module: "Cache",
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+          }).catch(() => {});
+
           return {
             success: true,
             fromCache: true,

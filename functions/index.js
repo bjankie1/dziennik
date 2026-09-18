@@ -32,7 +32,7 @@ exports.syncNow = onRequest(
         });
       }
 
-      const result = await syncStudentData(login, pass);
+      const result = await syncStudentData(login, pass, { trigger: "manual" });
       res.status(200).json(result);
     } catch (error) {
       console.error("syncNow error:", error);
@@ -199,10 +199,58 @@ exports.scheduledLibrusSync = onSchedule(
         console.warn("scheduledLibrusSync: Brak skonfigurowanych zmiennych LIBRUS_LOGIN / LIBRUS_PASSWORD.");
         return;
       }
-      const result = await syncStudentData(login, pass);
+      const result = await syncStudentData(login, pass, { trigger: "cron" });
       console.log("Scheduled sync finished successfully:", result);
     } catch (error) {
       console.error("Scheduled sync error:", error);
+    }
+  }
+);
+
+/**
+ * Return recent Librus query access logs.
+ */
+exports.getLibrusLogs = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 30,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const limitCount = parseInt(req.query.limit || "50", 10);
+      const snapshot = await admin.firestore()
+        .collection("librus_query_logs")
+        .orderBy("timestamp", "desc")
+        .limit(Math.min(limitCount, 100))
+        .get();
+
+      const logs = snapshot.docs.map(doc => {
+        const data = doc.data();
+        let timestampIso = null;
+        if (data.timestamp && typeof data.timestamp.toDate === "function") {
+          timestampIso = data.timestamp.toDate().toISOString();
+        } else if (typeof data.timestamp === "string") {
+          timestampIso = data.timestamp;
+        } else {
+          timestampIso = new Date().toISOString();
+        }
+        return {
+          id: doc.id,
+          ...data,
+          timestamp: timestampIso
+        };
+      });
+
+      res.status(200).json({
+        success: true,
+        count: logs.length,
+        logs
+      });
+    } catch (error) {
+      console.error("getLibrusLogs error:", error);
+      res.status(500).json({ success: false, error: error.message });
     }
   }
 );

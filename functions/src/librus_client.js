@@ -22,13 +22,27 @@ const sleep = (minMs, maxMs) => new Promise(resolve => {
   setTimeout(resolve, ms);
 });
 
+function deriveLibrusModule(endpoint = "") {
+  const ep = endpoint.toLowerCase();
+  if (ep.includes("oauth") || ep.includes("loguj")) return "Autoryzacja";
+  if (ep.includes("przegladaj_oceny") || ep.includes("oceny")) return "Oceny";
+  if (ep.includes("przegladaj_plan") || ep.includes("plan")) return "Plan lekcji";
+  if (ep.includes("przegladaj_nb") || ep.includes("nieobecn") || ep.includes("eusprawiedliwienia")) return "Frekwencja";
+  if (ep.includes("wiadomosci")) return "Wiadomości";
+  if (ep.includes("terminarz")) return "Terminarz";
+  if (ep.includes("ogloszenia")) return "Ogłoszenia";
+  if (ep.includes("informacja") || ep.includes("uczen/index")) return "Profil / Sesja";
+  return "Inne";
+}
+
 class LibrusClient {
-  constructor(login = process.env.LIBRUS_LOGIN, pass = process.env.LIBRUS_PASSWORD) {
+  constructor(login = process.env.LIBRUS_LOGIN, pass = process.env.LIBRUS_PASSWORD, options = {}) {
     if (!login || !pass) {
       throw new Error("Brak danych logowania Librus. Ustaw zmienne LIBRUS_LOGIN i LIBRUS_PASSWORD.");
     }
     this.login = login;
     this.pass = pass;
+    this.onQueryLog = options.onQueryLog || null;
     this.jar = new CookieJar();
     this._initAxios();
   }
@@ -40,6 +54,73 @@ class LibrusClient {
       headers: { ...MODERN_BROWSER_HEADERS },
       timeout: 25000
     }));
+
+    this.client.interceptors.request.use(config => {
+      config.metadata = { startTime: Date.now() };
+      return config;
+    });
+
+    this.client.interceptors.response.use(
+      response => {
+        const durationMs = Date.now() - (response.config?.metadata?.startTime || Date.now());
+        if (typeof this.onQueryLog === "function") {
+          try {
+            const urlStr = response.config?.url || "";
+            let endpoint = urlStr;
+            try {
+              const parsed = new URL(urlStr);
+              endpoint = parsed.pathname + parsed.search;
+            } catch (_) {}
+
+            const responseSize = typeof response.data === "string"
+              ? Buffer.byteLength(response.data, "utf8")
+              : (response.data ? Buffer.byteLength(JSON.stringify(response.data), "utf8") : 0);
+
+            this.onQueryLog({
+              url: urlStr,
+              endpoint,
+              method: (response.config?.method || "GET").toUpperCase(),
+              status: response.status,
+              statusText: response.statusText || "OK",
+              durationMs,
+              responseSizeBytes: responseSize,
+              login: this.login
+            });
+          } catch (e) {
+            console.warn("[LibrusClient] onQueryLog error:", e.message);
+          }
+        }
+        return response;
+      },
+      error => {
+        const durationMs = Date.now() - (error.config?.metadata?.startTime || Date.now());
+        if (typeof this.onQueryLog === "function") {
+          try {
+            const urlStr = error.config?.url || "";
+            let endpoint = urlStr;
+            try {
+              const parsed = new URL(urlStr);
+              endpoint = parsed.pathname + parsed.search;
+            } catch (_) {}
+
+            this.onQueryLog({
+              url: urlStr,
+              endpoint,
+              method: (error.config?.method || "GET").toUpperCase(),
+              status: error.response?.status || 0,
+              statusText: error.response?.statusText || error.message || "Network Error",
+              durationMs,
+              responseSizeBytes: 0,
+              error: error.message,
+              login: this.login
+            });
+          } catch (e) {
+            console.warn("[LibrusClient] onQueryLog error:", e.message);
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
   }
 
   exportCookies() {
@@ -827,4 +908,4 @@ class LibrusClient {
   }
 }
 
-module.exports = { LibrusClient };
+module.exports = { LibrusClient, deriveLibrusModule };
