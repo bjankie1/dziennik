@@ -44,6 +44,15 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Node.js dependencies & logs
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+firebase-debug.log*
+firebase-debug.*.log*
+
 # Environment variables & secrets
 .env
 .env.*
@@ -52,6 +61,14 @@ app.*.map.json
 functions/.env
 functions/.env.*
 !functions/.env.example
+functions/.runtimeconfig.json
 credentials.json
 secrets/
 .firebase/
+*.pem
+*.key
+*.p12
+*.jks
+*.keystore
+*serviceAccount*.json
+serviceAccountKey.json
