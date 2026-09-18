@@ -1,12 +1,12 @@
 ---
 gsd_state_version: "1.0"
 milestone: v2.0
-status: Complete
-stopped_at: Phase 10 complete
-last_updated: "2026-09-17T21:00:00.000Z"
-state_head: 7c6c066
+status: Ready to plan
+stopped_at: Phase 11 added
+last_updated: "2026-09-18T06:47:00.000Z"
+state_head: c0ef744
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 7
   total_plans: 12
   completed_plans: 12
@@ -15,9 +15,9 @@ progress:
 # Project State
 
 **Current Milestone:** Milestone v2.0
-**Active Phase:** Phase 10: Pełen panel ocen w wersji na przeglądarkę
-**Status:** Complete
-**Last Updated:** 2026-09-17
+**Active Phase:** Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)
+**Status:** Not planned yet
+**Last Updated:** 2026-09-18
 
 ## Completed in v2.0
 
@@ -38,6 +38,7 @@ progress:
 - [x] **Phase 8**: Pełny design ekranu głównego w wersji web
 - [x] **Phase 9**: Plan lekcji w wersji web (Widok siatki i agendy)
 - [x] **Phase 10**: Pełen panel ocen w wersji na przeglądarkę
+- [ ] **Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)**
 
 ## Accumulated Context
 
@@ -46,10 +47,12 @@ progress:
 - Phase 8 added: Pełny design ekranu głównego w wersji web (nowoczesny pulpit webowy z Bento Grid dla wersji desktop/tablet).
 - Phase 9 added: Plan lekcji w wersji web (Widok siatki i agendy) na podstawie makiet docs/plan_lekcji_v1 i docs/plan lekcji agenda.
 - Phase 10 added: Pełen panel ocen w wersji na przeglądarkę na podstawie makiet docs/panel_ocen i docs/szczegoly_oceny.
+- Phase 11 added: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny) na wniosek użytkownika (ochrona przed podejrzeniami o łamanie regulaminu, wyłączenie nocy).
 
 ## Session
 
-**Last session:** 2026-09-17T21:00:00.000Z
-**Stopped at:** Phase 10 complete
-**Resume file:** .planning/phases/10-pe-en-panel-ocen-w-wersji-na-przegl-dark/10-SUMMARY.md
+**Last session:** 2026-09-18T06:47:00.000Z
+**Stopped at:** Phase 11 added
+**Resume file:** .planning/ROADMAP.md
+
 

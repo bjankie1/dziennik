@@ -15,7 +15,8 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 - [x] **Phase 7: Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)** — Widok wątku wiadomości w stylu Gmail, odpowiadanie na wiadomości oraz nowa wiadomość z autocomplete nauczyciela (nazwisko + przedmiot).
 - [x] **Phase 8: Pełny design ekranu głównego w wersji web** — Nowoczesny dashboard webowy (desktop/tablet/mobile) z bento-grid, podsumowaniem dnia, nadchodzącymi sprawdzianami, planem dnia, statystykami ocen i frekwencji.
 - [x] **Phase 9: Plan lekcji w wersji web (Widok siatki i agendy)** — Nowoczesny desktopowy i responsywny plan lekcji z widokiem pełnej siatki tygodniowej oraz agendy wg makiet (docs/plan_lekcji_v1 i docs/plan lekcji agenda).
-- [ ] **Phase 10: Pełen panel ocen w wersji na przeglądarkę** — Nowoczesny dwukolumnowy panel ocen na desktopie z wyborem przedmiotu, szczegółami ocen, wykresem/statystykami i szufladą (drawer) szczegółów oceny wg makiet docs/panel_ocen i docs/szczegoly_oceny.
+- [x] **Phase 10: Pełen panel ocen w wersji na przeglądarkę** — Nowoczesny dwukolumnowy panel ocen na desktopie z wyborem przedmiotu, szczegółami ocen, wykresem/statystykami i szufladą (drawer) szczegółów oceny wg makiet docs/panel_ocen i docs/szczegoly_oceny.
+- [ ] **Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)** — Optymalizacja strategii synchronizacji z Librus (inteligentny throttling, losowy jitter, dynamiczny backoff, całkowite wyłączenie odpytywania w nocy oraz cache'owanie), aby nie budzić podejrzeń o łamanie regulaminu serwisu.
 
 ---
 
@@ -123,3 +124,23 @@ Plans:
 
 - [x] 10-01-PLAN.md — Layout Master-Detail, tokeny, Riverpod providery, KPI (histogram) i tabela ocen
 - [x] 10-02-PLAN.md — Wykres trajektorii średniej, szuflada (drawer) szczegółów oceny i pełna integracja
+
+### Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)
+
+**Goal**: Ulepszenie strategii odpytywania serwerów Librus (inteligentny throttling, losowy jitter, dynamiczny backoff oraz całkowite wyłączenie odpytywania w godzinach nocnych), aby nie budzić podejrzeń o automatyzację ani łamanie regulaminu serwisu.
+**Requirements**: TBD
+**Depends on:** Phase 10
+**Success Criteria**:
+
+  1. Harmonogram nocny: Całkowite zawieszenie automatycznego odpytywania serwerów Librus w godzinach nocnych (np. 23:00 – 06:00).
+  2. Inteligentny throttling i jitter: Wprowadzenie losowych odstępów czasowych (jitter) pomiędzy żądaniami imitujących naturalne zachowanie człowieka zamiast stałych interwałów crona.
+  3. Dynamiczny backoff: Automatyczne wydłużanie przerw w przypadku błędów HTTP (429, 503) lub wykrycia captcha/blokady.
+  4. Cache-first & conditional requests: Wykorzystanie pamięci podręcznej Firestore/lokalnej, aby nie generować zbędnego ruchu.
+  5. Manual on-demand sync: Możliwość wymuszenia odświeżenia na żądanie użytkownika z odpowiednim limitem (np. max 1 na 2 minuty).
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 11 to break down)
+

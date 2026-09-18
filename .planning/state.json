@@ -47,12 +47,17 @@
       "number": "9",
       "name": "Plan lekcji w wersji web (Widok siatki i agendy)",
       "status": "complete"
+    },
+    {
+      "number": "10",
+      "name": "Pełen panel ocen w wersji na przeglądarkę",
+      "status": "pending"
     }
   ],
   "next": {
-    "command": "/gsd-discuss-phase",
-    "label": "Discuss the first phase",
-    "reason": "Project initialized — plan your first phase"
+    "command": "/gsd-progress",
+    "label": "Show progress",
+    "reason": "Unsure of state — showing progress"
   },
-  "updated_at": "2026-09-17T17:12:14.185Z"
+  "updated_at": "2026-09-18T04:46:57.187Z"
 }
