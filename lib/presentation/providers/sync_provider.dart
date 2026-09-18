@@ -50,6 +50,9 @@ class SyncState {
 }
 
 class SyncNotifier extends Notifier<SyncState> {
+  static const Duration cooldownDuration = Duration(seconds: 120);
+  DateTime? _lastSyncTriggerTime;
+
   @override
   SyncState build() {
     _init();
@@ -73,28 +76,48 @@ class SyncNotifier extends Notifier<SyncState> {
     );
   }
 
-  Future<void> syncNow() async {
+  bool _isNightSilence(DateTime dt) {
+    final totalMinutes = dt.hour * 60 + dt.minute;
+    return totalMinutes >= 22 * 60 + 30 || totalMinutes < 6 * 60 + 30;
+  }
+
+  Future<void> syncNow({bool ignoreCooldown = false}) async {
     if (state.isSyncing) return;
+
+    final now = DateTime.now();
+    if (!ignoreCooldown && _lastSyncTriggerTime != null) {
+      final elapsed = now.difference(_lastSyncTriggerTime!);
+      if (elapsed < cooldownDuration) {
+        final remaining = (cooldownDuration - elapsed).inSeconds;
+        state = state.copyWith(
+          statusMessage: 'Odczekaj jeszcze ${remaining}s przed kolejnym odświeżeniem.',
+        );
+        return;
+      }
+    }
+
+    _lastSyncTriggerTime = now;
+
     state = state.copyWith(
       isSyncing: true,
       statusMessage: 'Synchronizacja z Librus Synergia w toku...',
     );
 
     try {
-      // Trigger cloud synchronization endpoint
+      // Trigger cloud synchronization endpoint with 45s timeout for sequential scraping
       final uri = Uri.parse('/api/syncNow');
       try {
-        final res = await http.get(uri).timeout(const Duration(seconds: 15));
+        final res = await http.get(uri).timeout(const Duration(seconds: 45));
         if (res.statusCode != 200) {
           // Fallback to absolute Cloud Function URL
           await http.get(Uri.parse('https://europe-west3-lepsza-szkola.cloudfunctions.net/syncNow'))
-              .timeout(const Duration(seconds: 25));
+              .timeout(const Duration(seconds: 45));
         }
       } catch (_) {
         // Direct call fallback
         try {
           await http.get(Uri.parse('https://europe-west3-lepsza-szkola.cloudfunctions.net/syncNow'))
-              .timeout(const Duration(seconds: 25));
+              .timeout(const Duration(seconds: 45));
         } catch (_) {}
       }
 
@@ -110,10 +133,15 @@ class SyncNotifier extends Notifier<SyncState> {
       ref.invalidate(upcomingExamProvider);
       ref.invalidate(announcementsProvider);
 
+      final isNight = _isNightSilence(now);
+      final successMsg = isNight
+          ? 'Zsynchronizowano na żądanie (serwery w trybie nocnym)'
+          : 'Wszystkie dane są aktualne';
+
       state = state.copyWith(
         isSyncing: false,
         lastSyncTime: DateTime.now(),
-        statusMessage: 'Wszystkie dane są aktualne',
+        statusMessage: successMsg,
         isDemoMode: isDemo,
         connectedLogin: login,
       );
