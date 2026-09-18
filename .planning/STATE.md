@@ -50,10 +50,18 @@ progress:
 - Phase 10 added: Pełen panel ocen w wersji na przeglądarkę na podstawie makiet docs/panel_ocen i docs/szczegoly_oceny.
 - Phase 11 added: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny) na wniosek użytkownika (ochrona przed podejrzeniami o łamanie regulaminu, wyłączenie nocy).
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260918-ev7 | Librus query access log modal and tracking | 2026-09-18 | 478def3 | [260918-ev7-librus-query-access-log-modal-and-tracki](./quick/260918-ev7-librus-query-access-log-modal-and-tracki/) |
+
 ## Session
 
 **Last session:** 2026-09-18T06:47:00.000Z
-**Stopped at:** Phase 11 added
+**Stopped at:** Completed quick task 260918-ev7: Librus query access log modal and tracking
 **Resume file:** .planning/ROADMAP.md
+Last activity: 2026-09-18 - Completed quick task 260918-ev7: Librus query access log modal and tracking
+
 
 
