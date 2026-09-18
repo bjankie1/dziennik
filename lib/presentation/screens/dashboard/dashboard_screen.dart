@@ -14,6 +14,7 @@ import "../grades/grade_details_modal.dart";
 import "../attendance/justification_modal.dart";
 import "../messages/new_message_screen.dart";
 import "../messages/message_thread_screen.dart";
+import "../../widgets/modals/librus_query_log_modal.dart";
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -277,31 +278,42 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ],
                       ),
                     ),
-                    // State pill
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: AppColors.secondaryContainer.withValues(alpha: 0.7),
+                    // State pill (Librus status & Access log trigger)
+                    Tooltip(
+                      message: "Status systemu: Stan normalny • Kliknij, aby zobaczyć dziennik zapytań Librus (Access Log)",
+                      child: InkWell(
+                        onTap: () => LibrusQueryLogModal.show(context),
                         borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            size: 14,
-                            color: AppColors.onSecondaryContainer,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            "Stan normalny",
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.onSecondaryContainer,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondaryContainer.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppColors.secondary.withValues(alpha: 0.3),
+                              width: 1,
                             ),
                           ),
-                        ],
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle,
+                                size: 14,
+                                color: AppColors.onSecondaryContainer,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                "Stan normalny",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.onSecondaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ],
