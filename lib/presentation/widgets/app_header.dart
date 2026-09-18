@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../domain/models/student_profile.dart';
 import '../providers/sync_provider.dart';
 import '../providers/school_providers.dart';
+import 'modals/librus_query_log_modal.dart';
 
 class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
   final StudentProfile student;
@@ -142,6 +143,17 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                         color: AppColors.primary,
                         size: 22,
                       ),
+              ),
+
+              // Technical Librus Access Log
+              IconButton(
+                tooltip: 'Dziennik zapytań Librus (Access Log)',
+                onPressed: () => LibrusQueryLogModal.show(context),
+                icon: const Icon(
+                  Icons.terminal_rounded,
+                  color: AppColors.onSurfaceVariant,
+                  size: 21,
+                ),
               ),
 
               // Notifications Action with Badge

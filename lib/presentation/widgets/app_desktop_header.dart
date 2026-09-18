@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "../../core/theme/app_colors.dart";
 import "../../domain/models/student_profile.dart";
+import "modals/librus_query_log_modal.dart";
 
 class AppDesktopHeader extends StatelessWidget {
   final StudentProfile? student;
@@ -81,6 +82,19 @@ class AppDesktopHeader extends StatelessWidget {
           ),
 
           const SizedBox(width: 16),
+
+          // Technical Librus Access Log Button
+          IconButton(
+            tooltip: "Dziennik zapytań Librus (Access Log)",
+            onPressed: () => LibrusQueryLogModal.show(context),
+            icon: const Icon(
+              Icons.terminal_rounded,
+              color: AppColors.onSurfaceVariant,
+              size: 21,
+            ),
+          ),
+
+          const SizedBox(width: 4),
 
           // Notification Bell
           IconButton(
