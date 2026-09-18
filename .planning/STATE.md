@@ -1,22 +1,22 @@
 ---
 gsd_state_version: "1.0"
 milestone: v2.0
-status: Ready to execute
-stopped_at: Phase 11 planned
-last_updated: "2026-09-18T08:08:00.000Z"
-state_head: c0ef744
+status: Milestone complete
+stopped_at: Phase 11 verified
+last_updated: "2026-09-18T10:35:00.000Z"
+state_head: 346c617
 progress:
   total_phases: 8
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 14
-  completed_plans: 12
+  completed_plans: 14
 ---
 
 # Project State
 
 **Current Milestone:** Milestone v2.0
 **Active Phase:** Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)
-**Status:** Planned (2 plans ready)
+**Status:** Phase 11 complete (Milestone v2.0 Complete)
 **Last Updated:** 2026-09-18
 
 ## Completed in v2.0
@@ -28,6 +28,7 @@ progress:
 - [x] **Phase 8**: Pełny design ekranu głównego w wersji web (wspólny pasek boczny AppSidebar dla wszystkich widoków, AppDesktopHeader z wyszukiwarką, Bento Grid z 3 kolumnami, harmonogramem na żywo, wiadomościami i szybkimi akcjami).
 - [x] **Phase 9**: Plan lekcji w wersji web (Widok siatki i agendy) (nawigacja tygodnia, kafelki podsumowania, siatka Pn-Pt z modalem szczegółów, agenda z lekcją na żywo, wspólny sidebar i responsywność).
 - [x] **Phase 10**: Pełen panel ocen w wersji na przeglądarkę (Master-Detail 8+4, karty KPI ze średnią i rozkładem MEN 1-6, wykres trajektorii Béziera, szuflada boczna ze szczegółami i kalkulatorem GPA).
+- [x] **Phase 11**: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny) (nowoczesne nagłówki Chrome 133, sekwencyjny fetch z jitterem, probe sesji, dynamiczny backoff 429/503, cisza nocna 22:30-06:30, cooldown klienta 120s).
 
 ## Milestone v2.0 Roadmap
 
@@ -38,7 +39,7 @@ progress:
 - [x] **Phase 8**: Pełny design ekranu głównego w wersji web
 - [x] **Phase 9**: Plan lekcji w wersji web (Widok siatki i agendy)
 - [x] **Phase 10**: Pełen panel ocen w wersji na przeglądarkę
-- [ ] **Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)**
+- [x] **Phase 11**: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)
 
 ## Accumulated Context
 

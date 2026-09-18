@@ -53,12 +53,12 @@
 - [x] **REQ-TIMETABLE-04**: Widok agendy dziennej z chronologiczną osią czasu, lekcją na żywo ("Trwa teraz • Zostało X min"), tematami, zadaniami domowymi i materiałami.
 
 ### Stealth Scraping & Rate Limiting (Phase 11)
-- [ ] **REQ-STEALTH-01**: Nowoczesny profil przeglądarki i nagłówki HTTP (Chrome 133, Client Hints, Sec-*, Accept-Language) zamiast Firefox 10.
-- [ ] **REQ-STEALTH-02**: Humanizowane sekwencyjne odpytywanie modułów w `fetchAll()` z losowym opóźnieniem 1.0–2.5 s zamiast `Promise.all`.
-- [ ] **REQ-STEALTH-03**: Trwałość sesji cookie (`tough-cookie` w Firestore) z probe `isSessionAlive()` eliminujące zbędne autoryzacje OAuth.
-- [ ] **REQ-STEALTH-04**: Dynamiczny backoff na kody 429/503 z blokadą w Firestore i serwowaniem z cache.
-- [ ] **REQ-SCHED-01**: Inteligentny harmonogram w strefie `Europe/Warsaw` z ciszą nocną (22:30–06:30), taktem w dni szkolne i oknami weekendowymi.
-- [ ] **REQ-CLIENT-01**: Ochrona przycisku odświeżania w aplikacji (cooldown 120s) i informacja o trybie nocnym.
+- [x] **REQ-STEALTH-01**: Nowoczesny profil przeglądarki i nagłówki HTTP (Chrome 133, Client Hints, Sec-*, Accept-Language) zamiast Firefox 10.
+- [x] **REQ-STEALTH-02**: Humanizowane sekwencyjne odpytywanie modułów w `fetchAll()` z losowym opóźnieniem 1.0–2.5 s zamiast `Promise.all`.
+- [x] **REQ-STEALTH-03**: Trwałość sesji cookie (`tough-cookie` w Firestore) z probe `isSessionAlive()` eliminujące zbędne autoryzacje OAuth.
+- [x] **REQ-STEALTH-04**: Dynamiczny backoff na kody 429/503 z blokadą w Firestore i serwowaniem z cache.
+- [x] **REQ-SCHED-01**: Inteligentny harmonogram w strefie `Europe/Warsaw` z ciszą nocną (22:30–06:30), taktem w dni szkolne i oknami weekendowymi.
+- [x] **REQ-CLIENT-01**: Ochrona przycisku odświeżania w aplikacji (cooldown 120s) i informacja o trybie nocnym.
 
 ## Traceability
 
@@ -90,10 +90,11 @@
 | REQ-TIMETABLE-02 | Phase 9 | Complete |
 | REQ-TIMETABLE-03 | Phase 9 | Complete |
 | REQ-TIMETABLE-04 | Phase 9 | Complete |
-| REQ-STEALTH-01 | Phase 11 | Pending |
-| REQ-STEALTH-02 | Phase 11 | Pending |
-| REQ-STEALTH-03 | Phase 11 | Pending |
-| REQ-STEALTH-04 | Phase 11 | Pending |
-| REQ-SCHED-01 | Phase 11 | Pending |
-| REQ-CLIENT-01 | Phase 11 | Pending |
+| REQ-STEALTH-01 | Phase 11 | Complete |
+| REQ-STEALTH-02 | Phase 11 | Complete |
+| REQ-STEALTH-03 | Phase 11 | Complete |
+| REQ-STEALTH-04 | Phase 11 | Complete |
+| REQ-SCHED-01 | Phase 11 | Complete |
+| REQ-CLIENT-01 | Phase 11 | Complete |
+
 

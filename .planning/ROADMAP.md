@@ -16,7 +16,7 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 - [x] **Phase 8: Pełny design ekranu głównego w wersji web** — Nowoczesny dashboard webowy (desktop/tablet/mobile) z bento-grid, podsumowaniem dnia, nadchodzącymi sprawdzianami, planem dnia, statystykami ocen i frekwencji.
 - [x] **Phase 9: Plan lekcji w wersji web (Widok siatki i agendy)** — Nowoczesny desktopowy i responsywny plan lekcji z widokiem pełnej siatki tygodniowej oraz agendy wg makiet (docs/plan_lekcji_v1 i docs/plan lekcji agenda).
 - [x] **Phase 10: Pełen panel ocen w wersji na przeglądarkę** — Nowoczesny dwukolumnowy panel ocen na desktopie z wyborem przedmiotu, szczegółami ocen, wykresem/statystykami i szufladą (drawer) szczegółów oceny wg makiet docs/panel_ocen i docs/szczegoly_oceny.
-- [ ] **Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)** — Optymalizacja strategii synchronizacji z Librus (inteligentny throttling, losowy jitter, dynamiczny backoff, całkowite wyłączenie odpytywania w nocy oraz cache'owanie), aby nie budzić podejrzeń o łamanie regulaminu serwisu.
+- [x] **Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)** — Optymalizacja strategii synchronizacji z Librus (inteligentny throttling, losowy jitter, dynamiczny backoff, całkowite wyłączenie odpytywania w nocy oraz cache'owanie), aby nie budzić podejrzeń o łamanie regulaminu serwisu. (completed 2026-09-18)
 
 ---
 
@@ -138,9 +138,10 @@ Plans:
   4. Cache-first & conditional requests: Wykorzystanie pamięci podręcznej Firestore/lokalnej, aby nie generować zbędnego ruchu.
   5. Manual on-demand sync: Możliwość wymuszenia odświeżenia na żądanie użytkownika z odpowiednim limitem (np. max 1 na 2 minuty).
 
-**Plans:** 0 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 11 to break down)
+- [x] 11-01-PLAN.md — Bezpieczne odpytywanie serwerów Librus, humanizacja zapytań i odporność na rate limiting
+- [x] 11-02-PLAN.md — Adaptacyjny harmonogram backendu (strefa Europe/Warsaw) i ograniczenia po stronie klienta
 
