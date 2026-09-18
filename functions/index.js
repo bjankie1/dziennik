@@ -8,6 +8,7 @@ if (!admin.apps.length) {
 admin.firestore().settings({ ignoreUndefinedProperties: true });
 
 const { syncStudentData } = require("./src/sync_service");
+const { evaluateScheduleWindow } = require("./src/schedule_evaluator");
 
 /**
  * On-demand sync HTTP endpoint.
@@ -166,18 +167,31 @@ exports.getConnection = onRequest(
 );
 
 /**
- * Scheduled background sync every 30 minutes.
+ * Scheduled background sync every 15 minutes with Europe/Warsaw schedule evaluation.
+ * Enforces night silence (22:30 - 06:30), weekday intervals with jitter, and weekend slots (11:00 & 19:00).
  */
 exports.scheduledLibrusSync = onSchedule(
   {
     region: "europe-west3",
-    schedule: "every 30 minutes",
+    schedule: "every 15 minutes",
     timeZone: "Europe/Warsaw",
-    timeoutSeconds: 60,
+    timeoutSeconds: 300,
     memory: "512MiB"
   },
   async (event) => {
-    console.log("Starting scheduled 30-minute Librus sync job...");
+    const decision = evaluateScheduleWindow(new Date());
+    if (!decision.shouldRun) {
+      console.log(`[scheduledLibrusSync] Sync skipped: ${decision.reason}`);
+      return;
+    }
+
+    if (decision.jitterMaxMs && decision.jitterMaxMs > 0) {
+      const jitterMs = Math.floor(Math.random() * decision.jitterMaxMs);
+      console.log(`[scheduledLibrusSync] Applying pre-fetch jitter: ${jitterMs}ms (${decision.reason})`);
+      await new Promise(r => setTimeout(r, jitterMs));
+    }
+
+    console.log(`[scheduledLibrusSync] Starting scheduled sync job (${decision.reason})...`);
     try {
       const login = process.env.LIBRUS_LOGIN;
       const pass = process.env.LIBRUS_PASSWORD;
