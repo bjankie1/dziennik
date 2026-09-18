@@ -8,8 +8,99 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
   const db = admin.firestore();
   const client = new LibrusClient(login, password);
 
-  console.log(`Starting sync for student: ${login}...`);
-  const freshData = await client.fetchAll();
+  // 1. Check dynamic rate-limit backoff lock
+  const rateLimitRef = db.collection("system_status").doc("librus_rate_limit");
+  try {
+    const rateLimitDoc = await rateLimitRef.get();
+    if (rateLimitDoc.exists) {
+      const limit = rateLimitDoc.data();
+      if (limit.isLocked && limit.lockedUntil && limit.lockedUntil.toDate() > new Date()) {
+        console.warn(`[SyncService] Rate limit active until ${limit.lockedUntil.toDate().toISOString()} (${limit.reason}). Serving cached data.`);
+        const cachedDoc = await db.collection("students").doc(login).get();
+        if (cachedDoc.exists) {
+          return {
+            success: true,
+            fromCache: true,
+            rateLimited: true,
+            lockedUntil: limit.lockedUntil.toDate().toISOString(),
+            reason: limit.reason,
+            ...cachedDoc.data()
+          };
+        }
+      }
+    }
+  } catch (limitErr) {
+    console.warn("[SyncService] Error checking rate limit lock:", limitErr.message);
+  }
+
+  // 2. Restore cached session cookies if available
+  const sessionRef = db.collection("librus_sessions").doc(login);
+  try {
+    const sessionDoc = await sessionRef.get();
+    if (sessionDoc.exists && sessionDoc.data()?.serializedJar) {
+      client.importCookies(sessionDoc.data().serializedJar);
+      console.log(`[SyncService] Restored cached session cookies for ${login}.`);
+    }
+  } catch (sessErr) {
+    console.warn("[SyncService] Could not read cached session:", sessErr.message);
+  }
+
+  let freshData;
+  try {
+    console.log(`Starting sync for student: ${login}...`);
+    freshData = await client.fetchAll();
+
+    // Persist updated session cookies to Firestore
+    try {
+      await sessionRef.set({
+        serializedJar: client.exportCookies(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      console.log(`[SyncService] Saved updated session cookies for ${login}.`);
+    } catch (saveErr) {
+      console.warn("[SyncService] Could not save updated session cookies:", saveErr.message);
+    }
+  } catch (error) {
+    const status = error.response?.status || error.status;
+    const msg = error.message || "";
+    const isRateLimitOrBlocked =
+      status === 429 ||
+      status === 503 ||
+      msg.includes("429") ||
+      msg.includes("503") ||
+      msg.toLowerCase().includes("rate limit") ||
+      msg.toLowerCase().includes("zbyt wiele") ||
+      msg.toLowerCase().includes("captcha");
+
+    if (isRateLimitOrBlocked) {
+      console.error(`[SyncService] Rate limit or service unavailable detected (${status || msg}). Activating 20-minute backoff lock.`);
+      const lockedUntil = new Date(Date.now() + 20 * 60 * 1000);
+      try {
+        await rateLimitRef.set({
+          isLocked: true,
+          lockedUntil: admin.firestore.Timestamp.fromDate(lockedUntil),
+          reason: msg || `HTTP error ${status}`,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      } catch (lockErr) {
+        console.warn("[SyncService] Could not set rate limit lock in Firestore:", lockErr.message);
+      }
+
+      const cachedDoc = await db.collection("students").doc(login).get();
+      if (cachedDoc.exists) {
+        return {
+          success: true,
+          fromCache: true,
+          rateLimited: true,
+          lockedUntil: lockedUntil.toISOString(),
+          reason: msg,
+          ...cachedDoc.data()
+        };
+      }
+    }
+    throw error;
+  }
+
 
   const studentRef = db.collection("students").doc(login);
   const prevDoc = await studentRef.get();
