@@ -53,6 +53,10 @@ yarn-error.log*
 firebase-debug.log*
 firebase-debug.*.log*
 
+# Firebase project credentials & configuration
+lib/firebase_options.dart
+!lib/firebase_options.example.dart
+
 # Environment variables & secrets
 .env
 .env.*

@@ -22,7 +22,7 @@
 ## 2. Google Firebase Cloud
 - **Project ID:** `lepsza-szkola`
 - **Services:**
-  - **Firebase Auth:** Google OAuth Provider (`REDACTED_FIREBASE_KEY`)
+  - **Firebase Auth:** Google OAuth Provider
   - **Cloud Firestore:** Collections `students/{login}`, `students/{login}/notifications`, `users/{userId}`
   - **Firebase Cloud Functions (v2):** Endpoints `syncNow`, `getStudentData`, `saveConnection`, `getConnection`
   - **Google Cloud Scheduler:** `scheduledLibrusSync` (every 30 minutes)
