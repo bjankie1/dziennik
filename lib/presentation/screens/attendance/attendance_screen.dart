@@ -103,7 +103,10 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                       .where((r) => r.justificationStatus == JustificationStatus.requested)
                       .toList();
                   final excusedList = records
-                      .where((r) => r.type == AttendanceType.excused || r.justificationStatus == JustificationStatus.approved)
+                      .where((r) =>
+                          r.type == AttendanceType.excused ||
+                          r.type == AttendanceType.exempted ||
+                          r.justificationStatus == JustificationStatus.approved)
                       .toList();
 
                   List<AttendanceRecord> filtered;
@@ -698,12 +701,15 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   Widget _buildAbsenceRow(AttendanceRecord record) {
     final isSelected = _selectedIds.contains(record.id);
     final isRequested = record.justificationStatus == JustificationStatus.requested;
+    final isExempted = record.type == AttendanceType.exempted;
     final isUnexcused = record.type == AttendanceType.absent &&
         record.justificationStatus == JustificationStatus.none;
 
     final accentColor = isUnexcused
         ? const Color(0xFFDC2626)
-        : (isRequested ? const Color(0xFFD97706) : const Color(0xFF059669));
+        : (isRequested
+            ? const Color(0xFFD97706)
+            : (isExempted ? const Color(0xFF2563EB) : const Color(0xFF059669)));
 
     return InkWell(
       onTap: isUnexcused
@@ -755,10 +761,15 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             padding: EdgeInsets.all(12.0),
                             child: Icon(Icons.hourglass_empty_rounded, size: 20, color: Color(0xFFD97706)),
                           )
-                        : const Padding(
-                            padding: EdgeInsets.all(12.0),
-                            child: Icon(Icons.lock_outline_rounded, size: 20, color: Color(0xFF94A3B8)),
-                          )),
+                        : (isExempted
+                            ? const Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: Icon(Icons.info_outline_rounded, size: 20, color: Color(0xFF2563EB)),
+                              )
+                            : const Padding(
+                                padding: EdgeInsets.all(12.0),
+                                child: Icon(Icons.check_circle_outline_rounded, size: 20, color: Color(0xFF059669)),
+                              ))),
               ),
               const SizedBox(width: 4),
 
@@ -815,7 +826,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                 ? 'Nieobecność nieusprawiedliwiona'
                                 : (isRequested
                                     ? 'W trakcie decyzji (oczekuje na wychowawcę)'
-                                    : 'Usprawiedliwiona${record.justificationReason != null ? " (${record.justificationReason})" : ""}'),
+                                    : (isExempted
+                                        ? 'Zwolnienie z zajęć'
+                                        : 'Usprawiedliwiona${record.justificationReason != null ? " (${record.justificationReason})" : ""}')),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,

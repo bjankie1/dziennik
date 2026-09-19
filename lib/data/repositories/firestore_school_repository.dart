@@ -516,6 +516,8 @@ class FirestoreSchoolRepository implements SchoolRepository {
     final rawList = data['attendance'] as List<dynamic>? ?? [];
     if (rawList.isEmpty) return [];
 
+    final rawJustifications = data['justifications'] as List<dynamic>? ?? [];
+
     final slotTimes = {
       0: '07:10 - 07:55',
       1: '08:00 - 08:45',
@@ -531,19 +533,71 @@ class FirestoreSchoolRepository implements SchoolRepository {
     return rawList.map((item) {
       final lessonNum = item['lessonNumber'] as int? ?? 1;
       final typeStr = item['type'] as String? ?? 'unexcused';
+      final rawTooltip = (item['rawTooltip'] as String? ?? '').toLowerCase();
+      final symbol = (item['symbol'] as String? ?? '').toLowerCase();
+      final dateStr = item['date'] as String? ?? '';
 
       AttendanceType type = AttendanceType.absent;
-      if (typeStr == 'excused') {
+      if (typeStr == 'excused' ||
+          rawTooltip.contains('uspr') ||
+          rawTooltip.contains('usprawiedliw') ||
+          rawTooltip.contains('e-usprawiedliwienia') ||
+          rawTooltip.contains('usprawiedliwienie dodane') ||
+          symbol == 'u' ||
+          symbol.startsWith('u') ||
+          symbol.contains('unb')) {
         type = AttendanceType.excused;
-      } else if (typeStr == 'late') {
+      } else if (typeStr == 'exempted' ||
+          rawTooltip.contains('zwolnieni') ||
+          symbol.startsWith('zw')) {
+        type = AttendanceType.exempted;
+      } else if (typeStr == 'late' ||
+          rawTooltip.contains('spóźn') ||
+          symbol.startsWith('sp')) {
         type = AttendanceType.late;
-      } else if (typeStr == 'present') {
+      } else if (typeStr == 'present' ||
+          (!rawTooltip.contains('nieobecn') && rawTooltip.contains('obecn')) ||
+          symbol == 'ob' ||
+          symbol == '•') {
         type = AttendanceType.present;
+      }
+
+      // Check justification status from backend or cross-check justifications list
+      String? backendJustificationReason = item['justificationReason'] as String?;
+      JustificationStatus backendStatus = JustificationStatus.none;
+      if (item['justificationStatus'] == 'approved' || type == AttendanceType.excused) {
+        backendStatus = JustificationStatus.approved;
+      } else if (item['justificationStatus'] == 'requested') {
+        backendStatus = JustificationStatus.requested;
+      }
+
+      if (backendStatus == JustificationStatus.none && rawJustifications.isNotEmpty) {
+        for (final j in rawJustifications) {
+          if (j is Map) {
+            final period = (j['period'] as String? ?? '');
+            final status = (j['status'] as String? ?? '').toLowerCase();
+            if (dateStr.isNotEmpty && period.contains(dateStr)) {
+              final mentionsLesson = period.toLowerCase().contains('lekcj');
+              final lessonMatches = RegExp('\\b$lessonNum\\b').hasMatch(period);
+              if (!mentionsLesson || lessonMatches) {
+                if (status.contains('uspr') || status.contains('zaakcept')) {
+                  backendStatus = JustificationStatus.approved;
+                  type = AttendanceType.excused;
+                  backendJustificationReason = j['content'] as String?;
+                } else if (status.contains('oczekuj') || status.contains('przesłan') || status.contains('nowe')) {
+                  backendStatus = JustificationStatus.requested;
+                  backendJustificationReason = j['content'] as String?;
+                }
+                break;
+              }
+            }
+          }
+        }
       }
 
       DateTime dt;
       try {
-        dt = DateTime.parse(item['date'] as String? ?? '');
+        dt = DateTime.parse(dateStr);
       } catch (_) {
         dt = DateTime.now();
       }
@@ -561,10 +615,8 @@ class FirestoreSchoolRepository implements SchoolRepository {
         timeSlot: slotTimes[lessonNum] ?? 'Lekcja $lessonNum',
         justificationStatus: isOverridden
             ? JustificationStatus.requested
-            : (type == AttendanceType.excused
-                ? JustificationStatus.approved
-                : JustificationStatus.none),
-        justificationReason: reason,
+            : backendStatus,
+        justificationReason: reason ?? backendJustificationReason,
         classroom: item['classroom'] as String?,
         teacherName: item['teacherName'] as String?,
       );

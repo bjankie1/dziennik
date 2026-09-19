@@ -250,6 +250,41 @@ class LibrusClient {
       }
     });
 
+    const rawJusts = Array.isArray(justData) ? justData : (justData?.justifications || []);
+    if (rawJusts.length > 0 && Array.isArray(attData.records)) {
+      attData.records.forEach(rec => {
+        for (const just of rawJusts) {
+          const statusLower = (just.status || "").toLowerCase();
+          const isApproved = statusLower.includes("uspr") || statusLower.includes("zaakcept");
+          const isPending = statusLower.includes("oczekuj") || statusLower.includes("przesłan") || statusLower.includes("nowe");
+          const period = just.period || "";
+
+          // Check if date matches
+          if (rec.date && period.includes(rec.date)) {
+            const mentionsLesson = /lekcj/i.test(period);
+            const lessonRegex = new RegExp(`\\b${rec.lessonNumber}\\b`);
+            if (!mentionsLesson || lessonRegex.test(period)) {
+              if (isApproved) {
+                if (rec.type === "unexcused") {
+                  rec.type = "excused";
+                  if (attData.stats) {
+                    attData.stats.absenceCount = Math.max(0, (attData.stats.absenceCount || 1) - 1);
+                    attData.stats.excusedCount = (attData.stats.excusedCount || 0) + 1;
+                  }
+                }
+                rec.justificationStatus = "approved";
+                rec.justificationReason = just.content || "e-Usprawiedliwienie zaakceptowane";
+              } else if (isPending) {
+                rec.justificationStatus = "requested";
+                rec.justificationReason = just.content || "e-Usprawiedliwienie w trakcie weryfikacji";
+              }
+              break;
+            }
+          }
+        }
+      });
+    }
+
     return {
       login: this.login,
       lastSyncTime: new Date().toISOString(),
@@ -489,10 +524,10 @@ class LibrusClient {
       if (!dateText) return;
 
       for (let col = 1; col <= 13; col++) {
-        const a = $(tds[col]).find("a");
-        if (a.length > 0) {
-          const tooltip = a.attr("title") || "";
-          const symbol = a.text().trim();
+        $(tds[col]).find("a").each((_, aEl) => {
+          const tooltip = $(aEl).attr("title") || "";
+          const symbol = $(aEl).text().trim();
+          if (!tooltip && !symbol) return;
 
           const lessonMatch = tooltip.match(/Lekcja:\s*([^<]+)/i);
           const teacherMatch = tooltip.match(/Nauczyciel:\s*([^<]+)/i);
@@ -500,14 +535,40 @@ class LibrusClient {
           const kindMatch = tooltip.match(/Rodzaj:\s*([^<]+)/i);
           const numMatch = tooltip.match(/Godzina lekcyjna:\s*(\d+)/i);
 
-          const kind = kindMatch ? kindMatch[1].trim().toLowerCase() : "nieobecność";
+          const kind = kindMatch ? kindMatch[1].trim().toLowerCase() : "";
+          const lowerTooltip = tooltip.toLowerCase();
+          const lowerSymbol = symbol.toLowerCase();
+
           let type = "unexcused";
-          if (kind.includes("usprawiedliw") || symbol.toLowerCase() === "u") {
+          if (
+            kind.includes("uspr") ||
+            kind.includes("usprawiedliw") ||
+            lowerSymbol === "u" ||
+            lowerSymbol.startsWith("u") ||
+            lowerSymbol.includes("unb") ||
+            lowerTooltip.includes("e-usprawiedliwienia") ||
+            lowerTooltip.includes("usprawiedliwienie dodane")
+          ) {
             type = "excused";
             excusedCount++;
-          } else if (kind.includes("spóźn") || symbol.toLowerCase() === "sp") {
+          } else if (
+            kind.includes("zwoln") ||
+            lowerSymbol.startsWith("zw")
+          ) {
+            type = "exempted";
+            excusedCount++;
+          } else if (
+            kind.includes("spóźn") ||
+            lowerSymbol.startsWith("sp")
+          ) {
             type = "late";
             lateCount++;
+          } else if (
+            !kind.includes("nieobecn") &&
+            (kind.includes("obecn") || lowerSymbol === "ob" || lowerSymbol === "•")
+          ) {
+            type = "present";
+            presenceCount++;
           } else {
             type = "unexcused";
             absenceCount++;
@@ -525,7 +586,7 @@ class LibrusClient {
             symbol,
             rawTooltip: tooltip.replace(/<[^>]*>/g, " ").trim()
           });
-        }
+        });
       }
     });
 
