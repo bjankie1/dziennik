@@ -43,9 +43,38 @@ final dayScheduleProvider = FutureProvider.family<List<LessonSlot>, int>((ref, d
   return repo.getScheduleForDay(dayOfWeek);
 });
 
+class SelectedWeekMondayNotifier extends Notifier<DateTime> {
+  @override
+  DateTime build() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
+  }
+
+  void previousWeek() {
+    state = state.subtract(const Duration(days: 7));
+  }
+
+  void nextWeek() {
+    state = state.add(const Duration(days: 7));
+  }
+
+  void resetToCurrentWeek() {
+    final now = DateTime.now();
+    state = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
+  }
+
+  void setMonday(DateTime monday) {
+    state = DateTime(monday.year, monday.month, monday.day);
+  }
+}
+
+final selectedWeekMondayProvider =
+    NotifierProvider<SelectedWeekMondayNotifier, DateTime>(SelectedWeekMondayNotifier.new);
+
 final weekScheduleProvider = FutureProvider<Map<int, List<LessonSlot>>>((ref) async {
   final repo = ref.watch(schoolRepositoryProvider);
-  return repo.getWeekSchedule();
+  final monday = ref.watch(selectedWeekMondayProvider);
+  return repo.getWeekSchedule(weekStart: monday);
 });
 
 enum WeekScheduleFilter { none, substitutions, exams, canceled }
@@ -117,7 +146,7 @@ final weeklyScheduleStatsProvider = Provider<WeeklyScheduleStats>((ref) {
         canceledCount: canceled,
       );
     },
-    loading: () => const WeeklyScheduleStats(totalHours: 32, substitutionsCount: 2, examsCount: 2, canceledCount: 1),
+    loading: () => const WeeklyScheduleStats(totalHours: 0, substitutionsCount: 0, examsCount: 0, canceledCount: 0),
     error: (err, stack) => const WeeklyScheduleStats(totalHours: 0, substitutionsCount: 0, examsCount: 0, canceledCount: 0),
   );
 });

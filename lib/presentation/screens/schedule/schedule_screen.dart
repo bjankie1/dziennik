@@ -16,40 +16,25 @@ class ScheduleScreen extends ConsumerStatefulWidget {
 
 class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   int? _viewMode; // 0 = Siatka, 1 = Agenda (null until initialized from screen size)
-  late DateTime _currentWeekMonday;
-
-  @override
-  void initState() {
-    super.initState();
-    final now = DateTime.now();
-    final weekday = now.weekday; // 1=Mon .. 7=Sun
-    _currentWeekMonday = now.subtract(Duration(days: weekday - 1));
-  }
 
   void _previousWeek() {
-    setState(() {
-      _currentWeekMonday = _currentWeekMonday.subtract(const Duration(days: 7));
-    });
+    ref.read(selectedWeekMondayProvider.notifier).previousWeek();
   }
 
   void _nextWeek() {
-    setState(() {
-      _currentWeekMonday = _currentWeekMonday.add(const Duration(days: 7));
-    });
+    ref.read(selectedWeekMondayProvider.notifier).nextWeek();
   }
 
   void _goToCurrentWeek() {
+    ref.read(selectedWeekMondayProvider.notifier).resetToCurrentWeek();
     final now = DateTime.now();
-    final weekday = now.weekday;
-    setState(() {
-      _currentWeekMonday = now.subtract(Duration(days: weekday - 1));
-    });
     ref.read(selectedScheduleDayProvider.notifier).setDay((now.weekday - 1).clamp(0, 4));
   }
 
   @override
   Widget build(BuildContext context) {
     final studentAsync = ref.watch(studentProfileProvider);
+    final currentWeekMonday = ref.watch(selectedWeekMondayProvider);
     final weekScheduleAsync = ref.watch(weekScheduleProvider);
 
     return LayoutBuilder(
@@ -76,7 +61,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
               children: [
                 // 1. Week Navigator Bar with Tools & View Toggle
                 WeekNavigatorBar(
-                  currentWeekMonday: _currentWeekMonday,
+                  currentWeekMonday: currentWeekMonday,
                   onPreviousWeek: _previousWeek,
                   onNextWeek: _nextWeek,
                   onCurrentWeek: _goToCurrentWeek,
@@ -102,7 +87,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     if (activeViewMode == 0) {
                       // Grid View
                       return WeeklyGridView(
-                        currentWeekMonday: _currentWeekMonday,
+                        currentWeekMonday: currentWeekMonday,
                         weekMap: weekMap,
                         onDayHeaderTap: (dayIdx) {
                           ref.read(selectedScheduleDayProvider.notifier).setDay(dayIdx);
@@ -114,7 +99,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     } else {
                       // Agenda View
                       return AgendaView(
-                        currentWeekMonday: _currentWeekMonday,
+                        currentWeekMonday: currentWeekMonday,
                         weekMap: weekMap,
                       );
                     }

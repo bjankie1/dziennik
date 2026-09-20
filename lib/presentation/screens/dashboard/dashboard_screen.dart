@@ -51,6 +51,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final examAsync = ref.watch(upcomingExamProvider);
 
     final now = DateTime.now();
+    final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
     final rawDate = DateFormat("EEEE, d MMMM y", "pl_PL").format(now);
     final formattedDate = rawDate.isNotEmpty
         ? "${rawDate[0].toUpperCase()}${rawDate.substring(1)}"
@@ -108,6 +109,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     endTimeStr: endTimeStr,
                     effectiveCount: effectiveCount,
                     cancelledLessons: cancelledLessons,
+                    isWeekend: isWeekend,
+                    hasLessons: lessons.isNotEmpty,
                   ),
 
                   const SizedBox(height: 24),
@@ -124,6 +127,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           lessons: lessons,
                           now: now,
                           exam: examAsync.value,
+                          isWeekend: isWeekend,
                         ),
                       ),
 
@@ -174,6 +178,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required String endTimeStr,
     required int effectiveCount,
     required List<LessonSlot> cancelledLessons,
+    required bool isWeekend,
+    required bool hasLessons,
   }) {
     final firstName = (student != null && student.name.isNotEmpty)
         ? student.name.split(" ").first
@@ -333,25 +339,38 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     ),
                     const Text("•", style: TextStyle(color: AppColors.outlineVariant)),
-                    Text(
-                      "Początek lekcji: $startTimeStr",
-                      style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
-                    ),
-                    if (cancelledLessons.isNotEmpty) ...[
+                    if (isWeekend || !hasLessons) ...[
                       Text(
-                        "(Lekcja ${cancelledLessons.first.lessonNumber} odwołana - ${cancelledLessons.first.subjectName})",
+                        isWeekend
+                            ? "Weekend • Dzień wolny od zajęć lekcyjnych 🎉"
+                            : "Dzień wolny od zajęć lekcyjnych 🎉",
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.error,
+                          color: AppColors.onSurfaceVariant,
                         ),
                       ),
+                    ] else ...[
+                      Text(
+                        "Początek lekcji: $startTimeStr",
+                        style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                      ),
+                      if (cancelledLessons.isNotEmpty) ...[
+                        Text(
+                          "(Lekcja ${cancelledLessons.first.lessonNumber} odwołana - ${cancelledLessons.first.subjectName})",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ],
+                      const Text("•", style: TextStyle(color: AppColors.outlineVariant)),
+                      Text(
+                        "Koniec: $endTimeStr ($effectiveCount lekcje efektywne)",
+                        style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
+                      ),
                     ],
-                    const Text("•", style: TextStyle(color: AppColors.outlineVariant)),
-                    Text(
-                      "Koniec: $endTimeStr ($effectiveCount lekcje efektywne)",
-                      style: const TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
-                    ),
                   ],
                 ),
               ],
@@ -368,6 +387,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required List<LessonSlot> lessons,
     required DateTime now,
     UpcomingEvent? exam,
+    required bool isWeekend,
   }) {
     int completedCount = 0;
     for (final l in lessons) {
@@ -433,7 +453,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      "$completedCount / ${lessons.length} zrealizowane",
+                      lessons.isEmpty
+                          ? (isWeekend ? "Weekend" : "Dzień wolny")
+                          : "$completedCount / ${lessons.length} zrealizowane",
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
@@ -447,11 +469,48 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
               if (lessons.isEmpty)
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
                   alignment: Alignment.center,
-                  child: const Text(
-                    "Brak lekcji na dzisiaj • Dzień wolny 🎉",
-                    style: TextStyle(color: AppColors.onSurfaceVariant),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryContainer.withValues(alpha: 0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.weekend_rounded,
+                          color: AppColors.primary,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        isWeekend
+                            ? "Brak lekcji na dzisiaj • Weekend 🎉"
+                            : "Brak lekcji na dzisiaj • Dzień wolny 🎉",
+                        style: const TextStyle(
+                          color: AppColors.onSurface,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        isWeekend
+                            ? "Dziś nie masz zajęć lekcyjnych. Odpocznij i nabierz sił na nadchodzący tydzień nauki!"
+                            : "Ciesz się wolnym czasem lub powtórz materiał na nadchodzące lekcje.",
+                        style: const TextStyle(
+                          color: AppColors.onSurfaceVariant,
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 )
               else
@@ -1825,6 +1884,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final syncState = ref.watch(syncProvider);
 
     final now = DateTime.now();
+    final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
     final rawDate = DateFormat("EEEE, d MMMM", "pl_PL").format(now);
     final formattedDate = rawDate.isNotEmpty
         ? "${rawDate[0].toUpperCase()}${rawDate.substring(1)}"
@@ -1837,9 +1897,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final effectiveCount = lessons.length - cancelledLessons.length;
     final startTimeStr = firstLesson != null ? "Początek ${firstLesson.startTime}" : "Brak lekcji";
     final endTimeStr = lastLesson != null ? "Koniec zajęć: ${lastLesson.endTime} • $effectiveCount lekcji efektywnych" : "Dzień wolny";
-    final statusNoteStr = cancelledLessons.isNotEmpty
-        ? "Lekcja ${cancelledLessons.first.lessonNumber} odwołana"
-        : (lessons.any((l) => l.status == LessonStatus.substituted) ? "Zastępstwo w planie" : "Zgodnie z planem");
+    final statusNoteStr = lessons.isEmpty
+        ? (isWeekend ? "Weekend" : "Dzień wolny")
+        : (cancelledLessons.isNotEmpty
+            ? "Lekcja ${cancelledLessons.first.lessonNumber} odwołana"
+            : (lessons.any((l) => l.status == LessonStatus.substituted) ? "Zastępstwo w planie" : "Zgodnie z planem"));
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -2079,17 +2141,50 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  Text(
-                    startTimeStr,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    endTimeStr,
-                    style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 12),
-                  if (lessons.isNotEmpty)
+                  if (lessons.isEmpty) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryContainer.withValues(alpha: 0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.weekend_rounded, color: AppColors.primary, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isWeekend ? "Brak zajęć dzisiaj • Weekend 🎉" : "Brak lekcji na dzisiaj • Dzień wolny 🎉",
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                isWeekend
+                                    ? "Odpocznij i zregeneruj siły przed nowym tygodniem."
+                                    : "Ciesz się wolnym czasem lub powtórz materiał.",
+                                style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      startTimeStr,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      endTimeStr,
+                      style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 12),
                     ...lessons.take(4).map(
                           (l) => Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -2122,6 +2217,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ),
                           ),
                         ),
+                  ],
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () {
+                      ref.read(currentNavIndexProvider.notifier).setIndex(1); // Plan Lekcji
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            "Zobacz pełny plan lekcji",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          SizedBox(width: 4),
+                          Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primary),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

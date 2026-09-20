@@ -44,6 +44,46 @@ class LessonSlot {
     this.eventType,
     this.eventTitle,
   });
+
+  LessonSlot copyWith({
+    int? lessonNumber,
+    String? subjectName,
+    String? originalSubjectName,
+    String? startTime,
+    String? endTime,
+    String? room,
+    String? originalRoom,
+    String? teacher,
+    String? substituteTeacher,
+    LessonStatus? status,
+    String? statusNote,
+    double? progressFraction,
+    String? topic,
+    String? homework,
+    String? materials,
+    String? eventType,
+    String? eventTitle,
+  }) {
+    return LessonSlot(
+      lessonNumber: lessonNumber ?? this.lessonNumber,
+      subjectName: subjectName ?? this.subjectName,
+      originalSubjectName: originalSubjectName ?? this.originalSubjectName,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      room: room ?? this.room,
+      originalRoom: originalRoom ?? this.originalRoom,
+      teacher: teacher ?? this.teacher,
+      substituteTeacher: substituteTeacher ?? this.substituteTeacher,
+      status: status ?? this.status,
+      statusNote: statusNote ?? this.statusNote,
+      progressFraction: progressFraction ?? this.progressFraction,
+      topic: topic ?? this.topic,
+      homework: homework ?? this.homework,
+      materials: materials ?? this.materials,
+      eventType: eventType ?? this.eventType,
+      eventTitle: eventTitle ?? this.eventTitle,
+    );
+  }
 }
 
 class UpcomingEvent {

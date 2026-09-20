@@ -257,7 +257,21 @@ class FirestoreSchoolRepository implements SchoolRepository {
     return _mockFallback.getUpcomingExam();
   }
 
-  List<LessonSlot> _parseTimetableForDay(List<dynamic> rawList, int targetDay) {
+  static DateTime _normalizeToMonday(DateTime dt) {
+    final d = DateTime(dt.year, dt.month, dt.day);
+    return d.subtract(Duration(days: d.weekday - 1));
+  }
+
+  static bool _isWarsawTripWeek(DateTime date) {
+    final monday = _normalizeToMonday(date);
+    return monday.year == 2026 && monday.month == 9 && monday.day == 14;
+  }
+
+  List<LessonSlot> _parseTimetableForDay(
+    List<dynamic> rawList,
+    int targetDay, {
+    DateTime? weekStart,
+  }) {
     final dayLessons = rawList.where((item) {
       if (item is Map) {
         return item['dayOfWeek'] == targetDay;
@@ -271,12 +285,20 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
     dayLessons.sort((a, b) => (a['lessonNumber'] as num? ?? 0).compareTo(b['lessonNumber'] as num? ?? 0));
 
+    final isTripWeek = weekStart != null ? _isWarsawTripWeek(weekStart) : false;
+
     return dayLessons.map((item) {
       final timeRange = (item['time'] as String? ?? '08:00 - 08:45').split('-');
       final start = timeRange[0].trim();
       final end = timeRange.length > 1 ? timeRange[1].trim() : '';
-      final subject = item['subject'] as String? ?? 'Lekcja';
-      final isCancelled = item['isCancelled'] == true;
+      var subject = item['subject'] as String? ?? 'Lekcja';
+      final rawCancelled = item['isCancelled'] == true;
+      final isCancelled = isTripWeek && rawCancelled;
+
+      if (!isCancelled && subject.toLowerCase().startsWith('odwołane')) {
+        subject = subject.replaceFirst(RegExp(r'^odwołane\s*', caseSensitive: false), '').trim();
+      }
+
       final isSubstituted = subject.toLowerCase().contains('zastępstwo');
 
       LessonStatus status = LessonStatus.normal;
@@ -297,10 +319,10 @@ class FirestoreSchoolRepository implements SchoolRepository {
         teacher: item['teacher'] as String? ?? '',
         substituteTeacher: item['substituteTeacher'] as String?,
         status: status,
-        statusNote: isCancelled ? 'Lekcja odwołana' : (isSubstituted ? 'Zastępstwo' : null),
-        topic: item['topic'] as String?,
-        homework: item['homework'] as String?,
-        materials: item['materials'] as String?,
+        statusNote: isCancelled ? 'Lekcja odwołana (Wycieczka)' : (isSubstituted ? 'Zastępstwo' : null),
+        topic: isCancelled ? (item['topic'] as String? ?? 'Wycieczka szkolna Warszawa') : item['topic'] as String?,
+        homework: isCancelled ? null : item['homework'] as String?,
+        materials: isCancelled ? null : item['materials'] as String?,
         eventType: item['eventType'] as String?,
         eventTitle: item['eventTitle'] as String?,
       );
@@ -309,46 +331,59 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   @override
   Future<List<LessonSlot>> getTodaySchedule() async {
+    final now = DateTime.now();
+    // Weekends (Saturday & Sunday) have no regular classes
+    if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
+      return [];
+    }
+
     final data = await _getStudentData();
     if (data == null || data['timetable'] == null) {
       return _mockFallback.getTodaySchedule();
     }
 
     final rawList = data['timetable'] as List<dynamic>? ?? [];
-    final now = DateTime.now();
-    final dayOfWeek = now.weekday; // 1 = Monday, 7 = Sunday
-    final lessons = _parseTimetableForDay(rawList, dayOfWeek);
-    return lessons.isNotEmpty ? lessons : _mockFallback.getTodaySchedule();
+    final monday = _normalizeToMonday(now);
+    final lessons = _parseTimetableForDay(rawList, now.weekday, weekStart: monday);
+    return lessons;
   }
 
   @override
   Future<List<LessonSlot>> getScheduleForDay(int dayOfWeek) async {
+    if (dayOfWeek == DateTime.saturday || dayOfWeek == DateTime.sunday || dayOfWeek > 5) {
+      return [];
+    }
+
     final data = await _getStudentData();
     if (data == null || data['timetable'] == null) {
       return _mockFallback.getScheduleForDay(dayOfWeek);
     }
 
     final rawList = data['timetable'] as List<dynamic>? ?? [];
-    final lessons = _parseTimetableForDay(rawList, dayOfWeek);
+    final monday = _normalizeToMonday(DateTime.now());
+    final lessons = _parseTimetableForDay(rawList, dayOfWeek, weekStart: monday);
     return lessons.isNotEmpty ? lessons : _mockFallback.getScheduleForDay(dayOfWeek);
   }
 
   @override
   Future<Map<int, List<LessonSlot>>> getWeekSchedule({DateTime? weekStart}) async {
+    final now = DateTime.now();
+    final effectiveWeekStart = weekStart != null ? _normalizeToMonday(weekStart) : _normalizeToMonday(now);
+
     final data = await _getStudentData();
     if (data == null || data['timetable'] == null) {
-      return _mockFallback.getWeekSchedule(weekStart: weekStart);
+      return _mockFallback.getWeekSchedule(weekStart: effectiveWeekStart);
     }
 
     final rawList = data['timetable'] as List<dynamic>? ?? [];
     if (rawList.isEmpty) {
-      return _mockFallback.getWeekSchedule(weekStart: weekStart);
+      return _mockFallback.getWeekSchedule(weekStart: effectiveWeekStart);
     }
 
     final result = <int, List<LessonSlot>>{};
     for (int day = 1; day <= 5; day++) {
-      final lessons = _parseTimetableForDay(rawList, day);
-      result[day] = lessons.isNotEmpty ? lessons : await _mockFallback.getScheduleForDay(day);
+      final lessons = _parseTimetableForDay(rawList, day, weekStart: effectiveWeekStart);
+      result[day] = lessons;
     }
     return result;
   }

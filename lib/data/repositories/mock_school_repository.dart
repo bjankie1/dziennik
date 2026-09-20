@@ -56,18 +56,48 @@ class MockSchoolRepository implements SchoolRepository {
   @override
   Future<List<LessonSlot>> getTodaySchedule() async {
     await Future.delayed(const Duration(milliseconds: 50));
+    final now = DateTime.now();
+    if (now.weekday == DateTime.saturday || now.weekday == DateTime.sunday) {
+      return [];
+    }
     return MockData.todaySchedule;
   }
 
   @override
   Future<List<LessonSlot>> getScheduleForDay(int dayOfWeek) async {
     await Future.delayed(const Duration(milliseconds: 50));
+    if (dayOfWeek == DateTime.saturday || dayOfWeek == DateTime.sunday || dayOfWeek > 5) {
+      return [];
+    }
     return MockData.weekSchedule[dayOfWeek] ?? MockData.todaySchedule;
   }
 
   @override
   Future<Map<int, List<LessonSlot>>> getWeekSchedule({DateTime? weekStart}) async {
     await Future.delayed(const Duration(milliseconds: 50));
+    final effectiveMonday = weekStart != null
+        ? DateTime(weekStart.year, weekStart.month, weekStart.day).subtract(Duration(days: weekStart.weekday - 1))
+        : null;
+    final isTripWeek = effectiveMonday != null &&
+        effectiveMonday.year == 2026 &&
+        effectiveMonday.month == 9 &&
+        effectiveMonday.day == 14;
+
+    if (!isTripWeek) {
+      final cleanSchedule = <int, List<LessonSlot>>{};
+      for (final entry in MockData.weekSchedule.entries) {
+        cleanSchedule[entry.key] = entry.value.map((slot) {
+          if (slot.status == LessonStatus.canceled) {
+            return slot.copyWith(
+              status: LessonStatus.normal,
+              statusNote: null,
+            );
+          }
+          return slot;
+        }).toList();
+      }
+      return cleanSchedule;
+    }
     return MockData.weekSchedule;
   }
 
