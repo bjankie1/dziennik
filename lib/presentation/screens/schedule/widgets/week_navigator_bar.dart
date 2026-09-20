@@ -50,6 +50,7 @@ class WeekNavigatorBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isCurrent = _isThisCurrentWeek();
     final isCompact = MediaQuery.of(context).size.width < 1100;
+    final isNarrow = MediaQuery.of(context).size.width < 500;
     final syncState = ref.watch(syncProvider);
 
     return Container(
@@ -186,6 +187,7 @@ class WeekNavigatorBar extends ConsumerWidget {
             children: [
               // Center: Week Navigator
               Container(
+                width: isNarrow ? double.infinity : 430,
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceContainerLow,
@@ -193,50 +195,62 @@ class WeekNavigatorBar extends ConsumerWidget {
                   border: Border.all(color: AppColors.surfaceContainerHigh),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Left button [<] pinned to left edge
                     IconButton(
                       icon: const Icon(Icons.chevron_left, size: 20),
                       onPressed: onPreviousWeek,
                       tooltip: 'Poprzedni tydzień',
                       visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.calendar_month_outlined, size: 18, color: AppColors.primary),
-                    const SizedBox(width: 6),
-                    Text(
-                      _formatWeekRange(),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.onSurface,
+
+                    // Middle section with centered text & badge
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.calendar_month_outlined, size: 16, color: AppColors.primary),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              _formatWeekRange(),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurface,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (isCurrent) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.secondaryContainer,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Text(
+                                'Aktualny',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.onSecondaryContainer,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    if (isCurrent)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondaryContainer,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Aktualny tydzień',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.onSecondaryContainer,
-                          ),
-                        ),
-                      ),
+
+                    // Right button [>] pinned to right edge
                     IconButton(
                       icon: const Icon(Icons.chevron_right, size: 20),
                       onPressed: onNextWeek,
                       tooltip: 'Następny tydzień',
                       visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                     ),
                     const SizedBox(width: 4),
@@ -245,7 +259,7 @@ class WeekNavigatorBar extends ConsumerWidget {
                       style: TextButton.styleFrom(
                         backgroundColor: AppColors.surfaceContainerLowest,
                         foregroundColor: AppColors.primary,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                         minimumSize: const Size(0, 30),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
