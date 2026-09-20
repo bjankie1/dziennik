@@ -12,6 +12,7 @@ class StudentProfile {
   final int unreadMessagesCount;
   final String currentWeek; // e.g. "Tydzień B"
   final int luckyNumber;
+  final String? educator;
 
   const StudentProfile({
     required this.id,
@@ -27,5 +28,6 @@ class StudentProfile {
     required this.unreadMessagesCount,
     required this.currentWeek,
     this.luckyNumber = 0,
+    this.educator,
   });
 }

@@ -198,7 +198,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
     }
 
     final studentMap = data['student'] as Map<String, dynamic>? ?? {};
-    final lucky = (data['luckyNumber'] as num?)?.toInt() ?? 9;
+    final lucky = (data['luckyNumber'] as num?)?.toInt() ?? 0;
     final avg = (data['overallAverage'] as num?)?.toDouble() ?? 5.0;
 
     final attStats = data['attendanceStats'] as Map<String, dynamic>?;
@@ -218,11 +218,12 @@ class FirestoreSchoolRepository implements SchoolRepository {
       unreadMessagesCount: (data['unreadNotificationsCount'] as num?)?.toInt() ?? 0,
       currentWeek: 'Tydzień A',
       luckyNumber: lucky,
+      educator: studentMap['educator'] as String? ?? 'Sobota Łukasz',
     );
   }
 
   @override
-  Future<UpcomingEvent> getUpcomingExam() async {
+  Future<UpcomingEvent?> getUpcomingExam() async {
     final data = await _getStudentData();
     if (data != null) {
       final upcomingExamMap = data['upcomingExam'] as Map<String, dynamic>?;
@@ -253,6 +254,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
           hasNotes: true,
         );
       }
+      return null;
     }
     return _mockFallback.getUpcomingExam();
   }
@@ -471,8 +473,11 @@ class FirestoreSchoolRepository implements SchoolRepository {
     }
 
     final data = await _getStudentData();
-    if (data == null || data['timetable'] == null) {
+    if (data == null) {
       return _mockFallback.getTodaySchedule();
+    }
+    if (data['timetable'] == null) {
+      return [];
     }
 
     final rawList = data['timetable'] as List<dynamic>? ?? [];
@@ -495,8 +500,11 @@ class FirestoreSchoolRepository implements SchoolRepository {
     }
 
     final data = await _getStudentData();
-    if (data == null || data['timetable'] == null) {
+    if (data == null) {
       return _mockFallback.getScheduleForDay(dayOfWeek);
+    }
+    if (data['timetable'] == null) {
+      return [];
     }
 
     final rawList = data['timetable'] as List<dynamic>? ?? [];
@@ -511,7 +519,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
       dayDate: targetDate,
       events: events,
     );
-    return lessons.isNotEmpty ? lessons : _mockFallback.getScheduleForDay(dayOfWeek);
+    return lessons;
   }
 
   @override
@@ -520,26 +528,24 @@ class FirestoreSchoolRepository implements SchoolRepository {
     final effectiveWeekStart = weekStart != null ? _normalizeToMonday(weekStart) : _normalizeToMonday(now);
 
     final data = await _getStudentData();
-    if (data == null || data['timetable'] == null) {
+    if (data == null) {
       return _mockFallback.getWeekSchedule(weekStart: effectiveWeekStart);
     }
 
     final rawList = data['timetable'] as List<dynamic>? ?? [];
-    if (rawList.isEmpty) {
-      return _mockFallback.getWeekSchedule(weekStart: effectiveWeekStart);
-    }
-
     final events = _extractAllEvents(data);
     final result = <int, List<LessonSlot>>{};
     for (int day = 1; day <= 5; day++) {
       final dayDate = effectiveWeekStart.add(Duration(days: day - 1));
-      final lessons = _parseTimetableForDay(
-        rawList,
-        day,
-        weekStart: effectiveWeekStart,
-        dayDate: dayDate,
-        events: events,
-      );
+      final lessons = rawList.isEmpty
+          ? <LessonSlot>[]
+          : _parseTimetableForDay(
+              rawList,
+              day,
+              weekStart: effectiveWeekStart,
+              dayDate: dayDate,
+              events: events,
+            );
       result[day] = lessons;
     }
     return result;
@@ -548,12 +554,15 @@ class FirestoreSchoolRepository implements SchoolRepository {
   @override
   Future<List<Subject>> getSubjects() async {
     final data = await _getStudentData();
-    if (data == null || data['subjects'] == null) {
+    if (data == null) {
       return _mockFallback.getSubjects();
+    }
+    if (data['subjects'] == null) {
+      return [];
     }
 
     final rawSubjects = data['subjects'] as List<dynamic>? ?? [];
-    if (rawSubjects.isEmpty) return _mockFallback.getSubjects();
+    if (rawSubjects.isEmpty) return [];
 
     final validSubjects = rawSubjects.where((s) {
       if (s is! Map) return false;
@@ -575,7 +584,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
       return true;
     }).toList();
 
-    if (validSubjects.isEmpty) return _mockFallback.getSubjects();
+    if (validSubjects.isEmpty) return [];
 
     final rawTimetable = data['timetable'] as List<dynamic>? ?? [];
     final ttTeachers = <String, String>{};
@@ -674,7 +683,8 @@ class FirestoreSchoolRepository implements SchoolRepository {
     for (final s in subjects) {
       allGrades.addAll(s.grades);
     }
-    if (allGrades.isEmpty) return _mockFallback.getRecentGrades();
+    final data = await _getStudentData();
+    if (data == null && allGrades.isEmpty) return _mockFallback.getRecentGrades();
     allGrades.sort((a, b) => b.date.compareTo(a.date));
     return allGrades;
   }
@@ -683,7 +693,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
   Future<List<AttendanceRecord>> getAttendanceRecords() async {
     await _loadJustificationOverrides();
     final data = await _getStudentData();
-    if (data == null || data['attendance'] == null) {
+    if (data == null) {
       final list = await _mockFallback.getAttendanceRecords();
       return list.map((rec) {
         final reason = _localJustificationOverrides[rec.id];
@@ -704,6 +714,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
         return rec;
       }).toList();
     }
+    if (data['attendance'] == null) return [];
 
     final rawList = data['attendance'] as List<dynamic>? ?? [];
     if (rawList.isEmpty) return [];
@@ -907,12 +918,15 @@ class FirestoreSchoolRepository implements SchoolRepository {
   @override
   Future<List<Announcement>> getAnnouncements() async {
     final data = await _getStudentData();
-    if (data == null || data['announcements'] == null) {
+    if (data == null) {
       return _mockFallback.getAnnouncements();
+    }
+    if (data['announcements'] == null) {
+      return [];
     }
 
     final rawAnn = data['announcements'] as List<dynamic>? ?? [];
-    if (rawAnn.isEmpty) return _mockFallback.getAnnouncements();
+    if (rawAnn.isEmpty) return [];
 
     return rawAnn.map((a) {
       DateTime dt;
@@ -1037,31 +1051,33 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   @override
   Future<List<TeacherContact>> getTeachers() async {
+    final data = await _getStudentData();
+    if (data == null) {
+      return _mockFallback.getTeachers();
+    }
+
     final list = <TeacherContact>[];
     final seen = <String>{};
 
-    final data = await _getStudentData();
-
     // 1. Educator (Wychowawca)
-    final studentMap = data?['student'] as Map<String, dynamic>?;
-    final educator = studentMap?['educator'] as String?;
-    if (educator != null && educator.isNotEmpty && !seen.contains(educator)) {
-      seen.add(educator);
-      final parts = educator.split(' ');
-      final initials = parts.map((p) => p.isNotEmpty ? p[0] : '').take(2).join().toUpperCase();
-      list.add(
-        TeacherContact(
-          id: 'educator',
-          name: educator,
-          subjectName: 'Wychowawstwo',
-          role: 'Wychowawca',
-          initials: initials.isNotEmpty ? initials : 'W',
-        ),
-      );
-    }
+    final studentMap = data['student'] as Map<String, dynamic>?;
+    final educator = (studentMap?['educator'] as String?)?.trim();
+    final educatorName = (educator != null && educator.isNotEmpty) ? educator : 'Sobota Łukasz';
+    seen.add(educatorName);
+    final parts = educatorName.split(' ');
+    final initials = parts.map((p) => p.isNotEmpty ? p[0] : '').take(2).join().toUpperCase();
+    list.add(
+      TeacherContact(
+        id: 'educator',
+        name: educatorName,
+        subjectName: 'Wychowawstwo',
+        role: 'Wychowawca',
+        initials: initials.isNotEmpty ? initials : 'W',
+      ),
+    );
 
     // 2. Active teachers from timetable (Matematyka, Historia, Język angielski, etc.)
-    final rawTimetable = data?['timetable'] as List<dynamic>? ?? [];
+    final rawTimetable = data['timetable'] as List<dynamic>? ?? [];
     for (final t in rawTimetable) {
       if (t is Map) {
         final rawTeacher = (t['teacher'] as String? ?? '').trim();
@@ -1103,7 +1119,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
     }
 
     // 4. Teachers from attendance
-    final rawAttendance = data?['attendance'] as List<dynamic>? ?? [];
+    final rawAttendance = data['attendance'] as List<dynamic>? ?? [];
     for (final a in rawAttendance) {
       if (a is Map) {
         final rawTeacher = (a['teacher'] as String? ?? '').trim();
@@ -1123,9 +1139,6 @@ class FirestoreSchoolRepository implements SchoolRepository {
       }
     }
 
-    if (list.isEmpty) {
-      return _mockFallback.getTeachers();
-    }
     return list;
   }
 

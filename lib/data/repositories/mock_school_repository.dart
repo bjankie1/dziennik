@@ -48,7 +48,7 @@ class MockSchoolRepository implements SchoolRepository {
   }
 
   @override
-  Future<UpcomingEvent> getUpcomingExam() async {
+  Future<UpcomingEvent?> getUpcomingExam() async {
     await Future.delayed(const Duration(milliseconds: 50));
     return MockData.upcomingExam;
   }

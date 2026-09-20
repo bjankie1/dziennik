@@ -28,7 +28,7 @@ final studentProfileProvider = FutureProvider<StudentProfile>((ref) async {
   return repo.getStudentProfile();
 });
 
-final upcomingExamProvider = FutureProvider<UpcomingEvent>((ref) async {
+final upcomingExamProvider = FutureProvider<UpcomingEvent?>((ref) async {
   final repo = ref.watch(schoolRepositoryProvider);
   return repo.getUpcomingExam();
 });

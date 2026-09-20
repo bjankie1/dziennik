@@ -8,7 +8,7 @@ import '../../domain/models/teacher_contact.dart';
 
 abstract class SchoolRepository {
   Future<StudentProfile> getStudentProfile();
-  Future<UpcomingEvent> getUpcomingExam();
+  Future<UpcomingEvent?> getUpcomingExam();
   Future<List<LessonSlot>> getTodaySchedule();
   Future<List<LessonSlot>> getScheduleForDay(int dayOfWeek);
   Future<Map<int, List<LessonSlot>>> getWeekSchedule({DateTime? weekStart});
