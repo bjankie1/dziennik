@@ -1,3 +1,5 @@
+import 'attendance_record.dart';
+
 enum LessonStatus {
   normal,
   inProgress,
@@ -24,6 +26,9 @@ class LessonSlot {
   final String? materials;
   final String? eventType;
   final String? eventTitle;
+  final AttendanceType? attendanceType;
+  final JustificationStatus? attendanceJustificationStatus;
+  final String? attendanceNote;
 
   const LessonSlot({
     required this.lessonNumber,
@@ -43,6 +48,9 @@ class LessonSlot {
     this.materials,
     this.eventType,
     this.eventTitle,
+    this.attendanceType,
+    this.attendanceJustificationStatus,
+    this.attendanceNote,
   });
 
   LessonSlot copyWith({
@@ -63,6 +71,9 @@ class LessonSlot {
     String? materials,
     String? eventType,
     String? eventTitle,
+    AttendanceType? attendanceType,
+    JustificationStatus? attendanceJustificationStatus,
+    String? attendanceNote,
   }) {
     return LessonSlot(
       lessonNumber: lessonNumber ?? this.lessonNumber,
@@ -82,6 +93,9 @@ class LessonSlot {
       materials: materials ?? this.materials,
       eventType: eventType ?? this.eventType,
       eventTitle: eventTitle ?? this.eventTitle,
+      attendanceType: attendanceType ?? this.attendanceType,
+      attendanceJustificationStatus: attendanceJustificationStatus ?? this.attendanceJustificationStatus,
+      attendanceNote: attendanceNote ?? this.attendanceNote,
     );
   }
 }

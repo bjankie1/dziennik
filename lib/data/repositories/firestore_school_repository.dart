@@ -305,6 +305,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
     DateTime? weekStart,
     DateTime? dayDate,
     List<Map<String, dynamic>>? events,
+    List<AttendanceRecord>? dayAttendance,
   }) {
     final dayLessons = rawList.where((item) {
       if (item is Map) {
@@ -443,6 +444,33 @@ class FirestoreSchoolRepository implements SchoolRepository {
         }
       }
 
+      AttendanceType? attType;
+      JustificationStatus? attJustStatus;
+      String? attNote;
+
+      if (dayAttendance != null && dayAttendance.isNotEmpty) {
+        final lessonNumber = item['lessonNumber'] as int? ?? 1;
+        final matchedAtt = dayAttendance.firstWhere(
+          (a) => a.lessonNumber == lessonNumber,
+          orElse: () => dayAttendance.firstWhere(
+            (a) => a.subjectName.toLowerCase() == subject.toLowerCase(),
+            orElse: () => AttendanceRecord(
+              id: '',
+              date: DateTime(1970),
+              lessonNumber: -1,
+              subjectName: '',
+              type: AttendanceType.present,
+              timeSlot: '',
+            ),
+          ),
+        );
+        if (matchedAtt.lessonNumber != -1) {
+          attType = matchedAtt.type;
+          attJustStatus = matchedAtt.justificationStatus;
+          attNote = matchedAtt.justificationReason;
+        }
+      }
+
       return LessonSlot(
         lessonNumber: item['lessonNumber'] as int? ?? 1,
         subjectName: subject,
@@ -460,6 +488,9 @@ class FirestoreSchoolRepository implements SchoolRepository {
         materials: isTripCancelled ? null : item['materials'] as String?,
         eventType: eventType,
         eventTitle: eventTitle,
+        attendanceType: attType,
+        attendanceJustificationStatus: attJustStatus,
+        attendanceNote: attNote,
       );
     }).toList();
   }
@@ -483,12 +514,18 @@ class FirestoreSchoolRepository implements SchoolRepository {
     final rawList = data['timetable'] as List<dynamic>? ?? [];
     final monday = _normalizeToMonday(now);
     final events = _extractAllEvents(data);
+    final allAttendance = await getAttendanceRecords();
+    final dayAttendance = allAttendance.where((a) =>
+        a.date.year == now.year &&
+        a.date.month == now.month &&
+        a.date.day == now.day).toList();
     final lessons = _parseTimetableForDay(
       rawList,
       now.weekday,
       weekStart: monday,
       dayDate: now,
       events: events,
+      dayAttendance: dayAttendance,
     );
     return lessons;
   }
@@ -512,12 +549,18 @@ class FirestoreSchoolRepository implements SchoolRepository {
     final monday = _normalizeToMonday(now);
     final targetDate = monday.add(Duration(days: dayOfWeek - 1));
     final events = _extractAllEvents(data);
+    final allAttendance = await getAttendanceRecords();
+    final dayAttendance = allAttendance.where((a) =>
+        a.date.year == targetDate.year &&
+        a.date.month == targetDate.month &&
+        a.date.day == targetDate.day).toList();
     final lessons = _parseTimetableForDay(
       rawList,
       dayOfWeek,
       weekStart: monday,
       dayDate: targetDate,
       events: events,
+      dayAttendance: dayAttendance,
     );
     return lessons;
   }
@@ -534,9 +577,14 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
     final rawList = data['timetable'] as List<dynamic>? ?? [];
     final events = _extractAllEvents(data);
+    final allAttendance = await getAttendanceRecords();
     final result = <int, List<LessonSlot>>{};
     for (int day = 1; day <= 5; day++) {
       final dayDate = effectiveWeekStart.add(Duration(days: day - 1));
+      final dayAttendance = allAttendance.where((a) =>
+          a.date.year == dayDate.year &&
+          a.date.month == dayDate.month &&
+          a.date.day == dayDate.day).toList();
       final lessons = rawList.isEmpty
           ? <LessonSlot>[]
           : _parseTimetableForDay(
@@ -545,6 +593,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
               weekStart: effectiveWeekStart,
               dayDate: dayDate,
               events: events,
+              dayAttendance: dayAttendance,
             );
       result[day] = lessons;
     }
