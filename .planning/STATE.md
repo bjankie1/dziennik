@@ -57,13 +57,14 @@ progress:
 | 260918-ev7 | Librus query access log modal and tracking | 2026-09-18 | 478def3 | [260918-ev7-librus-query-access-log-modal-and-tracki](./quick/260918-ev7-librus-query-access-log-modal-and-tracki/) |
 | 260919-ufy | Naprawa rozpoznawania usprawiedliwień i zwolnień w module frekwencji | 2026-09-19 | 6c76505 | [260919-ufy-naprawa-rozpoznawania-usprawiedliwie-i-z](./quick/260919-ufy-naprawa-rozpoznawania-usprawiedliwie-i-z/) |
 | 260920-wkd | Harmonogram na weekend oraz dynamiczne przełączanie tygodni w planie lekcji | 2026-09-20 | 39391f3 | [260920-wkd-harmonogram-weekend-i-przelaczanie-tygodni](./quick/260920-wkd-harmonogram-weekend-i-przelaczanie-tygodni/) |
+| 260920-trm | Integracja terminarza z planem lekcji, nawigacja do tygodnia sprawdzianu, naprawa zastępstwa z j. polskiego | 2026-09-20 | a0d9d9c | [260920-trm-terminarz-integracja-kartkowka-zastepstwa](./quick/260920-trm-terminarz-integracja-kartkowka-zastepstwa/) |
 
 ## Session
 
-**Last session:** 2026-09-20T07:40:00.000Z
-**Stopped at:** Completed quick task 260920-wkd: Harmonogram na weekend oraz dynamiczne przełączanie tygodni w planie lekcji
+**Last session:** 2026-09-20T22:45:00.000Z
+**Stopped at:** Completed quick task 260920-trm: Integracja terminarza z planem lekcji, nawigacja do tygodnia sprawdzianu, naprawa zastępstwa z j. polskiego
 **Resume file:** .planning/ROADMAP.md
-Last activity: 2026-09-20 - Completed quick task 260920-wkd: Harmonogram na weekend oraz dynamiczne przełączanie tygodni w planie lekcji
+Last activity: 2026-09-20 - Completed quick task 260920-trm: Integracja terminarza z planem lekcji, nawigacja do tygodnia sprawdzianu, naprawa zastępstwa z j. polskiego
 
 
 
