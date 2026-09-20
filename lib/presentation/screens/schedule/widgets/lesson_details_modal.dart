@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/lesson_slot.dart';
+import '../../../../domain/models/attendance_record.dart';
+import '../../../providers/school_providers.dart';
+import '../../attendance/justification_modal.dart';
 
-class LessonDetailsModal extends StatelessWidget {
+class LessonDetailsModal extends ConsumerWidget {
   final LessonSlot slot;
   final DateTime date;
 
@@ -28,7 +32,7 @@ class LessonDetailsModal extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final dateStr = DateFormat('EEEE, d MMMM yyyy', 'pl_PL').format(date);
     final capitalizedDate = dateStr.isNotEmpty ? '${dateStr[0].toUpperCase()}${dateStr.substring(1)}' : dateStr;
 
@@ -53,6 +57,28 @@ class LessonDetailsModal extends StatelessWidget {
       statusColor = const Color(0xFF006C4A);
       statusLabel = 'Trwa teraz';
       statusIcon = Icons.timelapse_rounded;
+    } else if (slot.attendanceType != null && slot.attendanceType != AttendanceType.present) {
+      if (slot.attendanceJustificationStatus == JustificationStatus.requested) {
+        statusColor = const Color(0xFFB45309);
+        statusLabel = 'Weryfikacja';
+        statusIcon = Icons.hourglass_top_rounded;
+      } else if (slot.attendanceType == AttendanceType.absent) {
+        statusColor = AppColors.error;
+        statusLabel = 'Nieobecność';
+        statusIcon = Icons.cancel_outlined;
+      } else if (slot.attendanceType == AttendanceType.excused) {
+        statusColor = const Color(0xFF15803D);
+        statusLabel = 'Usprawiedliwiona';
+        statusIcon = Icons.check_circle_outline;
+      } else if (slot.attendanceType == AttendanceType.exempted) {
+        statusColor = const Color(0xFF0369A1);
+        statusLabel = 'Zwolnienie';
+        statusIcon = Icons.beach_access_rounded;
+      } else if (slot.attendanceType == AttendanceType.late || slot.attendanceType == AttendanceType.excusedLate) {
+        statusColor = const Color(0xFFA16207);
+        statusLabel = 'Spóźnienie';
+        statusIcon = Icons.access_time_rounded;
+      }
     }
 
     return Container(
@@ -277,6 +303,12 @@ class LessonDetailsModal extends StatelessWidget {
                     ),
                   ),
 
+                  // Attendance details section (D-03)
+                  if (slot.attendanceType != null && slot.attendanceType != AttendanceType.present) ...[
+                    const SizedBox(height: 14),
+                    _buildAttendanceDetailsSection(context, ref, slot),
+                  ],
+
                   // Alert reason box (if canceled or substituted)
                   if (slot.statusNote != null && slot.statusNote!.isNotEmpty) ...[
                     const SizedBox(height: 14),
@@ -464,6 +496,191 @@ class LessonDetailsModal extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceDetailsSection(BuildContext context, WidgetRef ref, LessonSlot slot) {
+    final isPending = slot.attendanceJustificationStatus == JustificationStatus.requested;
+    final isApproved = slot.attendanceJustificationStatus == JustificationStatus.approved ||
+        slot.attendanceType == AttendanceType.excused;
+    final isRejected = slot.attendanceJustificationStatus == JustificationStatus.rejected;
+    final isUnexcused = slot.attendanceType == AttendanceType.absent &&
+        (slot.attendanceJustificationStatus == null || slot.attendanceJustificationStatus == JustificationStatus.none);
+
+    Color statusColor;
+    Color bgColor;
+    Color borderColor;
+    IconData icon;
+    String statusTitle;
+    String decisionDescription;
+
+    if (isPending) {
+      statusColor = const Color(0xFFB45309);
+      bgColor = const Color(0xFFFFFBEB);
+      borderColor = const Color(0xFFFDE68A);
+      icon = Icons.pending_actions_rounded;
+      statusTitle = 'Oczekuje na weryfikację';
+      decisionDescription = 'Wniosek o e-usprawiedliwienie został przesłany do wychowawcy i oczekuje na decyzję.';
+    } else if (isApproved) {
+      statusColor = const Color(0xFF15803D);
+      bgColor = const Color(0xFFF0FDF4);
+      borderColor = const Color(0xFFBBF7D0);
+      icon = Icons.check_circle_outline_rounded;
+      statusTitle = 'Usprawiedliwiona';
+      decisionDescription = 'Wychowawca zaakceptował usprawiedliwienie tej nieobecności.';
+    } else if (isRejected) {
+      statusColor = AppColors.error;
+      bgColor = const Color(0xFFFEF2F2);
+      borderColor = const Color(0xFFFECACA);
+      icon = Icons.highlight_off_rounded;
+      statusTitle = 'Odrzucone usprawiedliwienie';
+      decisionDescription = 'Wychowawca odrzucił wniosek o usprawiedliwienie tej godziny.';
+    } else if (slot.attendanceType == AttendanceType.exempted) {
+      statusColor = const Color(0xFF0369A1);
+      bgColor = const Color(0xFFF0F9FF);
+      borderColor = const Color(0xFFBAE6FD);
+      icon = Icons.beach_access_rounded;
+      statusTitle = 'Zwolnienie z zajęć';
+      decisionDescription = 'Uczeń posiada oficjalne zwolnienie ze szkoły z tej godziny lekcyjnej.';
+    } else if (slot.attendanceType == AttendanceType.late || slot.attendanceType == AttendanceType.excusedLate) {
+      statusColor = const Color(0xFFA16207);
+      bgColor = const Color(0xFFFEFCE8);
+      borderColor = const Color(0xFFFEF08A);
+      icon = Icons.access_time_rounded;
+      statusTitle = slot.attendanceType == AttendanceType.excusedLate ? 'Spóźnienie usprawiedliwione' : 'Spóźnienie';
+      decisionDescription = 'Nauczyciel odnotował spóźnienie ucznia na tę lekcję.';
+    } else {
+      statusColor = AppColors.error;
+      bgColor = const Color(0xFFFEF2F2);
+      borderColor = const Color(0xFFFECACA);
+      icon = Icons.cancel_outlined;
+      statusTitle = 'Nieobecność nieusprawiedliwiona';
+      decisionDescription = 'Godzina lekcyjna nie została jeszcze usprawiedliwiona przez rodzica.';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: statusColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'STATUS FREKWENCJI: $statusTitle',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: statusColor,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+              if (isPending)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFF59E0B)),
+                  ),
+                  child: const Text(
+                    'WERYFIKACJA',
+                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: Color(0xFFB45309)),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            decisionDescription,
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: statusColor.withValues(alpha: 0.95)),
+          ),
+          if (slot.attendanceNote != null && slot.attendanceNote!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: borderColor),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Powód podany przez rodzica:',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    slot.attendanceNote!,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.onSurface),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          if (isUnexcused) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  final attendanceList = ref.read(attendanceProvider).value ?? [];
+                  final matched = attendanceList.where((a) =>
+                      a.date.year == date.year &&
+                      a.date.month == date.month &&
+                      a.date.day == date.day &&
+                      (a.lessonNumber == slot.lessonNumber || a.subjectName.toLowerCase() == slot.subjectName.toLowerCase())).toList();
+                  final recordIds = matched.isNotEmpty ? [matched.first.id] : ['temp_${slot.lessonNumber}'];
+
+                  Navigator.pop(context); // Close details modal first
+                  JustificationModal.show(
+                    context,
+                    recordIds,
+                    'Wizyta lekarska',
+                    (reason, pin, selectedDate) async {
+                      await ref.read(attendanceProvider.notifier).submitJustification(
+                            recordIds,
+                            reason,
+                            date: selectedDate ?? date,
+                          );
+                      ref.invalidate(weekScheduleProvider);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Wniosek o e-usprawiedliwienie został pomyślnie wysłany.'),
+                            backgroundColor: Color(0xFF006C4A),
+                          ),
+                        );
+                      }
+                    },
+                    initialDate: date,
+                  );
+                },
+                icon: const Icon(Icons.send_rounded, size: 15),
+                label: const Text('Zgłoś e-usprawiedliwienie'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

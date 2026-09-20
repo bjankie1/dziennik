@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/lesson_slot.dart';
+import '../../../../domain/models/attendance_record.dart';
 import 'lesson_details_modal.dart';
 
 class AgendaLessonCard extends StatefulWidget {
@@ -254,6 +255,8 @@ class _AgendaLessonCardState extends State<AgendaLessonCard> with SingleTickerPr
                                   ),
                                 ),
                               ),
+                            ] else if (slot.attendanceType != null && slot.attendanceType != AttendanceType.present) ...[
+                              _buildAttendanceTopBadge(slot),
                             ],
                           ],
                         ),
@@ -330,6 +333,11 @@ class _AgendaLessonCardState extends State<AgendaLessonCard> with SingleTickerPr
                               ],
                             ),
                           ),
+                        ],
+
+                        // Attendance Alert & Status Box (D-03)
+                        if (slot.attendanceType != null && slot.attendanceType != AttendanceType.present) ...[
+                          _buildAttendanceBanner(slot),
                         ],
 
                         // Extended details box (topic, materials, homework)
@@ -449,6 +457,204 @@ class _AgendaLessonCardState extends State<AgendaLessonCard> with SingleTickerPr
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAttendanceTopBadge(LessonSlot slot) {
+    final isPending = slot.attendanceJustificationStatus == JustificationStatus.requested;
+    if (isPending) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFEF3C7),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.5)),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.hourglass_top_rounded, size: 12, color: Color(0xFFB45309)),
+            SizedBox(width: 4),
+            Text(
+              'Oczekuje na weryfikację',
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFFB45309)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Color bgColor;
+    Color textColor;
+    String label;
+    IconData icon;
+
+    switch (slot.attendanceType!) {
+      case AttendanceType.absent:
+        bgColor = const Color(0xFFFEE2E2);
+        textColor = AppColors.error;
+        label = 'Nieobecność';
+        icon = Icons.cancel_outlined;
+        break;
+      case AttendanceType.excused:
+        bgColor = const Color(0xFFDCFCE7);
+        textColor = const Color(0xFF15803D);
+        label = 'Usprawiedliwiona';
+        icon = Icons.check_circle_outline;
+        break;
+      case AttendanceType.exempted:
+        bgColor = const Color(0xFFE0F2FE);
+        textColor = const Color(0xFF0369A1);
+        label = 'Zwolnienie';
+        icon = Icons.beach_access_rounded;
+        break;
+      case AttendanceType.late:
+      case AttendanceType.excusedLate:
+        bgColor = const Color(0xFFFEF9C3);
+        textColor = const Color(0xFFA16207);
+        label = 'Spóźnienie';
+        icon = Icons.access_time_rounded;
+        break;
+      default:
+        return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: textColor),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttendanceBanner(LessonSlot slot) {
+    final isPending = slot.attendanceJustificationStatus == JustificationStatus.requested;
+    final isApproved = slot.attendanceJustificationStatus == JustificationStatus.approved ||
+        slot.attendanceType == AttendanceType.excused;
+
+    Color bgColor;
+    Color borderColor;
+    Color textColor;
+    IconData icon;
+    String statusTitle;
+    String statusSubtitle;
+
+    if (isPending) {
+      bgColor = const Color(0xFFFFFBEB);
+      borderColor = const Color(0xFFFDE68A);
+      textColor = const Color(0xFFB45309);
+      icon = Icons.pending_actions_rounded;
+      statusTitle = 'Oczekuje na weryfikację';
+      statusSubtitle = 'Wniosek o usprawiedliwienie przesłany do wychowawcy';
+    } else if (isApproved) {
+      bgColor = const Color(0xFFF0FDF4);
+      borderColor = const Color(0xFFBBF7D0);
+      textColor = const Color(0xFF15803D);
+      icon = Icons.check_circle_outline_rounded;
+      statusTitle = 'Nieobecność usprawiedliwiona';
+      statusSubtitle = 'Zaakceptowano przez wychowawcę';
+    } else {
+      switch (slot.attendanceType!) {
+        case AttendanceType.absent:
+          bgColor = const Color(0xFFFEF2F2);
+          borderColor = const Color(0xFFFECACA);
+          textColor = AppColors.error;
+          icon = Icons.cancel_outlined;
+          statusTitle = 'Nieobecność nieusprawiedliwiona';
+          statusSubtitle = 'Wymaga złożenia e-usprawiedliwienia';
+          break;
+        case AttendanceType.exempted:
+          bgColor = const Color(0xFFF0F9FF);
+          borderColor = const Color(0xFFBAE6FD);
+          textColor = const Color(0xFF0369A1);
+          icon = Icons.beach_access_rounded;
+          statusTitle = 'Zwolnienie z lekcji';
+          statusSubtitle = 'Uczeń zwolniony z udziału w zajęciach';
+          break;
+        case AttendanceType.late:
+        case AttendanceType.excusedLate:
+          bgColor = const Color(0xFFFEFCE8);
+          borderColor = const Color(0xFFFEF08A);
+          textColor = const Color(0xFFA16207);
+          icon = Icons.access_time_rounded;
+          statusTitle = slot.attendanceType == AttendanceType.excusedLate
+              ? 'Spóźnienie usprawiedliwione'
+              : 'Spóźnienie';
+          statusSubtitle = 'Odnotowano spóźnienie na zajęcia';
+          break;
+        default:
+          return const SizedBox.shrink();
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: textColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      statusTitle,
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: textColor),
+                    ),
+                    if (isPending)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFEF3C7),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: const Color(0xFFF59E0B)),
+                        ),
+                        child: const Text(
+                          'WERYFIKACJA',
+                          style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFFB45309)),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  statusSubtitle,
+                  style: TextStyle(fontSize: 11, color: textColor.withValues(alpha: 0.9)),
+                ),
+                if (slot.attendanceNote != null && slot.attendanceNote!.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Powód rodzica: ${slot.attendanceNote}',
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.onSurface),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

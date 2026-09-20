@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/lesson_slot.dart';
+import '../../../../domain/models/attendance_record.dart';
 import '../../../providers/school_providers.dart';
 import 'lesson_details_modal.dart';
 
@@ -371,6 +372,70 @@ class WeeklyGridView extends ConsumerWidget {
       borderColor = const Color(0xFFC7D2FE);
     }
 
+    // Attendance status badge (D-01, D-02)
+    Widget? attendanceBadge;
+    if (slot.attendanceType != null && slot.attendanceType != AttendanceType.present) {
+      final isPending = slot.attendanceJustificationStatus == JustificationStatus.requested;
+      if (isPending) {
+        attendanceBadge = Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFEF3C7),
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: const Color(0xFFF59E0B).withValues(alpha: 0.5)),
+          ),
+          child: const Text(
+            'Weryfikacja',
+            style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Color(0xFFB45309)),
+          ),
+        );
+      } else {
+        Color badgeBg;
+        Color badgeText;
+        String badgeLabel;
+        switch (slot.attendanceType!) {
+          case AttendanceType.absent:
+            badgeBg = const Color(0xFFFEE2E2);
+            badgeText = AppColors.error;
+            badgeLabel = 'Nieobecność';
+            break;
+          case AttendanceType.excused:
+            badgeBg = const Color(0xFFDCFCE7);
+            badgeText = const Color(0xFF15803D);
+            badgeLabel = 'Usprawiedliwiona';
+            break;
+          case AttendanceType.exempted:
+            badgeBg = const Color(0xFFE0F2FE);
+            badgeText = const Color(0xFF0369A1);
+            badgeLabel = 'Zwolnienie';
+            break;
+          case AttendanceType.late:
+          case AttendanceType.excusedLate:
+            badgeBg = const Color(0xFFFEF9C3);
+            badgeText = const Color(0xFFA16207);
+            badgeLabel = 'Spóźnienie';
+            break;
+          default:
+            badgeLabel = '';
+            badgeBg = Colors.transparent;
+            badgeText = Colors.transparent;
+        }
+        if (badgeLabel.isNotEmpty) {
+          attendanceBadge = Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: badgeBg,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              badgeLabel,
+              style: TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: badgeText),
+            ),
+          );
+        }
+      }
+    }
+
     return Opacity(
       opacity: isDimmed ? 0.25 : 1.0,
       child: Material(
@@ -392,7 +457,7 @@ class WeeklyGridView extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Top: Subject + Room pill
+                // Top: Subject + Room pill + Attendance pill
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -421,6 +486,10 @@ class WeeklyGridView extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 4),
+                    if (attendanceBadge != null) ...[
+                      attendanceBadge,
+                      const SizedBox(width: 4),
+                    ],
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                       decoration: BoxDecoration(
