@@ -13,6 +13,7 @@ class AverageTrajectoryCard extends ConsumerWidget {
     final stats = ref.watch(gradesDistributionStatsProvider);
 
     final studentName = studentAsync.value?.name.split(' ').first ?? 'Maja';
+    final className = studentAsync.value?.className ?? '3B';
     final currentAvg = stats.overallAverage > 0 ? stats.overallAverage : 4.82;
     final currentAvgStr = currentAvg.toStringAsFixed(2);
 
@@ -101,9 +102,9 @@ class AverageTrajectoryCard extends ConsumerWidget {
                         color: AppColors.outlineVariant,
                       ),
                       const SizedBox(width: 5),
-                      const Text(
-                        'Średnia klasy 3B (4.18)',
-                        style: TextStyle(
+                      Text(
+                        'Średnia klasy $className (4.18)',
+                        style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.onSurfaceVariant,
                         ),

@@ -44,8 +44,9 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
         final activeViewMode = _viewMode ?? (isDesktop ? 0 : 1);
 
         final student = studentAsync.value;
-        final className = student?.className ?? 'Klasa 3B';
+        final className = student != null ? 'Klasa ${student.className}' : 'Klasa';
         final schoolName = student?.schoolName ?? 'LO nr X we Wrocławiu';
+        final educatorName = student?.educator ?? 'Wychowawca';
 
         return Scaffold(
           backgroundColor: isDesktop ? AppColors.surface : Colors.white,
@@ -73,7 +74,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                   },
                   className: className,
                   profileName: schoolName,
-                  teacherName: 'mgr K. Wiśniewski',
+                  teacherName: educatorName,
                 ),
                 const SizedBox(height: 14),
 

@@ -24,9 +24,9 @@ class WeekNavigatorBar extends ConsumerWidget {
     required this.onCurrentWeek,
     required this.viewMode,
     required this.onViewModeChanged,
-    this.className = 'Klasa 3B',
-    this.profileName = 'Profil mat-fiz-chem',
-    this.teacherName = 'mgr K. Wiśniewski',
+    this.className = 'Klasa',
+    this.profileName = '',
+    this.teacherName = 'Wychowawca',
   });
 
   bool _isThisCurrentWeek() {

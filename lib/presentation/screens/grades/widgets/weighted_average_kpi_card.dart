@@ -11,6 +11,10 @@ class WeightedAverageKpiCard extends ConsumerWidget {
     final stats = ref.watch(gradesDistributionStatsProvider);
     final term = ref.watch(gradesTermProvider);
     final termLabel = term == 1 ? 'S1' : (term == 2 ? 'S2' : 'ROCZNA');
+    final student = ref.watch(studentProfileProvider).value;
+    final className = student?.className ?? '3B';
+    final rank = student?.classRank ?? 2;
+    final total = student?.totalStudentsInClass ?? 28;
 
     final avgStr = stats.overallAverage > 0
         ? stats.overallAverage.toStringAsFixed(2)
@@ -138,18 +142,18 @@ class WeightedAverageKpiCard extends ConsumerWidget {
                       top: BorderSide(color: AppColors.surfaceContainerHigh.withValues(alpha: 0.6)),
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.stars_rounded,
                         size: 16,
                         color: AppColors.secondary,
                       ),
-                      SizedBox(width: 6),
+                      const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'Top 5% w klasie 3B (2. lokata na 28 uczniów)',
-                          style: TextStyle(
+                          'Top 5% w klasie $className ($rank. lokata na $total uczniów)',
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: AppColors.secondary,

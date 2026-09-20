@@ -138,7 +138,10 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
     final selectedSubject = ref.watch(selectedGradesSubjectProvider);
     final desktopTerm = ref.watch(gradesTermProvider);
 
-    final overallAvg = studentAsync.value?.overallAverage ?? 4.82;
+    final student = studentAsync.value;
+    final overallAvg = student?.overallAverage ?? 4.82;
+    final className = student?.className ?? 'Klasa';
+    final schoolName = student?.schoolName ?? 'Liceum';
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -150,6 +153,8 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
             overallAvg,
             selectedSubject,
             desktopTerm,
+            className: className,
+            schoolName: schoolName,
           );
         }
         return _buildMobileLayout(
@@ -157,7 +162,7 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
           cleanSubjects,
           overallAvg,
           subjectsAsync,
-          studentAsync.value?.className ?? '3B',
+          student?.className ?? 'Klasa',
         );
       },
     );
@@ -168,8 +173,10 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
     List<Subject> cleanSubjects,
     double overallAvg,
     Subject? selectedSubject,
-    int term,
-  ) {
+    int term, {
+    required String className,
+    required String schoolName,
+  }) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FF),
       body: SingleChildScrollView(
@@ -214,13 +221,13 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                         color: AppColors.surfaceContainerHigh,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.circle, size: 8, color: AppColors.secondary),
-                          SizedBox(width: 6),
+                          const Icon(Icons.circle, size: 8, color: AppColors.secondary),
+                          const SizedBox(width: 6),
                           Text(
-                            'Klasa 3B LO • Profil Mat-Fiz-Chem',
-                            style: TextStyle(
+                            'Klasa $className',
+                            style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: AppColors.onSurfaceVariant,
@@ -233,9 +240,9 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                       padding: EdgeInsets.symmetric(horizontal: 8),
                       child: Text('•', style: TextStyle(color: AppColors.outline)),
                     ),
-                    const Text(
-                      'Liceum Ogólnokształcące im. KEN',
-                      style: TextStyle(
+                    Text(
+                      schoolName,
+                      style: const TextStyle(
                         fontSize: 11,
                         letterSpacing: 0.5,
                         fontWeight: FontWeight.w600,

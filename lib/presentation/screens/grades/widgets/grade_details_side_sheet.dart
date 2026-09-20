@@ -1,11 +1,13 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/grade.dart';
 import '../../../../domain/models/subject.dart';
+import '../../../providers/school_providers.dart';
 
-class GradeDetailsSideSheet extends StatelessWidget {
+class GradeDetailsSideSheet extends ConsumerWidget {
   final Grade grade;
   final Subject subject;
   final VoidCallback? onContactTeacher;
@@ -85,7 +87,9 @@ class GradeDetailsSideSheet extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final student = ref.watch(studentProfileProvider).value;
+    final className = student?.className.isNotEmpty == true ? student!.className : '';
     final dateFormat = DateFormat('EEEE, d MMMM yyyy (godz. HH:mm)', 'pl');
     final formattedDate = dateFormat.format(grade.date);
 
@@ -165,14 +169,16 @@ class GradeDetailsSideSheet extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 6),
-                            const Text(
-                              '• Klasa 3B LO',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.onSurfaceVariant,
+                            if (className.isNotEmpty) ...[
+                              const SizedBox(width: 6),
+                              Text(
+                                '• Klasa $className',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
                               ),
-                            ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: 2),

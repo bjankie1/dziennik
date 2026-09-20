@@ -189,7 +189,7 @@ class LibrusClient {
     const infoData = await this.fetchStudentInfo();
     await sleep(1000, 2200);
 
-    let annData = { luckyNumber: 18, announcements: [] };
+    let annData = { luckyNumber: 0, announcements: [] };
     try {
       annData = await this.fetchAnnouncements();
     } catch (err) {
@@ -309,7 +309,8 @@ class LibrusClient {
     const res = await this.client.get("https://synergia.librus.pl/ogloszenia");
     const $ = cheerio.load(res.data);
 
-    const luckyNumber = parseInt($(".luckyNumber b").text().trim(), 10) || 18;
+    const parsedLucky = parseInt($(".luckyNumber b").text().trim(), 10);
+    const luckyNumber = isNaN(parsedLucky) ? 0 : parsedLucky;
     const announcements = [];
 
     $("table.decorated.big").each((_, table) => {
