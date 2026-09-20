@@ -51,7 +51,12 @@
     {
       "number": "10",
       "name": "Pełen panel ocen w wersji na przeglądarkę",
-      "status": "pending"
+      "status": "complete"
+    },
+    {
+      "number": "11",
+      "name": "Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)",
+      "status": "complete"
     }
   ],
   "next": {
@@ -59,5 +64,5 @@
     "label": "Show progress",
     "reason": "Unsure of state — showing progress"
   },
-  "updated_at": "2026-09-18T04:46:57.187Z"
+  "updated_at": "2026-09-20T21:04:16.497Z"
 }

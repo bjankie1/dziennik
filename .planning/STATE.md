@@ -40,6 +40,7 @@ progress:
 - [x] **Phase 9**: Plan lekcji w wersji web (Widok siatki i agendy)
 - [x] **Phase 10**: Pełen panel ocen w wersji na przeglądarkę
 - [x] **Phase 11**: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)
+- [ ] **Phase 12**: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni
 
 ## Accumulated Context
 
@@ -49,6 +50,7 @@ progress:
 - Phase 9 added: Plan lekcji w wersji web (Widok siatki i agendy) na podstawie makiet docs/plan_lekcji_v1 i docs/plan lekcji agenda.
 - Phase 10 added: Pełen panel ocen w wersji na przeglądarkę na podstawie makiet docs/panel_ocen i docs/szczegoly_oceny.
 - Phase 11 added: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny) na wniosek użytkownika (ochrona przed podejrzeniami o łamanie regulaminu, wyłączenie nocy).
+- Phase 12 added: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni (eliminacja sztucznych danych, naniesienie frekwencji na plan lekcji, fixed-width dla date pickera tygodni).
 
 ### Quick Tasks Completed
 

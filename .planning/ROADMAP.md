@@ -17,6 +17,7 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 - [x] **Phase 9: Plan lekcji w wersji web (Widok siatki i agendy)** — Nowoczesny desktopowy i responsywny plan lekcji z widokiem pełnej siatki tygodniowej oraz agendy wg makiet (docs/plan_lekcji_v1 i docs/plan lekcji agenda).
 - [x] **Phase 10: Pełen panel ocen w wersji na przeglądarkę** — Nowoczesny dwukolumnowy panel ocen na desktopie z wyborem przedmiotu, szczegółami ocen, wykresem/statystykami i szufladą (drawer) szczegółów oceny wg makiet docs/panel_ocen i docs/szczegoly_oceny.
 - [x] **Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)** — Optymalizacja strategii synchronizacji z Librus (inteligentny throttling, losowy jitter, dynamiczny backoff, całkowite wyłączenie odpytywania w nocy oraz cache'owanie), aby nie budzić podejrzeń o łamanie regulaminu serwisu. (completed 2026-09-18)
+- [ ] **Phase 12: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni** — Kompleksowy audyt i usunięcie sztucznych mocków/wartości fallbackowych w kodzie, prezentacja nieobecności/frekwencji w planie lekcji oraz stała szerokość nawigatora tygodni.
 
 ---
 
@@ -144,4 +145,17 @@ Plans:
 
 - [x] 11-01-PLAN.md — Bezpieczne odpytywanie serwerów Librus, humanizacja zapytań i odporność na rate limiting
 - [x] 11-02-PLAN.md — Adaptacyjny harmonogram backendu (strefa Europe/Warsaw) i ograniczenia po stronie klienta
+
+### Phase 12: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni
+
+**Goal**: Kompleksowy audyt bazy kodu pod kątem ukrytych danych mockowanych / zastępczych, integracja statusów obecności/nieobecności bezpośrednio z kafelkami planu lekcji oraz zablokowanie stałej szerokości kontenera dat w przełączniku tygodni.
+**Requirements**: REQ-AUDIT-01, REQ-TIMETABLE-05, REQ-TIMETABLE-06
+**Depends on:** Phase 9, Phase 11
+**Success Criteria**:
+
+  1. Identyfikacja i usunięcie nieuzasadnionych wartości mockowych (np. sztywne sprawdziany, statyczne nazwy klas/profili, fallbacki do fikcyjnych ocen/ogłoszeń) i zastąpienie ich danymi rzeczywistymi z Firestore lub czystymi stanami pustymi (Empty State).
+  2. Nanoszenie statusów frekwencji ucznia (nieobecność, usprawiedliwiona, spóźnienie, zwolnienie) bezpośrednio na kafelki lekcji w widoku tygodniowym (siatka) i dziennym (agenda) oraz w modalu szczegółów lekcji.
+  3. Stała szerokość elementu wyboru tygodnia (WeekNavigatorBar), gwarantująca niezmienną pozycję przycisków `<` i `>` niezależnie od długości tekstu daty.
+
+**Plans:** 0 plans
 
