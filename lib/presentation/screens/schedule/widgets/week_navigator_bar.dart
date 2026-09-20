@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../providers/sync_provider.dart';
+import '../../../providers/school_providers.dart';
 
-class WeekNavigatorBar extends StatelessWidget {
+class WeekNavigatorBar extends ConsumerWidget {
   final DateTime currentWeekMonday;
   final VoidCallback onPreviousWeek;
   final VoidCallback onNextWeek;
@@ -44,9 +47,10 @@ class WeekNavigatorBar extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isCurrent = _isThisCurrentWeek();
     final isCompact = MediaQuery.of(context).size.width < 1100;
+    final syncState = ref.watch(syncProvider);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -137,13 +141,28 @@ class WeekNavigatorBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Plan został pomyślnie zsynchronizowany z kalendarzem.')),
-                      );
-                    },
-                    icon: const Icon(Icons.sync, size: 15),
-                    label: Text(isCompact ? '' : 'Synchronizuj'),
+                    onPressed: syncState.isSyncing
+                        ? null
+                        : () async {
+                            await ref.read(syncProvider.notifier).syncNow();
+                            ref.invalidate(weekScheduleProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(ref.read(syncProvider).statusMessage),
+                                  backgroundColor: AppColors.primary,
+                                ),
+                              );
+                            }
+                          },
+                    icon: syncState.isSyncing
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                          )
+                        : const Icon(Icons.sync, size: 15),
+                    label: Text(isCompact ? '' : (syncState.isSyncing ? 'Synchronizacja...' : 'Synchronizuj')),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.onSurface,
                       side: const BorderSide(color: AppColors.surfaceContainerHigh),

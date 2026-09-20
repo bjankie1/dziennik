@@ -668,6 +668,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       const SizedBox(height: 8),
                       InkWell(
                         onTap: () {
+                          final examMonday = DateTime(exam.date.year, exam.date.month, exam.date.day)
+                              .subtract(Duration(days: exam.date.weekday - 1));
+                          ref.read(selectedWeekMondayProvider.notifier).setMonday(examMonday);
+                          ref.read(selectedScheduleDayProvider.notifier).setDay((exam.date.weekday - 1).clamp(0, 4));
                           ref.read(currentNavIndexProvider.notifier).setIndex(1);
                         },
                         child: const Row(

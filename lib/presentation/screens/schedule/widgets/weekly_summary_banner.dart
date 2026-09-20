@@ -38,7 +38,7 @@ class WeeklySummaryBanner extends ConsumerWidget {
                       iconBg: const Color(0xFFFFEDD5),
                       iconColor: const Color(0xFFC2410C),
                       title: '${stats.substitutionsCount} Zastępstwa',
-                      subtitle: 'Zmiany sal / n-li',
+                      subtitle: stats.substitutionsSubtitle,
                       isSelected: activeFilter == WeekScheduleFilter.substitutions,
                       onTap: () {
                         ref.read(weekScheduleFilterProvider.notifier).toggleFilter(WeekScheduleFilter.substitutions);
@@ -56,7 +56,7 @@ class WeeklySummaryBanner extends ConsumerWidget {
                       iconBg: AppColors.primaryFixed,
                       iconColor: AppColors.primary,
                       title: '${stats.examsCount} Sprawdziany',
-                      subtitle: 'Terminarz tygodnia',
+                      subtitle: stats.examsSubtitle,
                       isSelected: activeFilter == WeekScheduleFilter.exams,
                       onTap: () {
                         ref.read(weekScheduleFilterProvider.notifier).toggleFilter(WeekScheduleFilter.exams);
@@ -70,7 +70,7 @@ class WeeklySummaryBanner extends ConsumerWidget {
                       iconBg: const Color(0xFFFEE2E2),
                       iconColor: const Color(0xFFDC2626),
                       title: '${stats.canceledCount} Odwołana',
-                      subtitle: 'Późniejszy start',
+                      subtitle: stats.canceledSubtitle,
                       isSelected: activeFilter == WeekScheduleFilter.canceled,
                       onTap: () {
                         ref.read(weekScheduleFilterProvider.notifier).toggleFilter(WeekScheduleFilter.canceled);
@@ -117,7 +117,7 @@ class WeeklySummaryBanner extends ConsumerWidget {
                   iconBg: const Color(0xFFFFEDD5),
                   iconColor: const Color(0xFFC2410C),
                   title: '${stats.substitutionsCount} Zastępstwa',
-                  subtitle: 'Wt: Geografia, Czw: Matematyka',
+                  subtitle: stats.substitutionsSubtitle,
                   isSelected: activeFilter == WeekScheduleFilter.substitutions,
                   onTap: () {
                     ref.read(weekScheduleFilterProvider.notifier).toggleFilter(WeekScheduleFilter.substitutions);
@@ -131,7 +131,7 @@ class WeeklySummaryBanner extends ConsumerWidget {
                   iconBg: AppColors.primaryFixed,
                   iconColor: AppColors.primary,
                   title: '${stats.examsCount} Sprawdziany',
-                  subtitle: 'Czw: Chemia, Pt: J. Polski',
+                  subtitle: stats.examsSubtitle,
                   isSelected: activeFilter == WeekScheduleFilter.exams,
                   onTap: () {
                     ref.read(weekScheduleFilterProvider.notifier).toggleFilter(WeekScheduleFilter.exams);
@@ -145,7 +145,7 @@ class WeeklySummaryBanner extends ConsumerWidget {
                   iconBg: const Color(0xFFFEE2E2),
                   iconColor: const Color(0xFFDC2626),
                   title: '${stats.canceledCount} Lekcja odwołana',
-                  subtitle: 'Czw: 08:00 Fizyka (start 08:50)',
+                  subtitle: stats.canceledSubtitle,
                   isSelected: activeFilter == WeekScheduleFilter.canceled,
                   onTap: () {
                     ref.read(weekScheduleFilterProvider.notifier).toggleFilter(WeekScheduleFilter.canceled);

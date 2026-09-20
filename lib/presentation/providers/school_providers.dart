@@ -108,14 +108,20 @@ final selectedScheduleDayProvider =
 class WeeklyScheduleStats {
   final int totalHours;
   final int substitutionsCount;
+  final String substitutionsSubtitle;
   final int examsCount;
+  final String examsSubtitle;
   final int canceledCount;
+  final String canceledSubtitle;
 
   const WeeklyScheduleStats({
     required this.totalHours,
     required this.substitutionsCount,
+    required this.substitutionsSubtitle,
     required this.examsCount,
+    required this.examsSubtitle,
     required this.canceledCount,
+    required this.canceledSubtitle,
   });
 }
 
@@ -128,26 +134,75 @@ final weeklyScheduleStatsProvider = Provider<WeeklyScheduleStats>((ref) {
       int exams = 0;
       int canceled = 0;
 
-      for (final lessons in weekMap.values) {
+      final subList = <String>[];
+      final examList = <String>[];
+      final cancelList = <String>[];
+
+      final dayShortNames = {1: 'Pn', 2: 'Wt', 3: 'Śr', 4: 'Czw', 5: 'Pt'};
+
+      for (int day = 1; day <= 5; day++) {
+        final lessons = weekMap[day] ?? [];
         total += lessons.length;
+        final dName = dayShortNames[day] ?? 'Dzień $day';
+
         for (final slot in lessons) {
-          if (slot.status == LessonStatus.substituted) substitutions++;
-          if (slot.status == LessonStatus.canceled) canceled++;
+          if (slot.status == LessonStatus.substituted) {
+            substitutions++;
+            final subText = '$dName: ${slot.subjectName}';
+            if (!subList.contains(subText)) subList.add(subText);
+          }
+          if (slot.status == LessonStatus.canceled) {
+            canceled++;
+            final cText = '$dName: ${slot.startTime} ${slot.subjectName}';
+            if (!cancelList.contains(cText)) cancelList.add(cText);
+          }
           if (slot.eventType != null || (slot.topic != null && slot.topic!.toLowerCase().contains('sprawdzian'))) {
             exams++;
+            final exType = (slot.eventType ?? 'Sprawdzian').toLowerCase();
+            final eText = '$dName: ${slot.subjectName} ($exType)';
+            if (!examList.contains(eText)) examList.add(eText);
           }
         }
       }
 
+      final subSubtitle = substitutions > 0
+          ? subList.take(2).join(', ')
+          : 'Brak zmian w planie';
+      final exSubtitle = exams > 0
+          ? examList.take(2).join(', ')
+          : 'Brak sprawdzianów w tym tygodniu';
+      final canSubtitle = canceled > 0
+          ? cancelList.take(2).join(', ')
+          : 'Wszystkie lekcje zgodnie z planem';
+
       return WeeklyScheduleStats(
         totalHours: total,
         substitutionsCount: substitutions,
+        substitutionsSubtitle: subSubtitle,
         examsCount: exams,
+        examsSubtitle: exSubtitle,
         canceledCount: canceled,
+        canceledSubtitle: canSubtitle,
       );
     },
-    loading: () => const WeeklyScheduleStats(totalHours: 0, substitutionsCount: 0, examsCount: 0, canceledCount: 0),
-    error: (err, stack) => const WeeklyScheduleStats(totalHours: 0, substitutionsCount: 0, examsCount: 0, canceledCount: 0),
+    loading: () => const WeeklyScheduleStats(
+      totalHours: 0,
+      substitutionsCount: 0,
+      substitutionsSubtitle: 'Ładowanie...',
+      examsCount: 0,
+      examsSubtitle: 'Ładowanie...',
+      canceledCount: 0,
+      canceledSubtitle: 'Ładowanie...',
+    ),
+    error: (err, stack) => const WeeklyScheduleStats(
+      totalHours: 0,
+      substitutionsCount: 0,
+      substitutionsSubtitle: 'Błąd pobierania',
+      examsCount: 0,
+      examsSubtitle: 'Błąd pobierania',
+      canceledCount: 0,
+      canceledSubtitle: 'Błąd pobierania',
+    ),
   );
 });
 

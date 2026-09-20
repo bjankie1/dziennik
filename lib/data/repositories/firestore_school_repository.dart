@@ -267,10 +267,42 @@ class FirestoreSchoolRepository implements SchoolRepository {
     return monday.year == 2026 && monday.month == 9 && monday.day == 14;
   }
 
+  List<Map<String, dynamic>> _extractAllEvents(Map<String, dynamic> data) {
+    final list = <Map<String, dynamic>>[];
+    if (data['events'] is List) {
+      for (final e in data['events']) {
+        if (e is Map<String, dynamic>) {
+          list.add(e);
+        } else if (e is Map) {
+          list.add(Map<String, dynamic>.from(e));
+        }
+      }
+    }
+    if (data['upcomingExams'] is List) {
+      for (final e in data['upcomingExams']) {
+        if (e is Map) {
+          final m = Map<String, dynamic>.from(e);
+          if (!list.any((x) => x['date'] == m['date'] && x['subject'] == m['subject'])) {
+            list.add(m);
+          }
+        }
+      }
+    }
+    if (data['upcomingExam'] is Map) {
+      final m = Map<String, dynamic>.from(data['upcomingExam'] as Map);
+      if (!list.any((x) => x['date'] == m['date'] && x['subject'] == m['subject'])) {
+        list.add(m);
+      }
+    }
+    return list;
+  }
+
   List<LessonSlot> _parseTimetableForDay(
     List<dynamic> rawList,
     int targetDay, {
     DateTime? weekStart,
+    DateTime? dayDate,
+    List<Map<String, dynamic>>? events,
   }) {
     final dayLessons = rawList.where((item) {
       if (item is Map) {
@@ -286,26 +318,127 @@ class FirestoreSchoolRepository implements SchoolRepository {
     dayLessons.sort((a, b) => (a['lessonNumber'] as num? ?? 0).compareTo(b['lessonNumber'] as num? ?? 0));
 
     final isTripWeek = weekStart != null ? _isWarsawTripWeek(weekStart) : false;
+    final dayDateStr = dayDate != null
+        ? "${dayDate.year}-${dayDate.month.toString().padLeft(2, '0')}-${dayDate.day.toString().padLeft(2, '0')}"
+        : null;
+
+    final dayEvents = (events != null && dayDateStr != null)
+        ? events.where((e) => e['date'] == dayDateStr).toList()
+        : <Map<String, dynamic>>[];
 
     return dayLessons.map((item) {
       final timeRange = (item['time'] as String? ?? '08:00 - 08:45').split('-');
       final start = timeRange[0].trim();
       final end = timeRange.length > 1 ? timeRange[1].trim() : '';
       var subject = item['subject'] as String? ?? 'Lekcja';
-      final rawCancelled = item['isCancelled'] == true;
-      final isCancelled = isTripWeek && rawCancelled;
+      var teacher = item['teacher'] as String? ?? '';
+      String? substituteTeacher = item['substituteTeacher'] as String?;
 
-      if (!isCancelled && subject.toLowerCase().startsWith('odwołane')) {
+      final rawCancelled = item['isCancelled'] == true;
+      final isTripCancelled = isTripWeek && rawCancelled;
+
+      // Handle cancellation prefix cleanup
+      if (!isTripCancelled && subject.toLowerCase().startsWith('odwołane')) {
         subject = subject.replaceFirst(RegExp(r'^odwołane\s*', caseSensitive: false), '').trim();
       }
 
-      final isSubstituted = subject.toLowerCase().contains('zastępstwo');
-
+      // Handle base timetable substitution (scraped during week of 2026-09-14)
+      final hasBaseSubstitution = subject.toLowerCase().contains('zastępstwo');
       LessonStatus status = LessonStatus.normal;
-      if (isCancelled) {
+      String? statusNote;
+
+      if (hasBaseSubstitution) {
+        // Strip "zastępstwo" prefix from subject name
+        subject = subject.replaceFirst(RegExp(r'^zastępstwo\s*', caseSensitive: false), '').trim();
+        if (isTripWeek) {
+          status = LessonStatus.substituted;
+          statusNote = 'Zastępstwo';
+          substituteTeacher = teacher.isNotEmpty ? teacher : 'Czajkowska Maria';
+          teacher = 'Melska Grażyna';
+        } else {
+          status = LessonStatus.normal;
+          statusNote = null;
+          substituteTeacher = null;
+          if (teacher.toLowerCase().contains('czajkowska')) {
+            teacher = 'Melska Grażyna';
+          }
+        }
+      }
+
+      if (isTripCancelled) {
         status = LessonStatus.canceled;
-      } else if (isSubstituted) {
-        status = LessonStatus.substituted;
+        statusNote = 'Lekcja odwołana (Wycieczka)';
+      }
+
+      String? eventType = item['eventType'] as String?;
+      String? eventTitle = item['eventTitle'] as String?;
+      String? topic = isTripCancelled
+          ? (item['topic'] as String? ?? 'Wycieczka szkolna Warszawa')
+          : item['topic'] as String?;
+
+      // Enrich with calendar events for this specific date (from Terminarz)
+      if (dayEvents.isNotEmpty) {
+        final lessonNumber = item['lessonNumber'] as int? ?? 1;
+        // 1. Try matching by both lessonNumber and subject name
+        var matchedEvent = dayEvents.firstWhere(
+          (e) {
+            final eLesson = e['lessonNumber'] as num? ?? 0;
+            final eSub = (e['subject'] as String? ?? '').toLowerCase();
+            final curSub = subject.toLowerCase();
+            final subMatches = eSub.isNotEmpty && (curSub.contains(eSub) || eSub.contains(curSub));
+            return eLesson == lessonNumber && subMatches;
+          },
+          orElse: () => <String, dynamic>{},
+        );
+        // 2. Try matching by lessonNumber if specified and > 0
+        if (matchedEvent.isEmpty) {
+          matchedEvent = dayEvents.firstWhere(
+            (e) {
+              final eLesson = e['lessonNumber'] as num? ?? 0;
+              return eLesson == lessonNumber && eLesson > 0;
+            },
+            orElse: () => <String, dynamic>{},
+          );
+        }
+        // 3. Try matching by subject name
+        if (matchedEvent.isEmpty) {
+          matchedEvent = dayEvents.firstWhere(
+            (e) {
+              final eSub = (e['subject'] as String? ?? '').toLowerCase();
+              final curSub = subject.toLowerCase();
+              return eSub.isNotEmpty && (curSub.contains(eSub) || eSub.contains(curSub));
+            },
+            orElse: () => <String, dynamic>{},
+          );
+        }
+
+        if (matchedEvent.isNotEmpty) {
+          final rawType = (matchedEvent['type'] as String? ?? '').toLowerCase();
+          final desc = matchedEvent['description'] as String? ?? matchedEvent['rawText'] as String? ?? '';
+          final evTeacher = matchedEvent['teacher'] as String?;
+
+          if (rawType.contains('sprawdzian')) {
+            eventType = 'Sprawdzian';
+            eventTitle = desc.isNotEmpty ? desc : 'Sprawdzian';
+            topic = desc.isNotEmpty ? desc : topic;
+          } else if (rawType.contains('kartkówk')) {
+            eventType = 'Kartkówka';
+            eventTitle = desc.isNotEmpty ? desc : 'Kartkówka';
+            topic = desc.isNotEmpty ? desc : topic;
+          } else if (rawType.contains('odwołan')) {
+            status = LessonStatus.canceled;
+            statusNote = desc.isNotEmpty ? desc : 'Lekcja odwołana';
+          } else if (rawType.contains('zastępstwo')) {
+            status = LessonStatus.substituted;
+            statusNote = 'Zastępstwo';
+            if (evTeacher != null && evTeacher.isNotEmpty) {
+              substituteTeacher = evTeacher;
+            }
+          } else {
+            eventType = matchedEvent['type'] as String? ?? 'Wydarzenie';
+            eventTitle = desc;
+          }
+        }
       }
 
       return LessonSlot(
@@ -316,15 +449,15 @@ class FirestoreSchoolRepository implements SchoolRepository {
         endTime: end,
         room: (item['room'] as String?)?.isNotEmpty == true ? (item['room'] as String) : 'Sala szkolna',
         originalRoom: item['originalRoom'] as String?,
-        teacher: item['teacher'] as String? ?? '',
-        substituteTeacher: item['substituteTeacher'] as String?,
+        teacher: teacher,
+        substituteTeacher: substituteTeacher,
         status: status,
-        statusNote: isCancelled ? 'Lekcja odwołana (Wycieczka)' : (isSubstituted ? 'Zastępstwo' : null),
-        topic: isCancelled ? (item['topic'] as String? ?? 'Wycieczka szkolna Warszawa') : item['topic'] as String?,
-        homework: isCancelled ? null : item['homework'] as String?,
-        materials: isCancelled ? null : item['materials'] as String?,
-        eventType: item['eventType'] as String?,
-        eventTitle: item['eventTitle'] as String?,
+        statusNote: statusNote,
+        topic: topic,
+        homework: isTripCancelled ? null : item['homework'] as String?,
+        materials: isTripCancelled ? null : item['materials'] as String?,
+        eventType: eventType,
+        eventTitle: eventTitle,
       );
     }).toList();
   }
@@ -344,7 +477,14 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
     final rawList = data['timetable'] as List<dynamic>? ?? [];
     final monday = _normalizeToMonday(now);
-    final lessons = _parseTimetableForDay(rawList, now.weekday, weekStart: monday);
+    final events = _extractAllEvents(data);
+    final lessons = _parseTimetableForDay(
+      rawList,
+      now.weekday,
+      weekStart: monday,
+      dayDate: now,
+      events: events,
+    );
     return lessons;
   }
 
@@ -360,8 +500,17 @@ class FirestoreSchoolRepository implements SchoolRepository {
     }
 
     final rawList = data['timetable'] as List<dynamic>? ?? [];
-    final monday = _normalizeToMonday(DateTime.now());
-    final lessons = _parseTimetableForDay(rawList, dayOfWeek, weekStart: monday);
+    final now = DateTime.now();
+    final monday = _normalizeToMonday(now);
+    final targetDate = monday.add(Duration(days: dayOfWeek - 1));
+    final events = _extractAllEvents(data);
+    final lessons = _parseTimetableForDay(
+      rawList,
+      dayOfWeek,
+      weekStart: monday,
+      dayDate: targetDate,
+      events: events,
+    );
     return lessons.isNotEmpty ? lessons : _mockFallback.getScheduleForDay(dayOfWeek);
   }
 
@@ -380,9 +529,17 @@ class FirestoreSchoolRepository implements SchoolRepository {
       return _mockFallback.getWeekSchedule(weekStart: effectiveWeekStart);
     }
 
+    final events = _extractAllEvents(data);
     final result = <int, List<LessonSlot>>{};
     for (int day = 1; day <= 5; day++) {
-      final lessons = _parseTimetableForDay(rawList, day, weekStart: effectiveWeekStart);
+      final dayDate = effectiveWeekStart.add(Duration(days: day - 1));
+      final lessons = _parseTimetableForDay(
+        rawList,
+        day,
+        weekStart: effectiveWeekStart,
+        dayDate: dayDate,
+        events: events,
+      );
       result[day] = lessons;
     }
     return result;

@@ -93,6 +93,13 @@ class MockSchoolRepository implements SchoolRepository {
               statusNote: null,
             );
           }
+          if (slot.status == LessonStatus.substituted) {
+            return slot.copyWith(
+              status: LessonStatus.normal,
+              statusNote: null,
+              substituteTeacher: null,
+            );
+          }
           return slot;
         }).toList();
       }
