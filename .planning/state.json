@@ -57,12 +57,17 @@
       "number": "11",
       "name": "Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)",
       "status": "complete"
+    },
+    {
+      "number": "12",
+      "name": "Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni",
+      "status": "pending"
     }
   ],
   "next": {
-    "command": "/gsd-progress",
-    "label": "Show progress",
-    "reason": "Unsure of state — showing progress"
+    "command": "/gsd-progress --next",
+    "label": "Advance to the next step",
+    "reason": "executing"
   },
-  "updated_at": "2026-09-20T21:04:16.497Z"
+  "updated_at": "2026-09-20T21:24:14.058Z"
 }

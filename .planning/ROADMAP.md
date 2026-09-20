@@ -157,5 +157,10 @@ Plans:
   2. Nanoszenie statusów frekwencji ucznia (nieobecność, usprawiedliwiona, spóźnienie, zwolnienie) bezpośrednio na kafelki lekcji w widoku tygodniowym (siatka) i dziennym (agenda) oraz w modalu szczegółów lekcji.
   3. Stała szerokość elementu wyboru tygodnia (WeekNavigatorBar), gwarantująca niezmienną pozycję przycisków `<` i `>` niezależnie od długości tekstu daty.
 
-**Plans:** 0 plans
+**Plans:** 2 plans
+
+Plans:
+
+- [ ] 12-01-PLAN.md — Audyt mocków, ujednolicenie profilu ucznia i czyste stany puste
+- [ ] 12-02-PLAN.md — Frekwencja w planie lekcji i stała szerokość przełącznika tygodni
 
