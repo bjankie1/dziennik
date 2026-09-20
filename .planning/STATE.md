@@ -56,13 +56,14 @@ progress:
 |---|-------------|------|--------|-----------|
 | 260918-ev7 | Librus query access log modal and tracking | 2026-09-18 | 478def3 | [260918-ev7-librus-query-access-log-modal-and-tracki](./quick/260918-ev7-librus-query-access-log-modal-and-tracki/) |
 | 260919-ufy | Naprawa rozpoznawania usprawiedliwień i zwolnień w module frekwencji | 2026-09-19 | 6c76505 | [260919-ufy-naprawa-rozpoznawania-usprawiedliwie-i-z](./quick/260919-ufy-naprawa-rozpoznawania-usprawiedliwie-i-z/) |
+| 260920-wkd | Harmonogram na weekend oraz dynamiczne przełączanie tygodni w planie lekcji | 2026-09-20 | 39391f3 | [260920-wkd-harmonogram-weekend-i-przelaczanie-tygodni](./quick/260920-wkd-harmonogram-weekend-i-przelaczanie-tygodni/) |
 
 ## Session
 
-**Last session:** 2026-09-19T22:05:00.000Z
-**Stopped at:** Completed quick task 260919-ufy: Naprawa rozpoznawania usprawiedliwień i zwolnień w module frekwencji
+**Last session:** 2026-09-20T07:40:00.000Z
+**Stopped at:** Completed quick task 260920-wkd: Harmonogram na weekend oraz dynamiczne przełączanie tygodni w planie lekcji
 **Resume file:** .planning/ROADMAP.md
-Last activity: 2026-09-19 - Completed quick task 260919-ufy: Naprawa rozpoznawania usprawiedliwień i zwolnień w module frekwencji
+Last activity: 2026-09-20 - Completed quick task 260920-wkd: Harmonogram na weekend oraz dynamiczne przełączanie tygodni w planie lekcji
 
 
 
