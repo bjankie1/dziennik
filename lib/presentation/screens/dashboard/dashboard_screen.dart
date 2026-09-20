@@ -223,36 +223,88 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ),
                     ),
                     // Lucky number pill (single place, clean number)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryContainer.withValues(alpha: 0.65),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text("🍀", style: TextStyle(fontSize: 13)),
-                          const SizedBox(width: 6),
-                          RichText(
-                            text: TextSpan(
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: AppColors.onPrimaryContainer,
-                                fontWeight: FontWeight.w600,
-                              ),
+                    Builder(
+                      builder: (context) {
+                        final luckyNumber = student?.luckyNumber ?? 0;
+                        if (isWeekend) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainerLow,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                const TextSpan(text: "Szczęśliwy numerek: "),
-                                TextSpan(
-                                  text: "${student?.luckyNumber ?? 9}",
-                                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                                Text("🍀", style: TextStyle(fontSize: 13)),
+                                SizedBox(width: 6),
+                                Text(
+                                  "Brak losowania w weekend",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
                                 ),
                               ],
                             ),
+                          );
+                        } else if (luckyNumber <= 0) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainerLow,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text("🍀", style: TextStyle(fontSize: 13)),
+                                SizedBox(width: 6),
+                                Text(
+                                  "Brak losowania dzisiaj",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryContainer.withValues(alpha: 0.65),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
                           ),
-                        ],
-                      ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text("🍀", style: TextStyle(fontSize: 13)),
+                              const SizedBox(width: 6),
+                              RichText(
+                                text: TextSpan(
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.onPrimaryContainer,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  children: [
+                                    const TextSpan(text: "Szczęśliwy numerek: "),
+                                    TextSpan(
+                                      text: "$luckyNumber",
+                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                     // Semester / Week pill
                     Container(
@@ -538,46 +590,46 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           ),
         ),
 
-        const SizedBox(height: 20),
+        if (exam != null) ...[
+          const SizedBox(height: 20),
 
-        // Nadchodzący Sprawdzian Card
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.3),
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x04000000),
-                blurRadius: 8,
-                offset: Offset(0, 2),
+          // Nadchodzący Sprawdzian Card
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLowest,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.outlineVariant.withValues(alpha: 0.3),
               ),
-            ],
-          ),
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.timer_outlined, size: 18, color: AppColors.tertiary),
-                      SizedBox(width: 8),
-                      Text(
-                        "Nadchodzący sprawdzian",
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onSurface,
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x04000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.timer_outlined, size: 18, color: AppColors.tertiary),
+                        SizedBox(width: 8),
+                        Text(
+                          "Nadchodzący sprawdzian",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.onSurface,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  if (exam != null)
+                      ],
+                    ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
@@ -597,30 +649,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                       ),
                     ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (exam == null)
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.check_circle_outline, size: 18, color: AppColors.secondary),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          "Brak zaplanowanych sprawdzianów w najbliższym czasie 🎉",
-                          style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
+                  ],
+                ),
+                const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -693,9 +724,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ],
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -1707,16 +1739,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 title: "Kontakt z wychowawcą",
                 subtitle: "Napisz nową wiadomość",
                 onTap: () {
+                  final educatorName = student?.educator ?? "Wychowawca";
                   final homeroomTeacher = teachers.firstWhere(
-                    (t) => t.role.toLowerCase().contains("wychowawc") || t.subjectName.toLowerCase().contains("wychowawc"),
+                    (t) => t.role.toLowerCase().contains("wychowawc") || t.subjectName.toLowerCase().contains("wychowawc") || t.id == 'educator',
                     orElse: () => teachers.isNotEmpty
                         ? teachers.first
-                        : const TeacherContact(
-                            id: "1",
-                            name: "mgr Krzysztof Wiśniewski",
-                            subjectName: "Wychowawca",
+                        : TeacherContact(
+                            id: "educator",
+                            name: educatorName,
+                            subjectName: "Wychowawstwo",
                             role: "Wychowawca",
-                            initials: "KW",
+                            initials: educatorName.split(' ').map((p) => p.isNotEmpty ? p[0] : '').take(2).join().toUpperCase(),
                           ),
                   );
 
