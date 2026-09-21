@@ -6,7 +6,9 @@ import 'justification_modal.dart';
 import 'widgets/dual_ring_attendance_gauge.dart';
 
 class AttendanceScreen extends ConsumerStatefulWidget {
-  const AttendanceScreen({super.key});
+  final int? initialFilter;
+
+  const AttendanceScreen({super.key, this.initialFilter});
 
   @override
   ConsumerState<AttendanceScreen> createState() => _AttendanceScreenState();
@@ -14,7 +16,7 @@ class AttendanceScreen extends ConsumerStatefulWidget {
 
 class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   final Set<String> _selectedIds = {};
-  int _activeFilter = 1; // 0=Wszystkie, 1=Do usprawiedliwienia (domyślny), 2=Usprawiedliwione
+  late int _activeFilter = widget.initialFilter ?? 1; // 0=Wszystkie, 1=Do usprawiedliwienia (domyślny), 2=Usprawiedliwione
   String _selectedQuickReason = 'Wizyta lekarska';
 
   final List<String> _quickReasons = const [

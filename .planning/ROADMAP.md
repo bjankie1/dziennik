@@ -186,9 +186,9 @@ Plans:
   2. Zmiana adresu w przeglądarce, odświeżenie strony (F5) oraz przyciski Wstecz/Dalej w przeglądarce poprawnie przełączają widoki i zachowują stan.
   3. Możliwość bezpośredniego wejścia z linku do konkretnego zasobu (np. `/wiadomosci/:id` lub parametr daty/tygodnia w planie lekcji `/plan?data=YYYY-MM-DD`).
 
-**Plans:** 0/2 plans complete
+**Plans:** 2/2 plans complete
 
 Plans:
 
-- [ ] 13-01-PLAN.md — Architektura routingu webowego (URL strategy, definicja tras i synchronizacja z MainNavigationScreen)
-- [ ] 13-02-PLAN.md — Deep linking dla zasobów (wątki wiadomości, widok tygodnia w planie lekcji, filtry frekwencji)
+- [x] 13-01-PLAN.md — Architektura routingu webowego (URL strategy, definicja tras i synchronizacja z MainNavigationScreen)
+- [x] 13-02-PLAN.md — Deep linking dla zasobów (wątki wiadomości, widok tygodnia w planie lekcji, filtry frekwencji)

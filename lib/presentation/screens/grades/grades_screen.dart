@@ -11,6 +11,7 @@ import 'widgets/subject_ledger_table.dart';
 import 'widgets/subject_inspector_card.dart';
 import 'widgets/average_trajectory_card.dart';
 import 'widgets/grade_details_side_sheet.dart';
+import 'package:go_router/go_router.dart';
 
 class _GradePalette {
   final Color bg;
@@ -103,14 +104,16 @@ String _getGradesCountLabel(int count) {
 }
 
 class GradesScreen extends ConsumerStatefulWidget {
-  const GradesScreen({super.key});
+  final int? initialTerm;
+
+  const GradesScreen({super.key, this.initialTerm});
 
   @override
   ConsumerState<GradesScreen> createState() => _GradesScreenState();
 }
 
 class _GradesScreenState extends ConsumerState<GradesScreen> {
-  int _selectedTerm = 1; // 1 = Semestr 1, 2 = Semestr 2, 3 = Roczna
+  late int _selectedTerm = widget.initialTerm ?? 1; // 1 = Semestr 1, 2 = Semestr 2, 3 = Roczna
   final Set<String> _expandedSubjectIds = {'sub_mat', 'sub_pol'}; // default expanded
 
   @override
@@ -385,7 +388,7 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                             grade: grade,
                             subject: subject,
                             onContactTeacher: () {
-                              ref.read(currentNavIndexProvider.notifier).setIndex(4);
+                              context.go('/wiadomosci');
                             },
                           );
                         },
@@ -408,7 +411,7 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                         grade: grade,
                         subject: subject,
                         onContactTeacher: () {
-                          ref.read(currentNavIndexProvider.notifier).setIndex(4);
+                          context.go('/wiadomosci');
                         },
                       );
                     },
@@ -418,7 +421,7 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                       }
                     },
                     onContactTeacher: () {
-                      ref.read(currentNavIndexProvider.notifier).setIndex(4);
+                      context.go('/wiadomosci');
                     },
                   ),
                 ),

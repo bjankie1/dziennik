@@ -2,25 +2,25 @@
 gsd_state_version: "1.0"
 milestone: v2.0
 status: Milestone complete
-stopped_at: Phase 12 verified
-last_updated: "2026-09-20T21:37:00.000Z"
-last_activity: 2026-09-20
-last_activity_desc: "Completed Phase 12: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni"
-state_head: 2c99f85
+stopped_at: Phase 13 verified
+last_updated: "2026-09-21T07:31:00.000Z"
+last_activity: 2026-09-21
+last_activity_desc: "Completed Phase 13: Dedykowane URL i routing dla podstron i zasobów (deep linking)"
+state_head: HEAD
 progress:
-  total_phases: 9
-  completed_phases: 9
-  total_plans: 16
-  completed_plans: 16
-current_phase_name: audyt-mockow-nieobecnosci-i-nawigator
+  total_phases: 10
+  completed_phases: 10
+  total_plans: 18
+  completed_plans: 18
+current_phase_name: dedykowane-url-i-routing-dla-podstron-i-zasob-w-deep-linking
 ---
 
 # Project State
 
 **Current Milestone:** Milestone v2.0
-**Active Phase:** Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)
-**Status:** Ready to execute
-**Last Updated:** 2026-09-18
+**Active Phase:** Phase 13: Dedykowane URL i routing dla podstron i zasobów (deep linking)
+**Status:** Completed & Deployed
+**Last Updated:** 2026-09-21
 
 ## Completed in v2.0
 
@@ -33,6 +33,7 @@ current_phase_name: audyt-mockow-nieobecnosci-i-nawigator
 - [x] **Phase 10**: Pełen panel ocen w wersji na przeglądarkę (Master-Detail 8+4, karty KPI ze średnią i rozkładem MEN 1-6, wykres trajektorii Béziera, szuflada boczna ze szczegółami i kalkulatorem GPA).
 - [x] **Phase 11**: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny) (nowoczesne nagłówki Chrome 133, sekwencyjny fetch z jitterem, probe sesji, dynamiczny backoff 429/503, cisza nocna 22:30-06:30, cooldown klienta 120s).
 - [x] **Phase 12**: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni (odcięcie mocków z MockData, ukrywanie sprawdzianu, neutralny numerek w weekend, dynamiczny profil i wychowawca, frekwencja na kafelkach planu, stała szerokość 430px WeekNavigatorBar).
+- [x] **Phase 13**: Dedykowane URL i routing dla podstron i zasobów (deep linking) (go_router, Path URL Strategy, StatefulShellRoute, trasy po polsku, deep linki /wiadomosci/:id i /plan-lekcji?data=...).
 
 ## Milestone v2.0 Roadmap
 
@@ -45,7 +46,7 @@ current_phase_name: audyt-mockow-nieobecnosci-i-nawigator
 - [x] **Phase 10**: Pełen panel ocen w wersji na przeglądarkę
 - [x] **Phase 11**: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)
 - [x] **Phase 12**: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni
-- [ ] **Phase 13**: Dedykowane URL i routing dla podstron i zasobów (deep linking)
+- [x] **Phase 13**: Dedykowane URL i routing dla podstron i zasobów (deep linking)
 
 ## Accumulated Context
 

@@ -6,10 +6,13 @@ import 'firebase_options.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/providers/auth_providers.dart';
-import 'presentation/screens/auth/auth_gate.dart';
+
+import 'package:flutter_web_plugins/url_strategy.dart';
+import 'presentation/routes/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
   await initializeDateFormatting('pl_PL', null);
   await initializeDateFormatting('pl', null);
 
@@ -33,16 +36,18 @@ void main() async {
   );
 }
 
-class EduSyncApp extends StatelessWidget {
+class EduSyncApp extends ConsumerWidget {
   const EduSyncApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+
+    return MaterialApp.router(
       title: 'EduSync • Lepsza Szkoła',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const AuthGate(),
+      routerConfig: router,
     );
   }
 }

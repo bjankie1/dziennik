@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/message_thread.dart';
 import '../../providers/school_providers.dart';
+import 'package:go_router/go_router.dart';
 
 class MessageThreadScreen extends ConsumerStatefulWidget {
   final MessageThread thread;
@@ -209,7 +210,13 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.onSurface),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/wiadomosci');
+            }
+          },
           tooltip: 'Wróć',
         ),
         title: Text(

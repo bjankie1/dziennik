@@ -14,8 +14,12 @@ import 'schedule/schedule_screen.dart';
 import 'attendance/attendance_screen.dart';
 import 'messages/messages_screen.dart';
 
+import 'package:go_router/go_router.dart';
+
 class MainNavigationScreen extends ConsumerWidget {
-  const MainNavigationScreen({super.key});
+  final StatefulNavigationShell? navigationShell;
+
+  const MainNavigationScreen({super.key, this.navigationShell});
 
   static const _screenTitles = [
     'Dashboard',
@@ -25,12 +29,39 @@ class MainNavigationScreen extends ConsumerWidget {
     'Wiadomości',
   ];
 
+  static const _routePaths = [
+    '/pulpit',
+    '/plan-lekcji',
+    '/oceny',
+    '/frekwencja',
+    '/wiadomosci',
+  ];
+
+  void _onDestinationSelected(BuildContext context, WidgetRef ref, int index) {
+    if (navigationShell != null) {
+      navigationShell!.goBranch(
+        index,
+        initialLocation: index == navigationShell!.currentIndex,
+      );
+    } else {
+      context.go(_routePaths[index]);
+    }
+    ref.read(currentNavIndexProvider.notifier).setIndex(index);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final currentIndex = ref.watch(currentNavIndexProvider);
+    final int activeIndex = navigationShell?.currentIndex ?? ref.watch(currentNavIndexProvider);
     final studentAsync = ref.watch(studentProfileProvider);
     final attendanceAsync = ref.watch(attendanceProvider);
     final messagesAsync = ref.watch(messagesProvider);
+
+    // Keep currentNavIndexProvider synced if route changed via browser back/forward
+    if (ref.read(currentNavIndexProvider) != activeIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(currentNavIndexProvider.notifier).setIndex(activeIndex);
+      });
+    }
 
     // Unexcused absences count for Frekwencja badge
     final unexcusedCount = (attendanceAsync.value ?? [])
@@ -60,10 +91,8 @@ class MainNavigationScreen extends ConsumerWidget {
             body: Row(
               children: [
                 AppSidebar(
-                  currentIndex: currentIndex,
-                  onIndexSelected: (index) {
-                    ref.read(currentNavIndexProvider.notifier).setIndex(index);
-                  },
+                  currentIndex: activeIndex,
+                  onIndexSelected: (index) => _onDestinationSelected(context, ref, index),
                   unexcusedCount: unexcusedCount,
                   unreadCount: messageBadgeCount,
                   student: studentAsync.value,
@@ -74,18 +103,17 @@ class MainNavigationScreen extends ConsumerWidget {
                       AppDesktopHeader(
                         student: studentAsync.value,
                         unreadCount: messageBadgeCount,
-                        onNotificationsTap: () {
-                          ref.read(currentNavIndexProvider.notifier).setIndex(4); // Messages
-                        },
+                        onNotificationsTap: () => _onDestinationSelected(context, ref, 4),
                         onProfileTap: () {
                           _showProfileSheet(context, ref);
                         },
                       ),
                       Expanded(
-                        child: IndexedStack(
-                          index: currentIndex,
-                          children: screens,
-                        ),
+                        child: navigationShell ??
+                            IndexedStack(
+                              index: activeIndex,
+                              children: screens,
+                            ),
                       ),
                     ],
                   ),
@@ -99,10 +127,8 @@ class MainNavigationScreen extends ConsumerWidget {
           appBar: studentAsync.when(
             data: (student) => AppHeader(
               student: student,
-              currentSectionTitle: _screenTitles[currentIndex],
-              onNotificationsTap: () {
-                ref.read(currentNavIndexProvider.notifier).setIndex(4); // Messages
-              },
+              currentSectionTitle: _screenTitles[activeIndex],
+              onNotificationsTap: () => _onDestinationSelected(context, ref, 4),
               onProfileTap: () {
                 _showProfileSheet(context, ref);
               },
@@ -110,15 +136,14 @@ class MainNavigationScreen extends ConsumerWidget {
             loading: () => null,
             error: (err, stack) => null,
           ),
-          body: IndexedStack(
-            index: currentIndex,
-            children: screens,
-          ),
+          body: navigationShell ??
+              IndexedStack(
+                index: activeIndex,
+                children: screens,
+              ),
           bottomNavigationBar: NavigationBar(
-            selectedIndex: currentIndex,
-            onDestinationSelected: (index) {
-              ref.read(currentNavIndexProvider.notifier).setIndex(index);
-            },
+            selectedIndex: activeIndex,
+            onDestinationSelected: (index) => _onDestinationSelected(context, ref, index),
             destinations: [
               const NavigationDestination(
                 icon: Icon(Icons.dashboard_outlined),

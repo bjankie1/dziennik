@@ -15,6 +15,7 @@ import "../attendance/justification_modal.dart";
 import "../messages/new_message_screen.dart";
 import "../messages/message_thread_screen.dart";
 import "../../widgets/modals/librus_query_log_modal.dart";
+import "package:go_router/go_router.dart";
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -571,7 +572,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               const SizedBox(height: 14),
               ElevatedButton.icon(
                 onPressed: () {
-                  ref.read(currentNavIndexProvider.notifier).setIndex(1); // Plan Lekcji
+                  context.go('/plan-lekcji');
                 },
                 icon: const Icon(Icons.arrow_forward_rounded, size: 16),
                 label: const Text("Pełny plan lekcji na cały tydzień"),
@@ -699,11 +700,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       const SizedBox(height: 8),
                       InkWell(
                         onTap: () {
-                          final examMonday = DateTime(exam.date.year, exam.date.month, exam.date.day)
-                              .subtract(Duration(days: exam.date.weekday - 1));
-                          ref.read(selectedWeekMondayProvider.notifier).setMonday(examMonday);
-                          ref.read(selectedScheduleDayProvider.notifier).setDay((exam.date.weekday - 1).clamp(0, 4));
-                          ref.read(currentNavIndexProvider.notifier).setIndex(1);
+                          final dateStr = DateFormat('yyyy-MM-dd').format(exam.date);
+                          context.go('/plan-lekcji?data=$dateStr');
                         },
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
@@ -1020,7 +1018,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
               InkWell(
                 onTap: () {
-                  ref.read(currentNavIndexProvider.notifier).setIndex(4); // Wiadomości
+                  context.go('/wiadomosci');
                 },
                 child: const Row(
                   children: [
@@ -1129,7 +1127,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
                 OutlinedButton.icon(
                   onPressed: () {
-                    ref.read(currentNavIndexProvider.notifier).setIndex(1);
+                    context.go('/plan-lekcji');
                   },
                   icon: const Icon(Icons.event, size: 14),
                   label: const Text("Szczegóły"),
@@ -1322,12 +1320,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 children: [
                   TextButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => MessageThreadScreen(thread: msg),
-                        ),
-                      );
+                      context.go('/wiadomosci/${msg.id}', extra: msg);
                     },
                     style: TextButton.styleFrom(
                       backgroundColor: AppColors.primary,
@@ -1518,7 +1511,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               const SizedBox(height: 8),
               InkWell(
                 onTap: () {
-                  ref.read(currentNavIndexProvider.notifier).setIndex(2); // Oceny
+                  context.go('/oceny');
                 },
                 child: const Padding(
                   padding: EdgeInsets.symmetric(vertical: 4),
@@ -1728,7 +1721,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 title: "Zadania domowe",
                 subtitle: "Terminarz i sprawdziany",
                 onTap: () {
-                  ref.read(currentNavIndexProvider.notifier).setIndex(1); // Plan
+                  context.go('/plan-lekcji');
                 },
               ),
               const Divider(height: 12, color: AppColors.surfaceContainerHigh),
@@ -2258,7 +2251,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   const SizedBox(height: 12),
                   InkWell(
                     onTap: () {
-                      ref.read(currentNavIndexProvider.notifier).setIndex(1); // Plan Lekcji
+                      context.go('/plan-lekcji');
                     },
                     borderRadius: BorderRadius.circular(8),
                     child: const Padding(
@@ -2310,7 +2303,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                       TextButton(
                         onPressed: () {
-                          ref.read(currentNavIndexProvider.notifier).setIndex(2); // Oceny
+                          context.go('/oceny');
                         },
                         child: const Text("Wszystkie →"),
                       ),

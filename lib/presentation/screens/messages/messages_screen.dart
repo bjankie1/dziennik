@@ -4,8 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/message_thread.dart';
 import '../../providers/school_providers.dart';
-import 'message_thread_screen.dart';
 import 'new_message_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
@@ -329,14 +329,8 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
         ],
       ),
       child: InkWell(
-        onTap: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MessageThreadScreen(thread: thread),
-            ),
-          );
-          ref.invalidate(messagesProvider);
+        onTap: () {
+          context.go('/wiadomosci/${thread.id}', extra: thread);
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
