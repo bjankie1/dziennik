@@ -1,18 +1,16 @@
 ---
 gsd_state_version: "1.0"
-milestone: v2.0
-status: Milestone complete
-stopped_at: Phase 13 verified
-last_updated: "2026-09-21T07:31:00.000Z"
+milestone: v3.0
+milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
+status: planning
+last_updated: "2026-09-21T19:36:15.622Z"
 last_activity: 2026-09-21
-last_activity_desc: "Completed Phase 13: Dedykowane URL i routing dla podstron i zasobów (deep linking)"
-state_head: HEAD
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 18
-  completed_plans: 18
-current_phase_name: dedykowane-url-i-routing-dla-podstron-i-zasob-w-deep-linking
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -76,3 +74,10 @@ current_phase_name: dedykowane-url-i-routing-dla-podstron-i-zasob-w-deep-linking
 **Stopped at:** Milestone v2.0 summary generated
 **Resume file:** .planning/reports/MILESTONE_SUMMARY-v2.0.md
 Last activity: 2026-09-21 - Wygenerowano kompleksowe podsumowanie kamienia milowego v2.0 (MILESTONE_SUMMARY-v2.0.md)
+
+## Current Position
+
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-09-21 — Milestone v3.0 started
