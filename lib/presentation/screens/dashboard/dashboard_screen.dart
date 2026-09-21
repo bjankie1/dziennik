@@ -25,7 +25,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  int _selectedMessageTab = 0; // 0: Nieprzeczytane, 1: Wszystkie, 2: Ogłoszenia
+  int _selectedMessageTab = 0; // 0: Wszystkie, 1: Nieprzeczytane, 2: Ogłoszenia
 
   @override
   Widget build(BuildContext context) {
@@ -82,8 +82,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     // Filtered messages by tab
     final displayedMessages = _selectedMessageTab == 0
-        ? (unreadMessages.isNotEmpty ? unreadMessages : allMessages.take(3).toList())
-        : (_selectedMessageTab == 2 ? announcementMessages : allMessages);
+        ? allMessages
+        : (_selectedMessageTab == 1 ? unreadMessages : announcementMessages);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -1050,12 +1050,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               children: [
                 _buildFilterPill(
                   index: 0,
-                  label: "Nieprzeczytane ($unreadCount)",
+                  label: "Wszystkie",
                   isSelected: _selectedMessageTab == 0,
                 ),
                 _buildFilterPill(
                   index: 1,
-                  label: "Wszystkie",
+                  label: "Nieprzeczytane ($unreadCount)",
                   isSelected: _selectedMessageTab == 1,
                 ),
                 _buildFilterPill(
@@ -1074,13 +1074,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             Container(
               padding: const EdgeInsets.all(32),
               alignment: Alignment.center,
-              child: const Text(
-                "Brak wiadomości w wybranej kategorii",
-                style: TextStyle(color: AppColors.onSurfaceVariant),
+              child: Text(
+                _selectedMessageTab == 1
+                    ? "Wszystkie wiadomości zostały przeczytane"
+                    : (_selectedMessageTab == 2
+                        ? "Brak ogłoszeń szkolnych"
+                        : "Brak wiadomości w skrzynce"),
+                style: const TextStyle(color: AppColors.onSurfaceVariant),
               ),
             )
           else
-            ...displayedMessages.take(4).map((msg) => _buildDesktopMessageArticle(context, msg)),
+            ...displayedMessages.take(3).map((msg) => _buildDesktopMessageArticle(context, msg)),
 
           const SizedBox(height: 12),
 
