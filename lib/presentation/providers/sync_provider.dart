@@ -133,6 +133,8 @@ class SyncNotifier extends Notifier<SyncState> {
       ref.invalidate(upcomingExamProvider);
       ref.invalidate(weekScheduleProvider);
       ref.invalidate(announcementsProvider);
+      ref.invalidate(messagesProvider);
+      ref.invalidate(attendanceProvider);
 
       final isNight = _isNightSilence(now);
       final successMsg = isNight

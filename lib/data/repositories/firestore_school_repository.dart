@@ -215,7 +215,9 @@ class FirestoreSchoolRepository implements SchoolRepository {
       previousPeriodAverage: 4.85,
       classRank: 1,
       totalStudentsInClass: 28,
-      unreadMessagesCount: (data['unreadNotificationsCount'] as num?)?.toInt() ?? 0,
+      unreadMessagesCount: (data['unreadMessagesCount'] as num?)?.toInt() ??
+          (data['unreadNotificationsCount'] as num?)?.toInt() ??
+          0,
       currentWeek: 'Tydzień A',
       luckyNumber: lucky,
       educator: studentMap['educator'] as String? ?? 'Sobota Łukasz',
@@ -946,8 +948,26 @@ class FirestoreSchoolRepository implements SchoolRepository {
       }
 
       final id = item['id'] as String? ?? UniqueKey().toString();
-      final isReadFromLibrus = item['isRead'] == true;
-      final isRead = _localReadOverrides[id] ?? isReadFromLibrus;
+      final localOverride = _localReadOverrides[id];
+      final now = DateTime.now();
+      final isToday = dt.year == now.year && dt.month == now.month && dt.day == now.day;
+
+      bool isUnread;
+      if (localOverride != null) {
+        // User explicit action inside EduSync (read / unread toggle) has highest authority
+        isUnread = !localOverride;
+      } else {
+        final backendIsRead = item['isRead'] == true && item['unread'] != true;
+        if (!backendIsRead) {
+          isUnread = true;
+        } else if (isToday) {
+          // If a message was received today and user hasn't opened it in EduSync yet,
+          // highlight it as unread so user sees the indicator/badge
+          isUnread = true;
+        } else {
+          isUnread = false;
+        }
+      }
 
       return MessageThread(
         id: id,
@@ -958,7 +978,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
         preview: item['preview'] as String? ?? subject,
         body: item['body'] as String? ?? item['preview'] as String? ?? subject,
         timestamp: dt,
-        isUnread: !isRead,
+        isUnread: isUnread,
         isImportant: isImportant,
       );
     }).toList();

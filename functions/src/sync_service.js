@@ -218,8 +218,10 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
   }
 
   // Save student snapshot
+  const unreadMessagesCount = (freshData.messages || []).filter(m => !m.isRead).length;
   await studentRef.set({
     ...freshData,
+    unreadMessagesCount,
     unreadNotificationsCount: newNotifications.length,
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   }, { merge: true });

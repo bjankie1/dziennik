@@ -298,6 +298,7 @@ class LibrusClient {
       attendance: attData.records,
       attendanceStats: attData.stats,
       messages: msgData.messages,
+      unreadMessagesCount: msgData.unreadCount || (msgData.messages || []).filter(m => !m.isRead).length,
       justifications: Array.isArray(justData) ? justData : (justData?.justifications || []),
       events: terminarzData.events || [],
       upcomingExams: terminarzData.upcomingExams || [],
@@ -625,7 +626,35 @@ class LibrusClient {
 
         const subject = $(tds[3]).text().trim().replace(/\s+/g, " ");
         const date = $(tds[4]).text().trim();
-        const isRead = !$(tr).hasClass("bold") && !$(tds[3]).find("b").length;
+
+        // Robust unread detection in Synergia HTML:
+        // 1. Text bold styling in tr, td, or subject link
+        const hasBold = $(tr).hasClass("bold") ||
+                        ($(tr).attr("style") || "").includes("bold") ||
+                        $(tds).toArray().some(td => {
+                          const style = $(td).attr("style") || "";
+                          const aStyle = $(td).find("a").attr("style") || "";
+                          return style.includes("bold") || aStyle.includes("bold") || $(td).hasClass("bold") || $(td).find("b, strong").length > 0;
+                        });
+
+        // 2. Icon in column 1 (tds[1]) indicating unread/read state
+        const statusImg = $(tds[1]).find("img");
+        const statusSrc = (statusImg.attr("src") || "").toLowerCase();
+        const statusTitle = (statusImg.attr("title") || "").toLowerCase();
+        const statusAlt = (statusImg.attr("alt") || "").toLowerCase();
+
+        const hasUnreadIcon = statusSrc.includes("nieprzeczytan") || 
+                              statusSrc.includes("zamkniet") || 
+                              statusSrc.includes("unread") ||
+                              statusTitle.includes("nieprzeczytan") || 
+                              statusAlt.includes("nieprzeczytan");
+
+        const hasReadIcon = statusSrc.includes("przeczytan") ||
+                            statusSrc.includes("otwart") ||
+                            statusSrc.includes("read");
+
+        const isUnread = hasUnreadIcon || (hasBold && !hasReadIcon);
+        const isRead = !isUnread;
 
         messages.push({
           id: msgId,
@@ -639,6 +668,20 @@ class LibrusClient {
         });
       }
     });
+
+    // Also parse menu counter if available: "Wiadomości (2)" or .counter / .unread-counter
+    let menuUnreadCount = 0;
+    $("a[href*='wiadomosci']").each((_, a) => {
+      const match = $(a).text().match(/\((\d+)\)/);
+      if (match) {
+        menuUnreadCount = Math.max(menuUnreadCount, parseInt(match[1], 10));
+      }
+    });
+    if (menuUnreadCount > 0 && messages.every(m => m.isRead)) {
+      for (let i = 0; i < Math.min(menuUnreadCount, messages.length); i++) {
+        messages[i].isRead = false;
+      }
+    }
 
     // Fetch full body for the latest 10 messages so they are immediately available
     for (let i = 0; i < Math.min(messages.length, 10); i++) {
@@ -658,7 +701,8 @@ class LibrusClient {
       }
     }
 
-    return { messages };
+    const unreadCount = messages.filter(m => !m.isRead).length;
+    return { messages, unreadCount };
   }
 
   async fetchMessageDetails(msgId, librusUrl) {

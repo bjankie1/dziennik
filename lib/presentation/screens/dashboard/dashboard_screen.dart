@@ -1911,7 +1911,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final studentAsync = ref.watch(studentProfileProvider);
     final scheduleAsync = ref.watch(todayScheduleProvider);
     final recentGradesAsync = ref.watch(recentGradesProvider);
+    final messagesAsync = ref.watch(messagesProvider);
+    final unreadMessagesCount = ref.watch(unreadMessagesCountProvider);
     final syncState = ref.watch(syncProvider);
+
+    final messages = messagesAsync.value ?? [];
 
     final now = DateTime.now();
     final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
@@ -2276,6 +2280,106 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ],
               ),
             ),
+            // Messages & Communications (Mobile)
+            Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: unreadMessagesCount > 0
+                      ? AppColors.primary.withValues(alpha: 0.35)
+                      : AppColors.outlineVariant.withValues(alpha: 0.3),
+                  width: unreadMessagesCount > 0 ? 1.5 : 1.0,
+                ),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Text(
+                            "WIADOMOŚCI",
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.onSurfaceVariant,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          if (unreadMessagesCount > 0) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                "$unreadMessagesCount ${unreadMessagesCount == 1 ? 'nowa' : 'nowe'}",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: () => context.go('/wiadomosci'),
+                        child: const Text("Wszystkie →"),
+                      ),
+                    ],
+                  ),
+                  if (unreadMessagesCount > 0) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.mark_email_unread_rounded, size: 16, color: AppColors.primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              unreadMessagesCount == 1
+                                  ? "Masz 1 nową wiadomość"
+                                  : "Masz $unreadMessagesCount nowe wiadomości",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 8),
+                  if (messages.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Center(
+                        child: Text(
+                          "Brak wiadomości w skrzynce",
+                          style: TextStyle(fontSize: 12, color: AppColors.outline),
+                        ),
+                      ),
+                    )
+                  else
+                    ...messages.take(3).map((msg) => _buildMobileMessageItem(context, msg)),
+                ],
+              ),
+            ),
             const SizedBox(height: 14),
 
             // Recent Grades (Mobile)
@@ -2333,6 +2437,115 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileMessageItem(BuildContext context, MessageThread msg) {
+    final timeStr = DateFormat("d MMM, HH:mm", "pl_PL").format(msg.timestamp);
+
+    return InkWell(
+      onTap: () => context.go('/wiadomosci/${msg.id}', extra: msg),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: msg.isUnread
+              ? AppColors.primary.withValues(alpha: 0.05)
+              : AppColors.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(12),
+          border: msg.isUnread
+              ? Border.all(color: AppColors.primary.withValues(alpha: 0.25))
+              : null,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 18,
+              backgroundColor: msg.isUnread
+                  ? AppColors.primary.withValues(alpha: 0.15)
+                  : AppColors.surfaceContainerHigh,
+              child: Text(
+                msg.senderInitials,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: msg.isUnread ? AppColors.primary : AppColors.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          msg.senderName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: msg.isUnread ? FontWeight.w700 : FontWeight.w600,
+                            color: AppColors.onSurface,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(
+                        timeStr,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: msg.isUnread ? AppColors.primary : AppColors.outline,
+                          fontWeight: msg.isUnread ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    msg.subject,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: msg.isUnread ? FontWeight.w700 : FontWeight.w500,
+                      color: msg.isUnread ? AppColors.primary : AppColors.onSurface,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (msg.preview.isNotEmpty && msg.preview != msg.subject) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      msg.preview,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (msg.isUnread) ...[
+              const SizedBox(width: 6),
+              Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.only(top: 4),
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
           ],
         ),
       ),

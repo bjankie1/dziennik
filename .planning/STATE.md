@@ -68,10 +68,11 @@ current_phase_name: dedykowane-url-i-routing-dla-podstron-i-zasob-w-deep-linking
 | 260920-wkd | Harmonogram na weekend oraz dynamiczne przełączanie tygodni w planie lekcji | 2026-09-20 | 39391f3 | [260920-wkd-harmonogram-weekend-i-przelaczanie-tygodni](./quick/260920-wkd-harmonogram-weekend-i-przelaczanie-tygodni/) |
 | 260920-trm | Integracja terminarza z planem lekcji, nawigacja do tygodnia sprawdzianu, naprawa zastępstwa z j. polskiego | 2026-09-20 | a0d9d9c | [260920-trm-terminarz-integracja-kartkowka-zastepstwa](./quick/260920-trm-terminarz-integracja-kartkowka-zastepstwa/) |
 | 260921-9sd | Uporządkowanie kalkulacji frekwencji: dual ring gauge i spójne wskaźniki obecności | 2026-09-21 | HEAD | [260921-9sd-uporzadkowanie-kalkulacji-frekwencji-dua](./quick/260921-9sd-uporzadkowanie-kalkulacji-frekwencji-dua/) |
+| 260921-msg | Naprawa licznika nieprzeczytanych wiadomości oraz dodanie kafelków wiadomości na pulpicie mobilnym | 2026-09-21 | HEAD | [260921-msg-licznik-nieprzeczytanych-i-kafelki-wiadomosci-mobile](./quick/260921-msg-licznik-nieprzeczytanych-i-kafelki-wiadomosci-mobile/) |
 
 ## Session
 
-**Last session:** 2026-09-21T07:06:00.000Z
-**Stopped at:** Completed quick task 260921-9sd: Uporządkowanie kalkulacji frekwencji: dual ring gauge i spójne wskaźniki obecności
+**Last session:** 2026-09-21T19:10:00.000Z
+**Stopped at:** Completed quick task 260921-msg: Naprawa licznika nieprzeczytanych wiadomości oraz dodanie kafelków wiadomości na pulpicie mobilnym
 **Resume file:** .planning/ROADMAP.md
-Last activity: 2026-09-21 - Completed quick task 260921-9sd: Uporządkowanie kalkulacji frekwencji: dual ring gauge i spójne wskaźniki obecności
+Last activity: 2026-09-21 - Completed quick task 260921-msg: Naprawa licznika nieprzeczytanych wiadomości oraz dodanie kafelków wiadomości na pulpicie mobilnym
