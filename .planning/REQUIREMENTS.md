@@ -1,7 +1,7 @@
 # Requirements: EduSync • Lepsza Szkoła
 
-**Defined:** 2026-09-15  
-**Core Value:** Błyskawiczny, czytelny i niezależny dostęp do rzeczywistych danych edukacyjnych ucznia (LO nr X we Wrocławiu) w czasie rzeczywistym, z automatyczną synchronizacją w tle co 30 minut.
+**Defined:** 2026-09-21  
+**Core Value:** Błyskawiczny, czytelny i niezależny dostęp do rzeczywistych danych edukacyjnych ucznia (LO nr X we Wrocławiu) w czasie rzeczywistym, z automatyczną synchronizacją w tle.
 
 ## v1 Requirements (Complete)
 
@@ -20,7 +20,7 @@
 - [x] **MSG-02**: Wskaźnik nowych / nieprzeczytanych wiadomości (badge) na dolnym pasku nawigacji.
 - [x] **MSG-03**: Automatyczne powiadomienia w tle o nowych wiadomościach i ocenach w cyklu Cloud Scheduler (co 30 min).
 
-## v2 Requirements (Active Milestone)
+## v2 Requirements (Complete)
 
 ### Authentication & Persistence
 - [x] **REQ-AUTH-01**: Trwałe powiązanie konta Librus pod profilem użytkownika Google w Firestore. Po wylogowaniu i ponownym zalogowaniu kontem Google aplikacja automatycznie rozpoznaje istniejące powiązanie i wchodzi do aplikacji bez ponownego wpisywania loginu Librus. Odświeżenie strony (F5) zachowuje sesję.
@@ -36,65 +36,83 @@
 - [x] **REQ-ATTN-04**: Filtrowanie frekwencji (Wszystkie, Do usprawiedliwienia, Usprawiedliwione) z grupowaniem po dniach i etykietami stanu.
 - [x] **REQ-ATTN-05**: Zaznaczanie wielu lekcji checkboxami i dolny wysuwany panel z szybkimi powodami usprawiedliwienia.
 - [x] **REQ-ATTN-06**: Autoryzacja kodem PIN rodzica i wysyłanie e-usprawiedliwienia do wychowawcy.
-### Messages Functional Module (czytanie, odpowiadanie, wysyłanie)
+
+### Messages Functional Module
 - [x] **REQ-MSG-04**: Widok wątku wiadomości na jednym ekranie w stylu Gmail (zwijalne/rozwijalne wiadomości, chronologia, czytelny nagłówek nadawcy).
 - [x] **REQ-MSG-05**: Odpowiadanie na wiadomość bezpośrednio w widoku wątku z wysyłaniem do Librus Synergia.
-- [x] **REQ-MSG-06**: Tworzenie nowej wiadomości z autocomplete odbiorcy po nazwisku nauczyciela oraz po nauczanym przedmiocie (np. "Chemia", "Pietrzak") oraz wysyłaniem do Librus Synergia.
-- [x] **REQ-MSG-07**: Pobieranie i prezentacja pełnej treści wiadomości z podstron szczegółów wiadomości Librus Synergia (zamiast powtórzonego tematu/podglądu), z automatycznym dociąganiem on-demand i trwałym cache'owaniem w Firestore.
-- [x] **REQ-MSG-08**: Oznaczanie wiadomości jako nowe i przeczytane (automatycznie przy otwarciu wątku oraz ręcznie) wraz z dynamicznym licznikiem nieprzeczytanych wiadomości na ikonie nawigacji dolnej i nagłówka (badge z liczbą, ukrywany gdy 0).
+- [x] **REQ-MSG-06**: Tworzenie nowej wiadomości z autocomplete odbiorcy po nazwisku nauczyciela oraz po nauczanym przedmiocie.
+- [x] **REQ-MSG-07**: Pobieranie i prezentacja pełnej treści wiadomości z podstron szczegółów wiadomości Librus Synergia on-demand z cache'em w Firestore.
+- [x] **REQ-MSG-08**: Oznaczanie wiadomości jako nowe i przeczytane z dynamicznym licznikiem nieprzeczytanych na pasku i nagłówku.
 
 ### Desktop Dashboard Bento Grid
 - [x] **REQ-DASH-02**: Nowoczesny dashboard webowy (desktop/tablet/mobile) z bento-grid, harmonogramem na żywo, kartą powitalną ze statusem, podsumowaniem ocen, frekwencji i wspólną nawigacją AppSidebar.
 
 ### Timetable Web Views (Siatka i Agenda)
 - [x] **REQ-TIMETABLE-01**: Segmented control trybów (Siatka / Agenda) na górnym pasku z synchronizacją wybranego dnia.
-- [x] **REQ-TIMETABLE-02**: Pasek nawigacji tygodniowej (zakres dat, dzisiaj, klasa) oraz interaktywne kafelki podsumowania tygodnia (godziny, zastępstwa, sprawdziany, odwołane).
-- [x] **REQ-TIMETABLE-03**: Tygodniowa siatka (Pn-Pt) z godzinami lekcyjnymi (1-8+), kafelkami statusów, podświetleniem "Dziś" i modalem szczegółów lekcji.
-- [x] **REQ-TIMETABLE-04**: Widok agendy dziennej z chronologiczną osią czasu, lekcją na żywo ("Trwa teraz • Zostało X min"), tematami, zadaniami domowymi i materiałami.
+- [x] **REQ-TIMETABLE-02**: Pasek nawigacji tygodniowej oraz interaktywne kafelki podsumowania tygodnia.
+- [x] **REQ-TIMETABLE-03**: Tygodniowa siatka (Pn-Pt) z godzinami lekcyjnymi (1-8+), kafelkami statusów i modalem szczegółów lekcji.
+- [x] **REQ-TIMETABLE-04**: Widok agendy dziennej z chronologiczną osią czasu, lekcją na żywo („Trwa teraz • Zostało X min”), tematami i zadaniami.
+
+### Desktop Master-Detail Grades (Phase 10)
+- [x] **REQ-GRADES-05**: Układ Master-Detail 8+4 na desktopie z tabelą przedmiotów i inspektorem.
+- [x] **REQ-GRADES-06**: Karta rozkładu ocen w skali MEN 1–6 (histogram) oraz wskaźnikiem bezpieczeństwa.
+- [x] **REQ-GRADES-07**: Wykres trajektorii średniej ważonej (krzywa Béziera) z linią średniej klasy.
+- [x] **REQ-GRADES-08**: Prawostronna szuflada szczegółów oceny z kalkulatorem wpływu na GPA.
 
 ### Stealth Scraping & Rate Limiting (Phase 11)
-- [x] **REQ-STEALTH-01**: Nowoczesny profil przeglądarki i nagłówki HTTP (Chrome 133, Client Hints, Sec-*, Accept-Language) zamiast Firefox 10.
-- [x] **REQ-STEALTH-02**: Humanizowane sekwencyjne odpytywanie modułów w `fetchAll()` z losowym opóźnieniem 1.0–2.5 s zamiast `Promise.all`.
-- [x] **REQ-STEALTH-03**: Trwałość sesji cookie (`tough-cookie` w Firestore) z probe `isSessionAlive()` eliminujące zbędne autoryzacje OAuth.
-- [x] **REQ-STEALTH-04**: Dynamiczny backoff na kody 429/503 z blokadą w Firestore i serwowaniem z cache.
-- [x] **REQ-SCHED-01**: Inteligentny harmonogram w strefie `Europe/Warsaw` z ciszą nocną (22:30–06:30), taktem w dni szkolne i oknami weekendowymi.
-- [x] **REQ-CLIENT-01**: Ochrona przycisku odświeżania w aplikacji (cooldown 120s) i informacja o trybie nocnym.
+- [x] **REQ-STEALTH-01**: Profil Chrome 133 z nagłówkami Client Hints i pl-PL.
+- [x] **REQ-STEALTH-02**: Sekwencyjne odpytywanie z losowym jitterem (1.0–2.5 s).
+- [x] **REQ-STEALTH-03**: Trwała sesja CookieJar w Firestore i probe isSessionAlive().
+- [x] **REQ-STEALTH-04**: Dynamiczny backoff 429/503 z 20-minutową blokadą.
+- [x] **REQ-SCHED-01**: Inteligentny harmonogram w strefie Europe/Warsaw z ciszą nocną (22:30–06:30).
+- [x] **REQ-CLIENT-01**: Cooldown 120s na ręczne odświeżanie z odliczaniem.
+
+### Audyt i Routing (Phase 12 & 13)
+- [x] **REQ-AUDIT-01**: Całkowite odcięcie sztucznych danych mockowych i dynamiczny profil ucznia.
+- [x] **REQ-TIMETABLE-05**: Naniesienie statusów frekwencji na kafelki planu lekcji.
+- [x] **REQ-TIMETABLE-06**: Stała szerokość 430px kontenera tygodni w planie lekcji.
+- [x] **REQ-ROUTING-01**: Czyste ścieżki HTML5 History API bez hasha w go_router z obsługą historii i przekierowań.
+- [x] **REQ-ROUTING-02**: Deep linking do konkretnych zasobów (/wiadomosci/:threadId, /plan-lekcji?data=...).
+
+## v3 Requirements (Active Milestone)
+
+### Role & Multi-User Access
+- [ ] **REQ-ROLE-01**: Logowanie kontem Google Oskara (ucznia) powiązane z tym samym profilem ucznia w Firestore.
+- [ ] **REQ-ROLE-02**: Separacja uprawnień `student` vs `parent`: tryb ucznia posiada pełny wgląd w dane szkolne, lecz brak uprawnień rodzica (wysyłanie e-usprawiedliwień, podgląd/edycja PIN rodzica).
+- [ ] **REQ-ROLE-03**: Współdzielenie pamięci podręcznej i stanu synchronizacji w Firestore (brak dublowania zapytań do Librusa).
+
+### Smart To-Do & Task Management
+- [ ] **REQ-TASK-01**: Dedykowana podstrona `/zadania` w menu bocznym i nawigacji z wykazem zadań, terminami i filtrami.
+- [ ] **REQ-TASK-02**: Karta Bento Grid na Pulpicie (desktop oraz mobile) prezentująca najpilniejsze zadania z natychmiastowym odhaczaniem.
+- [ ] **REQ-TASK-03**: Automatyczne i półautomatyczne generowanie zadań przygotowania do sprawdzianu/kartkówki z planu lekcji i terminarza.
+- [ ] **REQ-TASK-04**: Heurystyczne wykrywanie zadań podczas czytania wiadomości Librusa (kwoty, wpłaty, terminy, zgody) z przyciskiem szybkiego utworzenia zadania.
+
+### Calendar Export
+- [ ] **REQ-CAL-01**: Przycisk „Dodaj do Kalendarza Google” w kafelkach sprawdzianów i modalu lekcji (bezpośredni link webowy z wypełnioną datą, godziną i zakresem).
+- [ ] **REQ-CAL-02**: Pobieranie uniwersalnego pliku kalendarzowego `.ics` dla sprawdzianu lub zestawu terminów.
+
+### Notifications & Weekly Briefing
+- [ ] **REQ-NOTIF-01**: Integracja Telegram Bot w Cloud Functions z łączeniem konta poprzez jednorazowy kod.
+- [ ] **REQ-NOTIF-02**: Natychmiastowe powiadomienia Telegram o nowych ocenach, wiadomościach i sprawdzianach.
+- [ ] **REQ-NOTIF-03**: Obsługa powiadomień Web Push w przeglądarce (Service Worker / FCM).
+- [ ] **REQ-REPORT-01**: Automatyczny harmonogram Cloud Scheduler w piątki wieczorem generujący zestawienie sprawdzianów i planu na nadchodzący tydzień.
+- [ ] **REQ-REPORT-02**: Wysyłka piątkowego raportu tygodniowego przez bota Telegram do rodzica i ucznia.
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SCHED-01 | Phase 1 | Complete |
-| DASH-01 | Phase 1 | Complete |
-| ATTN-01 | Phase 2 | Complete |
-| ATTN-02 | Quick polish | Complete |
-| MSG-01 | Phase 3 | Complete |
-| MSG-02 | Quick polish | Complete |
-| MSG-03 | Phase 3 | Complete |
-| REQ-AUTH-01 | Phase 4 | Complete |
-| REQ-GRADES-01 | Phase 5 | Complete |
-| REQ-GRADES-02 | Phase 5 | Complete |
-| REQ-GRADES-03 | Phase 5 | Complete |
-| REQ-GRADES-04 | Phase 5 | Complete |
-| REQ-ATTN-03 | Phase 6 | Complete |
-| REQ-ATTN-04 | Phase 6 | Complete |
-| REQ-ATTN-05 | Phase 6 | Complete |
-| REQ-ATTN-06 | Phase 6 | Complete |
-| REQ-MSG-04 | Phase 7 | Complete |
-| REQ-MSG-05 | Phase 7 | Complete |
-| REQ-MSG-06 | Phase 7 | Complete |
-| REQ-MSG-07 | Phase 7 | Complete |
-| REQ-MSG-08 | Phase 7 | Complete |
-| REQ-DASH-02 | Phase 8 | Complete |
-| REQ-TIMETABLE-01 | Phase 9 | Complete |
-| REQ-TIMETABLE-02 | Phase 9 | Complete |
-| REQ-TIMETABLE-03 | Phase 9 | Complete |
-| REQ-TIMETABLE-04 | Phase 9 | Complete |
-| REQ-STEALTH-01 | Phase 11 | Complete |
-| REQ-STEALTH-02 | Phase 11 | Complete |
-| REQ-STEALTH-03 | Phase 11 | Complete |
-| REQ-STEALTH-04 | Phase 11 | Complete |
-| REQ-SCHED-01 | Phase 11 | Complete |
-| REQ-CLIENT-01 | Phase 11 | Complete |
-
-
+| REQ-ROLE-01 | TBD | Pending |
+| REQ-ROLE-02 | TBD | Pending |
+| REQ-ROLE-03 | TBD | Pending |
+| REQ-TASK-01 | TBD | Pending |
+| REQ-TASK-02 | TBD | Pending |
+| REQ-TASK-03 | TBD | Pending |
+| REQ-TASK-04 | TBD | Pending |
+| REQ-CAL-01 | TBD | Pending |
+| REQ-CAL-02 | TBD | Pending |
+| REQ-NOTIF-01 | TBD | Pending |
+| REQ-NOTIF-02 | TBD | Pending |
+| REQ-NOTIF-03 | TBD | Pending |
+| REQ-REPORT-01 | TBD | Pending |
+| REQ-REPORT-02 | TBD | Pending |
