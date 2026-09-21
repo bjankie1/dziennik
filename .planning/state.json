@@ -61,13 +61,13 @@
     {
       "number": "12",
       "name": "Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni",
-      "status": "pending"
+      "status": "complete"
     }
   ],
   "next": {
-    "command": "/gsd-progress --next",
-    "label": "Advance to the next step",
-    "reason": "executing"
+    "command": "/gsd-progress",
+    "label": "Show progress",
+    "reason": "Unsure of state — showing progress"
   },
-  "updated_at": "2026-09-20T21:24:14.058Z"
+  "updated_at": "2026-09-21T05:10:00.892Z"
 }

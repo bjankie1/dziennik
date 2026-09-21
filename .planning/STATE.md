@@ -45,6 +45,7 @@ current_phase_name: audyt-mockow-nieobecnosci-i-nawigator
 - [x] **Phase 10**: Pełen panel ocen w wersji na przeglądarkę
 - [x] **Phase 11**: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)
 - [x] **Phase 12**: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni
+- [ ] **Phase 13**: Dedykowane URL i routing dla podstron i zasobów (deep linking)
 
 ## Accumulated Context
 
@@ -55,6 +56,7 @@ current_phase_name: audyt-mockow-nieobecnosci-i-nawigator
 - Phase 10 added: Pełen panel ocen w wersji na przeglądarkę na podstawie makiet docs/panel_ocen i docs/szczegoly_oceny.
 - Phase 11 added: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny) na wniosek użytkownika (ochrona przed podejrzeniami o łamanie regulaminu, wyłączenie nocy).
 - Phase 12 added: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni (eliminacja sztucznych danych, naniesienie frekwencji na plan lekcji, fixed-width dla date pickera tygodni).
+- Phase 13 added: Dedykowane URL i routing dla podstron i zasobów (deep linking).
 
 ### Quick Tasks Completed
 

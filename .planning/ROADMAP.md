@@ -17,7 +17,18 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 - [x] **Phase 9: Plan lekcji w wersji web (Widok siatki i agendy)** — Nowoczesny desktopowy i responsywny plan lekcji z widokiem pełnej siatki tygodniowej oraz agendy wg makiet (docs/plan_lekcji_v1 i docs/plan lekcji agenda).
 - [x] **Phase 10: Pełen panel ocen w wersji na przeglądarkę** — Nowoczesny dwukolumnowy panel ocen na desktopie z wyborem przedmiotu, szczegółami ocen, wykresem/statystykami i szufladą (drawer) szczegółów oceny wg makiet docs/panel_ocen i docs/szczegoly_oceny.
 - [x] **Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)** — Optymalizacja strategii synchronizacji z Librus (inteligentny throttling, losowy jitter, dynamiczny backoff, całkowite wyłączenie odpytywania w nocy oraz cache'owanie), aby nie budzić podejrzeń o łamanie regulaminu serwisu. (completed 2026-09-18)
-- [ ] **Phase 12: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni** — Kompleksowy audyt i usunięcie sztucznych mocków/wartości fallbackowych w kodzie, prezentacja nieobecności/frekwencji w planie lekcji oraz stała szerokość nawigatora tygodni.
+- [x] **Phase 12: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni** — Kompleksowy audyt i usunięcie sztucznych mocków/wartości fallbackowych w kodzie, prezentacja nieobecności/frekwencji w planie lekcji oraz stała szerokość nawigatora tygodni. (completed 2026-09-20)
+
+### Phase 13: Dedykowane URL i routing dla podstron i zasobów (deep linking)
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 12
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 13 to break down)
 
 ---
 
@@ -157,10 +168,27 @@ Plans:
   2. Nanoszenie statusów frekwencji ucznia (nieobecność, usprawiedliwiona, spóźnienie, zwolnienie) bezpośrednio na kafelki lekcji w widoku tygodniowym (siatka) i dziennym (agenda) oraz w modalu szczegółów lekcji.
   3. Stała szerokość elementu wyboru tygodnia (WeekNavigatorBar), gwarantująca niezmienną pozycję przycisków `<` i `>` niezależnie od długości tekstu daty.
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 
-- [ ] 12-01-PLAN.md — Audyt mocków, ujednolicenie profilu ucznia i czyste stany puste
-- [ ] 12-02-PLAN.md — Frekwencja w planie lekcji i stała szerokość przełącznika tygodni
+- [x] 12-01-PLAN.md — Audyt mocków, ujednolicenie profilu ucznia i czyste stany puste
+- [x] 12-02-PLAN.md — Frekwencja w planie lekcji i stała szerokość przełącznika tygodni
 
+### Phase 13: Dedykowane URL i routing dla podstron i zasobów (deep linking)
+
+**Goal**: Wdrożenie routingu URL (np. go_router lub wbudowany Navigator 2.0 / URL strategy), umożliwiającego bezpośrednie otwieranie i udostępnianie linków do poszczególnych modułów i zasobów (np. `/pulpit`, `/plan-lekcji`, `/oceny`, `/frekwencja`, `/wiadomosci`, a także podgląd konkretnego wątku wiadomości lub szczegółów lekcji).
+**Requirements**: REQ-ROUTING-01, REQ-ROUTING-02
+**Depends on:** Phase 8, Phase 9, Phase 10
+**Success Criteria**:
+
+  1. Każda główna zakładka posiada czytelny adres URL w przeglądarce (np. `/pulpit`, `/plan`, `/oceny`, `/frekwencja`, `/wiadomosci`).
+  2. Zmiana adresu w przeglądarce, odświeżenie strony (F5) oraz przyciski Wstecz/Dalej w przeglądarce poprawnie przełączają widoki i zachowują stan.
+  3. Możliwość bezpośredniego wejścia z linku do konkretnego zasobu (np. `/wiadomosci/:id` lub parametr daty/tygodnia w planie lekcji `/plan?data=YYYY-MM-DD`).
+
+**Plans:** 0/2 plans complete
+
+Plans:
+
+- [ ] 13-01-PLAN.md — Architektura routingu webowego (URL strategy, definicja tras i synchronizacja z MainNavigationScreen)
+- [ ] 13-02-PLAN.md — Deep linking dla zasobów (wątki wiadomości, widok tygodnia w planie lekcji, filtry frekwencji)
