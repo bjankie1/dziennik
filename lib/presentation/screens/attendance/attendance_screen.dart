@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/models/attendance_record.dart';
 import '../../providers/school_providers.dart';
 import 'justification_modal.dart';
+import 'widgets/dual_ring_attendance_gauge.dart';
 
 class AttendanceScreen extends ConsumerStatefulWidget {
   const AttendanceScreen({super.key});
@@ -63,19 +64,44 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     final attendanceAsync = ref.watch(attendanceProvider);
     final statsAsync = ref.watch(attendanceStatsProvider);
 
-    final stats = statsAsync.value ?? {
-      'presenceCount': 142,
-      'absenceCount': 6,
-      'lateCount': 2,
-      'excusedCount': 3,
-      'percentage': 94.2,
-    };
-    final percentage = (stats['percentage'] as num?)?.toDouble() ?? 94.2;
-    final presence = stats['presenceCount'] ?? 142;
-    final absences = stats['absenceCount'] ?? 6;
-    final lates = stats['lateCount'] ?? 2;
-    final excused = stats['excusedCount'] ?? 3;
-    final unexcusedCount = (absences - excused) > 0 ? (absences - excused) : 3;
+    final records = attendanceAsync.value ?? [];
+
+    final unexcused = records
+        .where((r) => r.type == AttendanceType.absent && r.justificationStatus == JustificationStatus.none)
+        .toList();
+    final pendingList = records
+        .where((r) => r.justificationStatus == JustificationStatus.requested)
+        .toList();
+    final excusedList = records
+        .where((r) =>
+            r.type == AttendanceType.excused ||
+            r.type == AttendanceType.exempted ||
+            r.justificationStatus == JustificationStatus.approved)
+        .toList();
+    final latesList = records
+        .where((r) => r.type == AttendanceType.late || r.type == AttendanceType.excusedLate)
+        .toList();
+
+    // Dokładne statystyki wyliczone z rzeczywistych rekordów i obecności z Librusa
+    final stats = statsAsync.value;
+    final int backendPresence = stats?['presenceCount'] ?? 142;
+    final int unexcusedCount = unexcused.length;
+    final int pendingCount = pendingList.length;
+    final int excusedCount = excusedList.length;
+    final int latesCount = latesList.isNotEmpty ? latesList.length : (stats?['lateCount'] ?? 2);
+    final int totalLessons = backendPresence + unexcusedCount + pendingCount + excusedCount + latesCount;
+
+    // 1. Frekwencja fizyczna: obecności / wszystkie
+    final double physicalPercentage = totalLessons > 0
+        ? ((backendPresence + latesCount) / totalLessons) * 100
+        : (stats?['percentage'] as num?)?.toDouble() ?? 94.2;
+
+    // 2. Frekwencja rozliczona: obecności + usprawiedliwione / wszystkie
+    final double settledPercentage = totalLessons > 0
+        ? ((backendPresence + excusedCount + latesCount) / totalLessons) * 100
+        : 99.4;
+
+    final int totalAbsences = unexcusedCount + pendingCount + excusedCount;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -89,8 +115,17 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               bottom: _selectedIds.isNotEmpty ? 220 : 32,
             ),
             children: [
-              // 1. Karta Stanu Semestru (Bento Header wg makiety)
-              _buildSemesterStatusCard(percentage, presence, absences, lates, excused, unexcusedCount),
+              // 1. Karta Stanu Semestru (Dual Ring Bento Header)
+              _buildSemesterStatusCard(
+                physicalPercentage: physicalPercentage,
+                settledPercentage: settledPercentage,
+                presence: backendPresence,
+                totalAbsences: totalAbsences,
+                lates: latesCount,
+                excused: excusedCount,
+                unexcusedCount: unexcusedCount,
+                totalLessons: totalLessons,
+              ),
               const SizedBox(height: 14),
 
               // 2. Filtry kafelkowe i lista obecności
@@ -387,14 +422,16 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     );
   }
 
-  Widget _buildSemesterStatusCard(
-    double percentage,
-    int presence,
-    int absences,
-    int lates,
-    int excused,
-    int unexcusedCount,
-  ) {
+  Widget _buildSemesterStatusCard({
+    required double physicalPercentage,
+    required double settledPercentage,
+    required int presence,
+    required int totalAbsences,
+    required int lates,
+    required int excused,
+    required int unexcusedCount,
+    required int totalLessons,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -413,48 +450,16 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
         children: [
           Row(
             children: [
-              // Circular Progress Indicator (wg makiety)
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 88,
-                    height: 88,
-                    child: CircularProgressIndicator(
-                      value: (percentage / 100).clamp(0.0, 1.0),
-                      strokeWidth: 8.5,
-                      backgroundColor: const Color(0xFFE2E8F0),
-                      valueColor: const AlwaysStoppedAnimation(Color(0xFF006C4A)),
-                    ),
-                  ),
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '$percentage%',
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0F172A),
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const Text(
-                        'FREKWENCJA',
-                        style: TextStyle(
-                          fontSize: 8,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF64748B),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              // Dual Ring Gauge (Zewnętrzny: rozliczona, Wewnętrzny: obecność fizyczna)
+              DualRingAttendanceGauge(
+                physicalPercentage: physicalPercentage,
+                settledPercentage: settledPercentage,
+                unexcusedCount: unexcusedCount,
+                size: 96,
               ),
               const SizedBox(width: 16),
 
-              // Szczegóły stanu semestru
+              // Szczegóły stanu semestru i legenda ringów
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -473,21 +478,37 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFDCFCE7),
+                            color: unexcusedCount == 0
+                                ? const Color(0xFFDCFCE7)
+                                : const Color(0xFFFEF3C7),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFBBF7D0)),
+                            border: Border.all(
+                              color: unexcusedCount == 0
+                                  ? const Color(0xFFBBF7D0)
+                                  : const Color(0xFFFDE68A),
+                            ),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF15803D)),
-                              SizedBox(width: 4),
+                              Icon(
+                                unexcusedCount == 0
+                                    ? Icons.check_circle_rounded
+                                    : Icons.info_outline_rounded,
+                                size: 12,
+                                color: unexcusedCount == 0
+                                    ? const Color(0xFF15803D)
+                                    : const Color(0xFFB45309),
+                              ),
+                              const SizedBox(width: 4),
                               Text(
-                                'Cel osiągnięty',
+                                unexcusedCount == 0 ? 'Wszystko rozliczone' : '$unexcusedCount do usprawiedliwienia',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF15803D),
+                                  color: unexcusedCount == 0
+                                      ? const Color(0xFF15803D)
+                                      : const Color(0xFFB45309),
                                 ),
                               ),
                             ],
@@ -495,42 +516,66 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 6),
                     RichText(
-                      text: const TextSpan(
-                        style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      text: TextSpan(
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                         children: [
-                          TextSpan(text: 'Min. ustawowe: '),
-                          TextSpan(
+                          const TextSpan(text: 'Ustawowe min.: '),
+                          const TextSpan(
                             text: '50%',
                             style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                           ),
-                          TextSpan(text: ' • Cel szkoły: '),
+                          const TextSpan(text: ' • Fizyczna obecność: '),
                           TextSpan(
-                            text: '90%',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            text: '${physicalPercentage.toStringAsFixed(1)}%',
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0284C7)),
                           ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 8),
+
+                    // Dwukolorowy pasek postępu (obecne + usprawiedliwione)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: (percentage / 100).clamp(0.0, 1.0),
-                        minHeight: 6,
-                        backgroundColor: const Color(0xFFE2E8F0),
-                        valueColor: const AlwaysStoppedAnimation(Color(0xFF006C4A)),
+                      child: SizedBox(
+                        height: 6,
+                        child: Row(
+                          children: [
+                            if (presence > 0)
+                              Expanded(
+                                flex: presence,
+                                child: Container(color: const Color(0xFF0284C7)),
+                              ),
+                            if (excused > 0)
+                              Expanded(
+                                flex: excused,
+                                child: Container(color: const Color(0xFF059669)),
+                              ),
+                            if (lates > 0)
+                              Expanded(
+                                flex: lates,
+                                child: Container(color: const Color(0xFFD97706)),
+                              ),
+                            if (unexcusedCount > 0)
+                              Expanded(
+                                flex: unexcusedCount,
+                                child: Container(color: const Color(0xFFDC2626)),
+                              ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Legenda 3 kolorowych kropek
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+                    // Legenda ringów / wskaźników
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 4,
                       children: [
-                        _buildLegendItem(const Color(0xFF059669), '$presence obecne'),
-                        _buildLegendItem(const Color(0xFFDC2626), '$absences opuszczonych'),
-                        _buildLegendItem(const Color(0xFFD97706), '$lates spóźn.'),
+                        _buildLegendItem(const Color(0xFF059669), 'Ring zewn.: Rozliczona ${settledPercentage.toStringAsFixed(1)}%'),
+                        _buildLegendItem(const Color(0xFF0284C7), 'Ring wewn.: Obecność ${physicalPercentage.toStringAsFixed(1)}%'),
                       ],
                     ),
                   ],
@@ -540,7 +585,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
           ),
           const SizedBox(height: 14),
 
-          // 3 Kolumny podsumowania
+          // 4 Kolumny podsumowania (spójne i czytelne wskaźniki godzin)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
@@ -551,14 +596,47 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatColumn('$presence', 'Obecności', const Color(0xFF059669)),
-                _buildRichStatColumn('$unexcusedCount', ' / $excused', 'Nieusp. / Usp.'),
+                _buildStatColumn('$presence', 'Obecności', const Color(0xFF0284C7)),
+                _buildStatColumn(
+                  '$unexcusedCount',
+                  'Do uspraw.',
+                  unexcusedCount > 0 ? const Color(0xFFDC2626) : const Color(0xFF64748B),
+                  subtitle: 'z $totalAbsences opuszczonych',
+                ),
+                _buildStatColumn('$excused', 'Usprawiedliwione', const Color(0xFF059669)),
                 _buildStatColumn('$lates', 'Spóźnienia', const Color(0xFFD97706)),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatColumn(String number, String label, Color color, {String? subtitle}) {
+    return Column(
+      children: [
+        Text(
+          number,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 1),
+          Text(
+            subtitle,
+            style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w500, color: Color(0xFF64748B)),
+          ),
+        ],
+      ],
     );
   }
 
@@ -582,58 +660,6 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             fontWeight: FontWeight.w600,
             color: Color(0xFF475569),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatColumn(String number, String label, Color color) {
-    return Column(
-      children: [
-        Text(
-          number,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            color: color,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF64748B)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRichStatColumn(String redNum, String greyPart, String label) {
-    return Column(
-      children: [
-        RichText(
-          text: TextSpan(
-            text: redNum,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFFDC2626),
-            ),
-            children: [
-              TextSpan(
-                text: greyPart,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF64748B)),
         ),
       ],
     );

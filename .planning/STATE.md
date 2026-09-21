@@ -1,17 +1,17 @@
 ---
 gsd_state_version: "1.0"
 milestone: v2.0
-status: executing
-stopped_at: Phase 11 verified
-last_updated: "2026-09-20T21:24:14.047Z"
+status: Milestone complete
+stopped_at: Phase 12 verified
+last_updated: "2026-09-20T21:37:00.000Z"
 last_activity: 2026-09-20
-last_activity_desc: "Completed quick task 260920-trm: Integracja terminarza z planem lekcji, nawigacja do tygodnia sprawdzianu, naprawa zastępstwa z j. polskiego"
-state_head: 977aee6fb05920a300d958258e1d70d0ba13502c
+last_activity_desc: "Completed Phase 12: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni"
+state_head: 2c99f85
 progress:
   total_phases: 9
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 16
-  completed_plans: 14
+  completed_plans: 16
 current_phase_name: audyt-mockow-nieobecnosci-i-nawigator
 ---
 
@@ -32,6 +32,7 @@ current_phase_name: audyt-mockow-nieobecnosci-i-nawigator
 - [x] **Phase 9**: Plan lekcji w wersji web (Widok siatki i agendy) (nawigacja tygodnia, kafelki podsumowania, siatka Pn-Pt z modalem szczegółów, agenda z lekcją na żywo, wspólny sidebar i responsywność).
 - [x] **Phase 10**: Pełen panel ocen w wersji na przeglądarkę (Master-Detail 8+4, karty KPI ze średnią i rozkładem MEN 1-6, wykres trajektorii Béziera, szuflada boczna ze szczegółami i kalkulatorem GPA).
 - [x] **Phase 11**: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny) (nowoczesne nagłówki Chrome 133, sekwencyjny fetch z jitterem, probe sesji, dynamiczny backoff 429/503, cisza nocna 22:30-06:30, cooldown klienta 120s).
+- [x] **Phase 12**: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni (odcięcie mocków z MockData, ukrywanie sprawdzianu, neutralny numerek w weekend, dynamiczny profil i wychowawca, frekwencja na kafelkach planu, stała szerokość 430px WeekNavigatorBar).
 
 ## Milestone v2.0 Roadmap
 
@@ -43,7 +44,7 @@ current_phase_name: audyt-mockow-nieobecnosci-i-nawigator
 - [x] **Phase 9**: Plan lekcji w wersji web (Widok siatki i agendy)
 - [x] **Phase 10**: Pełen panel ocen w wersji na przeglądarkę
 - [x] **Phase 11**: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)
-- [ ] **Phase 12**: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni
+- [x] **Phase 12**: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni
 
 ## Accumulated Context
 
@@ -63,10 +64,11 @@ current_phase_name: audyt-mockow-nieobecnosci-i-nawigator
 | 260919-ufy | Naprawa rozpoznawania usprawiedliwień i zwolnień w module frekwencji | 2026-09-19 | 6c76505 | [260919-ufy-naprawa-rozpoznawania-usprawiedliwie-i-z](./quick/260919-ufy-naprawa-rozpoznawania-usprawiedliwie-i-z/) |
 | 260920-wkd | Harmonogram na weekend oraz dynamiczne przełączanie tygodni w planie lekcji | 2026-09-20 | 39391f3 | [260920-wkd-harmonogram-weekend-i-przelaczanie-tygodni](./quick/260920-wkd-harmonogram-weekend-i-przelaczanie-tygodni/) |
 | 260920-trm | Integracja terminarza z planem lekcji, nawigacja do tygodnia sprawdzianu, naprawa zastępstwa z j. polskiego | 2026-09-20 | a0d9d9c | [260920-trm-terminarz-integracja-kartkowka-zastepstwa](./quick/260920-trm-terminarz-integracja-kartkowka-zastepstwa/) |
+| 260921-9sd | Uporządkowanie kalkulacji frekwencji: dual ring gauge i spójne wskaźniki obecności | 2026-09-21 | HEAD | [260921-9sd-uporzadkowanie-kalkulacji-frekwencji-dua](./quick/260921-9sd-uporzadkowanie-kalkulacji-frekwencji-dua/) |
 
 ## Session
 
-**Last session:** 2026-09-20T22:45:00.000Z
-**Stopped at:** Completed quick task 260920-trm: Integracja terminarza z planem lekcji, nawigacja do tygodnia sprawdzianu, naprawa zastępstwa z j. polskiego
+**Last session:** 2026-09-21T07:06:00.000Z
+**Stopped at:** Completed quick task 260921-9sd: Uporządkowanie kalkulacji frekwencji: dual ring gauge i spójne wskaźniki obecności
 **Resume file:** .planning/ROADMAP.md
-Last activity: 2026-09-20 - Completed quick task 260920-trm: Integracja terminarza z planem lekcji, nawigacja do tygodnia sprawdzianu, naprawa zastępstwa z j. polskiego
+Last activity: 2026-09-21 - Completed quick task 260921-9sd: Uporządkowanie kalkulacji frekwencji: dual ring gauge i spójne wskaźniki obecności
