@@ -72,7 +72,7 @@ current_phase_name: dedykowane-url-i-routing-dla-podstron-i-zasob-w-deep-linking
 
 ## Session
 
-**Last session:** 2026-09-21T19:10:00.000Z
-**Stopped at:** Completed quick task 260921-msg: Naprawa licznika nieprzeczytanych wiadomości oraz dodanie kafelków wiadomości na pulpicie mobilnym
-**Resume file:** .planning/ROADMAP.md
-Last activity: 2026-09-21 - Completed quick task 260921-msg: Naprawa licznika nieprzeczytanych wiadomości oraz dodanie kafelków wiadomości na pulpicie mobilnym
+**Last session:** 2026-09-21T19:30:00.000Z
+**Stopped at:** Milestone v2.0 summary generated
+**Resume file:** .planning/reports/MILESTONE_SUMMARY-v2.0.md
+Last activity: 2026-09-21 - Wygenerowano kompleksowe podsumowanie kamienia milowego v2.0 (MILESTONE_SUMMARY-v2.0.md)
