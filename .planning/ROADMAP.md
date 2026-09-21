@@ -2,9 +2,11 @@
 
 ## Overview
 
-Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu konta Librus (autologin), nowoczesnym układzie ocen wg makiety (pigułki ocen z wagami w wierszu przedmiotu, szczegóły po rozwinięciu) oraz interaktywnym module usprawiedliwiania nieobecności (filtrowanie, checkboxy, wysuwany panel szybkiego usprawiedliwienia).
+Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) rozbudowuje EduSync o bezpieczny dostęp dla Oskara (ucznia) ze współdzielonym cache'em i separacją uprawnień rodzic/uczeń, inteligentny moduł zadań (Smart To-Do) zintegrowany z terminarzem i wiadomościami, bezpośredni eksport sprawdzianów do Kalendarza Google oraz wielokanałowe powiadomienia (Telegram Bot + Web Push) wraz z automatycznym piątkowym raportem tygodniowym.
 
 ## Phases
+
+### Completed Phases (v1.0 & v2.0)
 
 - [x] **Phase 1: Naprawa nawigacji planu lekcji i kompaktowy pulpit ocen** — Interaktywny przełącznik dni tygodnia w zakładce Plan oraz siatka kompaktowych kafelków ocen z datami na Pulpicie.
 - [x] **Phase 2: Rzeczywista frekwencja (Librus Synergia)** — Scraper modułu nieobecności, statystyki semestralne i podgląd wpisów w zakładce Frekwencja.
@@ -18,177 +20,113 @@ Milestone v2.0 skupia się na trzech kluczowych filarach: trwałym powiązaniu k
 - [x] **Phase 10: Pełen panel ocen w wersji na przeglądarkę** — Nowoczesny dwukolumnowy panel ocen na desktopie z wyborem przedmiotu, szczegółami ocen, wykresem/statystykami i szufladą (drawer) szczegółów oceny wg makiet docs/panel_ocen i docs/szczegoly_oceny.
 - [x] **Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)** — Optymalizacja strategii synchronizacji z Librus (inteligentny throttling, losowy jitter, dynamiczny backoff, całkowite wyłączenie odpytywania w nocy oraz cache'owanie), aby nie budzić podejrzeń o łamanie regulaminu serwisu. (completed 2026-09-18)
 - [x] **Phase 12: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni** — Kompleksowy audyt i usunięcie sztucznych mocków/wartości fallbackowych w kodzie, prezentacja nieobecności/frekwencji w planie lekcji oraz stała szerokość nawigatora tygodni. (completed 2026-09-20)
+- [x] **Phase 13: Dedykowane URL i routing dla podstron i zasobów (deep linking)** — Wdrożenie routingu URL go_router z HTML5 History API bez hasha, dedykowane ścieżki po polsku oraz deep linking do wiadomości i planu lekcji. (completed 2026-09-21)
 
-### Phase 13: Dedykowane URL i routing dla podstron i zasobów (deep linking)
+### Active Milestone Phases (v3.0)
 
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 12
-**Plans:** 0 plans
-
-Plans:
-
-- [ ] TBD (run /gsd-plan-phase 13 to break down)
+- [ ] **Phase 14: Dostęp ucznia (rola student vs parent) i współdzielony cache danych** — Logowanie kontem Google Oskara, separacja ról (`student` vs `parent`) z blokadą e-usprawiedliwień i PIN dla ucznia oraz Single Source of Truth w Firestore bez duplikowania scrapingu.
+- [ ] **Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie** — Dedykowana podstrona `/zadania` w menu bocznym i nawigacji oraz interaktywny widżet zadań w Bento Grid na Pulpicie z szybkim odhaczaniem.
+- [ ] **Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości** — Automatyczne generowanie zadań przygotowawczych ze sprawdzianów i terminarza oraz heurystyczne wykrywanie zadań, opłat i terminów z wiadomości Librusa.
+- [ ] **Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal** — Przycisk „Dodaj do Kalendarza Google” w kafelkach sprawdzianów i modalu lekcji oraz pobieranie plików kalendarzowych `.ics`.
+- [ ] **Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push** — Integracja bota Telegram w Cloud Functions z kodem parowania, natychmiastowe alerty o ocenach/wiadomościach/sprawdzianach oraz powiadomienia Web Push w przeglądarce.
+- [ ] **Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)** — Automatyczny harmonogram Cloud Scheduler w piątki wieczorem generujący i wysyłający raport podsumowujący nadchodzący tydzień przez bota Telegram do rodzica i ucznia.
 
 ---
 
 ## Phase Details
 
-### Phase 4: Bezpieczny autologin i trwałe powiązanie profilu Librus
+### Phase 14: Dostęp ucznia (rola student vs parent) i współdzielony cache danych
 
-**Goal**: Użytkownik logujący się przez konto Google nie musi ponownie podawać loginu i hasła Librus, jeśli konto zostało już wcześniej skonfigurowane i powiązane w Firestore; przeładowanie strony nie wylogowuje.
-**Requirements**: REQ-AUTH-01
+**Goal**: Umożliwienie Oskarowi (uczniowi) logowania kontem Google z powiązaniem do wspólnego profilu edukacyjnego w Firestore, z automatyczną separacją ról (`student` vs `parent` – brak możliwości edycji PIN oraz wysyłania usprawiedliwień dla roli ucznia) oraz pojedynczym źródłem prawdy (Single Source of Truth) dla pobranych danych bez duplikowania zapytań do serwerów Librus.  
+**Requirements**: REQ-ROLE-01, REQ-ROLE-02, REQ-ROLE-03  
+**Depends on**: Phase 13  
 **Success Criteria**:
+1. Użytkownik logujący się adresem e-mail Oskara (Google OAuth) zostaje przypisany do profilu ucznia z rolą `student`, podczas gdy konto rodzica zachowuje rolę `parent`.
+2. Użytkownik z rolą `student` nie ma dostępu do modułu wysyłania e-usprawiedliwień (formularz i przyciski wysyłania są zablokowane/ukryte) ani do wglądu i konfiguracji kodu PIN rodzica.
+3. Dane szkolne (oceny, frekwencja, plan lekcji, terminarz) są współdzielone w centralnej kolekcji Firestore — logowanie i odświeżenie danych przez ucznia korzysta z tego samego cache'a co rodzic, nie wywołując zdublowanego scrapingu serwerów Librus.
+4. Interfejs aplikacji prezentuje odpowiedni kontekst użytkownika (np. etykietę profilu "Oskar - Uczeń" lub "Rodzic") i poprawnie izoluje preferencje użytkownika przy współdzieleniu danych akademickich.
 
-  1. Po zalogowaniu Google Auth aplikacja sprawdza w Firestore (`/api/getConnection?userId=...`) czy istnieje powiązane konto Librus.
-  2. Jeśli konto Librus jest sparowane, aplikacja automatycznie przechodzi do głównego widoku pulpitu bez konieczności wyświetlania formularza logowania Librus.
-  3. Przeładowanie strony (odświeżenie w przeglądarce) nie powoduje wylogowania.
-  4. Wylogowanie i ponowne zalogowanie Google zachowuje powiązanie.
-
-### Phase 5: Nowy interfejs Ocen wg makiety
-
-**Goal**: Implementacja dedykowanego widoku ocen odpowiadającego makiecie graficznej (`media_1789491587201.png`).
-**Requirements**: REQ-GRADES-01, REQ-GRADES-02, REQ-GRADES-03, REQ-GRADES-04
-**Success Criteria**:
-
-  1. Zakładki semestrów (Semestr 1, Semestr 2, Roczna) na górze ekranu.
-  2. Karta podsumowania: średnia ważona, odchylenie (+0.14), wskaźnik stypendium naukowego (próg 4.75) oraz pozycja w klasie.
-  3. Lista przedmiotów: wiersz każdego przedmiotu od razu prezentuje pigułki ocen z wagami (np. `5 (w:3)`, `4+ (w:2)`).
-  4. Rozwinięcie wiersza przedmiotu prezentuje szczegółowy wykaz ocen z datami, wagami i komentarzami.
-
-### Phase 6: Moduł usprawiedliwiania nieobecności wg makiety
-
-**Goal**: Implementacja nowego widoku frekwencji i formularza usprawiedliwiania odpowiadającego makiecie (`media_1789491681801.png`).
-**Requirements**: REQ-ATTN-03, REQ-ATTN-04, REQ-ATTN-05, REQ-ATTN-06
-**Success Criteria**:
-
-  1. Okrągły wskaźnik frekwencji (np. 94.2%) oraz stan semestru z celami i licznikami.
-  2. Filtry: Wszystkie, Do usprawiedliwienia (X), Usprawiedliwione.
-  3. Kafelki dni z etykietami stanu (np. 2 DO DECYZJI) i możliwością zaznaczania checkboxów lekcji.
-  4. Pływający dolny panel z licznikiem zaznaczonych lekcji, pigułkami szybkiego powodu (Choroba, Wizyta lekarska, Sprawy rodzinne) oraz akcją wysłania usprawiedliwienia.
-
-### Phase 7: Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)
-
-**Goal**: Pełna obsługa wiadomości Librus: widok wątku w stylu Gmail, odpowiadanie na wiadomości i pisanie nowych wiadomości z inteligentnym autocomplete nauczyciela (nazwisko oraz przedmiot), prezentacja pełnej treści wiadomości oraz dynamiczne oznaczanie stanu przeczytania z licznikiem nieprzeczytanych.
-**Requirements**: REQ-MSG-04, REQ-MSG-05, REQ-MSG-06, REQ-MSG-07, REQ-MSG-08
-**Success Criteria**:
-
-  1. Widok wątku wiadomości na jednym ekranie (w stylu Gmail) z chronologiczną historią konwersacji i możliwością zwijania/rozwijania wiadomości.
-  2. Bezpośrednie pole szybkiej odpowiedzi w wątku wiadomości wysyłające odpowiedź do Librus Synergia.
-  3. Formularz nowej wiadomości z wyszukiwarką/autocomplete odbiorcy działającym zarówno po nazwisku nauczyciela, jak i po nauczanym przedmiocie (np. "Chemia", "Pietrzak").
-  4. Skuteczne wysyłanie wiadomości przez backend scraper Cloud Functions do Librus Synergia oraz natychmiastowe odświeżenie wątku.
-  5. Pobieranie i prezentacja pełnej treści wiadomości z podstron Librusa (`div.container-message-content`) zamiast powtórzonego tematu, z automatycznym dociąganiem on-demand i trwałym zapisem w pamięci podręcznej Firestore.
-  6. Dynamiczne oznaczanie wiadomości jako nowe i przeczytane (automatycznie przy otwarciu wątku oraz ręcznie) oraz wyświetlanie liczby nieprzeczytanych wiadomości w postaci badge na ikonie wiadomości paska nawigacji i nagłówka (ukrywany gdy brak nieprzeczytanych).
-
-### Phase 8: Pełny design ekranu głównego w wersji web
-
-**Goal**: Kompleksowe przeprojektowanie pulpitu głównego (Home / Dashboard) dla przeglądarek webowych na desktopie i tabletach (z zachowaniem pełnej responsywności mobilnej), z wykorzystaniem nowoczesnego układu Bento Grid, karty profilu ucznia ze szczęśliwym numerkiem, osi czasu dzisiejszych zajęć, skrótów do najnowszych ocen, frekwencji oraz szybkich akcji.
-**Requirements**: REQ-DASH-02
-**Success Criteria**:
-
-  1. Responsywny układ Bento Grid optymalnie zagospodarowujący szerokość ekranu powyżej 900px i 1200px.
-  2. Karta nagłówkowa z powitaniem, profilem ucznia, klasą, datą i szczęśliwym numerkiem.
-  3. Sekcja planu dnia (harmonogram dzisiejszych lekcji z salami, nauczycielami i wyróżnieniem trwającej/najbliższej lekcji).
-  4. Widżet podsumowania ocen (średnia ważona, ostatnie oceny z wagami i szybki skrót do pełnego modułu ocen).
-  5. Widżet frekwencji (procent obecności, licznik nieobecności do usprawiedliwienia z bezpośrednim przejściem).
-  6. Szybkie skróty: nowa wiadomość, usprawiedliwienie, pełny plan lekcji.
-
-### Phase 9: Plan lekcji w wersji web (Widok siatki i agendy)
-
-**Goal**: Implementacja nowoczesnego, desktopowego i responsywnego planu lekcji w wersji web z dwoma widokami (Siatka tygodniowa oraz Agenda dzienna) zgodnie z makietami graficznymi (`docs/plan_lekcji_v1` oraz `docs/plan lekcji agenda`).
-**Requirements**: REQ-TIMETABLE-01, REQ-TIMETABLE-02, REQ-TIMETABLE-03, REQ-TIMETABLE-04
-**Depends on:** Phase 8
-**Success Criteria**:
-
-  1. Przełącznik trybów widoku: Segmented control na górnym pasku (Siatka / Agenda) umożliwiający płynne przełączanie sposobu prezentacji planu.
-  2. Pasek nawigacji tygodniowej: Wybór tygodnia (poprzedni / następny), wskaźnik aktualnego tygodnia, przycisk „Dzisiaj” oraz nagłówek klasy/profilu/wychowawcy.
-  3. Kafelki podsumowania tygodnia: Pasek statystyk z łączną liczbą godzin, zastępstwami, sprawdzianami oraz odwołanymi lekcjami.
-  4. Widok Siatki (Grid View): Tygodniowa tabela poniedziałek–piątek z kolumną godzin lekcyjnych (1–8+), kafelkami zajęć z salami, nauczycielami, tematami i kolorystycznymi znacznikami statusów (planowa, zastępstwo, odwołana, sprawdzian), z wyróżnieniem bieżącego dnia ("Dziś").
-  5. Widok Agendy (Agenda View): Szczegółowa, czytelna oś czasu wybranego dnia z wyróżnieniem trwającej lekcji („Trwa teraz • Zostało X min”), rozszerzonymi informacjami o temacie, zadaniach domowych, powodach zastępstw lub odwołania lekcji.
-  6. Responsywność i wspólna nawigacja: Pełna integracja ze wspólnym paskiem bocznym webowej nawigacji, responsywność na ekranach desktopowych, tabletach oraz urządzeniach mobilnych.
-
-**Plans:** 3 plans
+**Plans:** 0 plans
 
 Plans:
+- [ ] TBD (run /gsd-plan-phase 14 to break down)
 
-- [x] 09-01-PLAN.md — Rozszerzenie modelu i providerów planu lekcji (Data & State Layer)
-- [x] 09-02-PLAN.md — Widok siatki tygodniowej na desktopie i tabletach (Grid View Component & Modal)
-- [x] 09-03-PLAN.md — Widok agendy dziennej i integracja przełącznika (Agenda View & Screen Integration)
+### Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie
 
-### Phase 10: Pełen panel ocen w wersji na przeglądarkę
-
-**Goal**: Kompleksowe wdrożenie nowoczesnego, pełnego panelu ocen w wersji na przeglądarkę (desktop/tablet/mobile) w oparciu o makiety `docs/panel_ocen` oraz `docs/szczegoly_oceny`. Zawiera dwukolumnowy układ Master-Detail na desktopie (lista przedmiotów z pigułkami ocen po lewej, panel inspekcji wybranego przedmiotu z wykazem ocen po prawej), wykres rozkładu ocen i trajektorii średniej, oraz wysuwaną szufladę/modal szczegółów pojedynczej oceny ze statystykami i wpływem na średnią.
-**Requirements**: REQ-GRADES-05, REQ-GRADES-06, REQ-GRADES-07, REQ-GRADES-08
-**Depends on:** Phase 9
+**Goal**: Wdrożenie pełnoprawnego modułu zarządzania zadaniami ucznia i rodzica z dedykowaną podstroną `/zadania` w menu nawigacyjnym oraz interaktywnym widżetem szybkiej listy zadań w Bento Grid na Pulpicie (desktop oraz mobile).  
+**Requirements**: REQ-TASK-01, REQ-TASK-02  
+**Depends on**: Phase 14  
 **Success Criteria**:
+1. W menu bocznym (`AppSidebar`) oraz dolnym pasku nawigacji pojawia się nowa pozycja `/zadania` prowadząca do podstrony To-Do z obsługą deep linkingu go_router.
+2. Widok `/zadania` umożliwia tworzenie, edycję, oznaczanie ukończenia i usuwanie zadań wraz z terminami (Due Date), priorytetami i filtrowaniem (Wszystkie, Dzisiaj, Nadchodzące, Ukończone).
+3. Karta Bento Grid na Pulpicie (`DashboardScreen`) wyświetla listę najpilniejszych zadań na dany dzień z możliwością natychmiastowego odhaczenia jednym kliknięciem bez opuszczania pulpitu.
+4. Zadania są trwale synchronizowane w kolekcji Firestore powiązanej z profilem ucznia z natychmiastową reaktywnością (Riverpod / StreamProvider).
 
-  1. Górny nagłówek akademicki: kontekst semestru, klasy i szkoły, pasek akcji (filtrowanie wag, eksport, przelicz GPA) oraz zakładki okresu (Semestr 1, Semestr 2, Klasyfikacja Roczna).
-  2. Kafelki metryk KPI: duża karta średniej ważonej z trendem i lokatą w klasie oraz karta rozkładu ocen cząstkowych ze słupkowym wykresem skali 1-6 i wskaźnikiem zagrożeń.
-  3. Master-Detail Ledger: po lewej tabela przedmiotów z wagami ocen, średnią ważoną, oceną przewidywaną i ostatnim wpisem; zaznaczenie przedmiotu aktywuje go i aktualizuje prawy panel inspekcji.
-  4. Prawy panel inspekcji przedmiotu: nagłówek wybranego przedmiotu z nauczycielem i średnią, wykaz ocen cząstkowych z wagami, procentami i komentarzami nauczyciela.
-  5. Szuflada / modal szczegółów oceny (docs/szczegoly_oceny): po kliknięciu na ocenę otwiera się szczegółowy widok z dużą oceną, kategorią, wagą, terminem, komentarzem nauczyciela oraz wizualizacją wpływu oceny na średnią.
-  6. Wykres trajektorii średniej: wizualizacja liniowa/krzywa postępu średniej ucznia na tle średniej klasy w trakcie semestru.
-  7. Responsywność i wspólna nawigacja: bezproblemowe działanie wewnątrz wspólnego `AppSidebar` na desktopie i płynne dostosowanie do tabletów i urządzeń mobilnych.
-
-**Plans:** 2 plans
+**Plans:** 0 plans
 
 Plans:
+- [ ] TBD (run /gsd-plan-phase 15 to break down)
 
-- [x] 10-01-PLAN.md — Layout Master-Detail, tokeny, Riverpod providery, KPI (histogram) i tabela ocen
-- [x] 10-02-PLAN.md — Wykres trajektorii średniej, szuflada (drawer) szczegółów oceny i pełna integracja
+### Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości
 
-### Phase 11: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)
-
-**Goal**: Ulepszenie strategii odpytywania serwerów Librus (inteligentny throttling, losowy jitter, dynamiczny backoff oraz całkowite wyłączenie odpytywania w godzinach nocnych), aby nie budzić podejrzeń o automatyzację ani łamanie regulaminu serwisu.
-**Requirements**: TBD
-**Depends on:** Phase 10
+**Goal**: Automatyzacja tworzenia zadań edukacyjnych i organizacyjnych poprzez generowanie propozycji zadań przygotowawczych do nadchodzących sprawdzianów/kartkówek z planu i terminarza oraz heurystyczne wykrywanie zadań, wpłat i terminów z wiadomości Librusa.  
+**Requirements**: REQ-TASK-03, REQ-TASK-04  
+**Depends on**: Phase 15  
 **Success Criteria**:
+1. Przy wykryciu sprawdzianu lub kartkówki w terminarzu/planie lekcji system automatycznie proponuje lub generuje zadanie przygotowania (np. „Powtórka do: Sprawdzian z Chemii”) z sugerowaną datą realizacji (np. 1-2 dni przed terminem).
+2. W widoku wątku wiadomości (`/wiadomosci/:id`) mechanizm heurystyczny analizuje treść pod kątem kwot (np. "50 zł", "wpłata"), dat/terminów (np. "do 15 października", "do piątku") oraz zgód i wyświetla wyróżniony baner podpowiedzi zadania („Wykryto zadanie/opłatę”).
+3. Kliknięcie podpowiedzi jednym tapnięciem tworzy sformatowane zadanie z wypełnioną nazwą, kwotą/opisem i terminem w module `/zadania`.
+4. Użytkownik ma możliwość odrzucenia podpowiedzi lub dostosowania parametrów zadania przed zatwierdzeniem.
 
-  1. Harmonogram nocny: Całkowite zawieszenie automatycznego odpytywania serwerów Librus w godzinach nocnych (np. 23:00 – 06:00).
-  2. Inteligentny throttling i jitter: Wprowadzenie losowych odstępów czasowych (jitter) pomiędzy żądaniami imitujących naturalne zachowanie człowieka zamiast stałych interwałów crona.
-  3. Dynamiczny backoff: Automatyczne wydłużanie przerw w przypadku błędów HTTP (429, 503) lub wykrycia captcha/blokady.
-  4. Cache-first & conditional requests: Wykorzystanie pamięci podręcznej Firestore/lokalnej, aby nie generować zbędnego ruchu.
-  5. Manual on-demand sync: Możliwość wymuszenia odświeżenia na żądanie użytkownika z odpowiednim limitem (np. max 1 na 2 minuty).
-
-**Plans:** 2/2 plans complete
+**Plans:** 0 plans
 
 Plans:
+- [ ] TBD (run /gsd-plan-phase 16 to break down)
 
-- [x] 11-01-PLAN.md — Bezpieczne odpytywanie serwerów Librus, humanizacja zapytań i odporność na rate limiting
-- [x] 11-02-PLAN.md — Adaptacyjny harmonogram backendu (strefa Europe/Warsaw) i ograniczenia po stronie klienta
+### Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal
 
-### Phase 12: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni
-
-**Goal**: Kompleksowy audyt bazy kodu pod kątem ukrytych danych mockowanych / zastępczych, integracja statusów obecności/nieobecności bezpośrednio z kafelkami planu lekcji oraz zablokowanie stałej szerokości kontenera dat w przełączniku tygodni.
-**Requirements**: REQ-AUDIT-01, REQ-TIMETABLE-05, REQ-TIMETABLE-06
-**Depends on:** Phase 9, Phase 11
+**Goal**: Bezproblemowa integracja sprawdzianów, kartkówek i wydarzeń szkolnych z zewnętrznymi kalendarzami użytkownika poprzez bezpośrednie generowanie linków do Kalendarza Google oraz uniwersalnych plików `.ics` (iCal / Apple Calendar / Outlook).  
+**Requirements**: REQ-CAL-01, REQ-CAL-02  
+**Depends on**: Phase 14  
 **Success Criteria**:
+1. Kafelki sprawdzianów w terminarzu, widżecie Bento Grid oraz w modalu szczegółów lekcji posiadają przycisk „Dodaj do Kalendarza Google”, otwierający w nowej karcie predefiniowane wydarzenie z poprawnym tytułem, zakresem, datą i godzinami zajęć.
+2. Każde wydarzenie/sprawdzian udostępnia opcję pobrania pliku `.ics` ze sformatowanym standardem RFC 5545 (strefa Europe/Warsaw, opis, lokalizacja sali).
+3. Użytkownik może pobrać zbiorczy plik `.ics` dla wszystkich nadchodzących sprawdzianów w danym miesiącu/semestrze jednym kliknięciem.
+4. Generowanie linków i plików `.ics` działa bezbłędnie na urządzeniach stacjonarnych i mobilnych (obsługa pobierania w przeglądarce).
 
-  1. Identyfikacja i usunięcie nieuzasadnionych wartości mockowych (np. sztywne sprawdziany, statyczne nazwy klas/profili, fallbacki do fikcyjnych ocen/ogłoszeń) i zastąpienie ich danymi rzeczywistymi z Firestore lub czystymi stanami pustymi (Empty State).
-  2. Nanoszenie statusów frekwencji ucznia (nieobecność, usprawiedliwiona, spóźnienie, zwolnienie) bezpośrednio na kafelki lekcji w widoku tygodniowym (siatka) i dziennym (agenda) oraz w modalu szczegółów lekcji.
-  3. Stała szerokość elementu wyboru tygodnia (WeekNavigatorBar), gwarantująca niezmienną pozycję przycisków `<` i `>` niezależnie od długości tekstu daty.
-
-**Plans:** 2/2 plans complete
+**Plans:** 0 plans
 
 Plans:
+- [ ] TBD (run /gsd-plan-phase 17 to break down)
 
-- [x] 12-01-PLAN.md — Audyt mocków, ujednolicenie profilu ucznia i czyste stany puste
-- [x] 12-02-PLAN.md — Frekwencja w planie lekcji i stała szerokość przełącznika tygodni
+### Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push
 
-### Phase 13: Dedykowane URL i routing dla podstron i zasobów (deep linking)
-
-**Goal**: Wdrożenie routingu URL (np. go_router lub wbudowany Navigator 2.0 / URL strategy), umożliwiającego bezpośrednie otwieranie i udostępnianie linków do poszczególnych modułów i zasobów (np. `/pulpit`, `/plan-lekcji`, `/oceny`, `/frekwencja`, `/wiadomosci`, a także podgląd konkretnego wątku wiadomości lub szczegółów lekcji).
-**Requirements**: REQ-ROUTING-01, REQ-ROUTING-02
-**Depends on:** Phase 8, Phase 9, Phase 10
+**Goal**: Stworzenie wielokanałowego systemu powiadomień natychmiastowych o kluczowych zdarzeniach szkolnych (nowa ocena, nowa wiadomość, nadchodzący sprawdzian) z wykorzystaniem bota Telegram oraz powiadomień Web Push w przeglądarce.  
+**Requirements**: REQ-NOTIF-01, REQ-NOTIF-02, REQ-NOTIF-03  
+**Depends on**: Phase 14  
 **Success Criteria**:
+1. Integracja Telegram Bot w Firebase Cloud Functions z generowaniem jednorazowego 6-cyfrowego kodu parowania w ustawieniach aplikacji, umożliwiającego powiązanie czatu Telegram rodzica lub ucznia z ich kontem.
+2. Wykrycie w cyklu synchronizacji nowej oceny, nowej wiadomości lub dodanego sprawdzianu powoduje natychmiastowe wysłanie sformatowanego powiadomienia na powiązany czat Telegram z kluczowymi szczegółami (przedmiot, ocena, waga, nadawca).
+3. Aplikacja webowa rejestruje Service Worker i obsługuje subskrypcję Web Push API (VAPID / FCM), wyświetlając natywne powiadomienia w przeglądarce po uzyskaniu zgody użytkownika.
+4. W ustawieniach użytkownik może niezależnie włączać i wyłączać kanały powiadomień (Telegram / Web Push) oraz kategorie zdarzeń.
 
-  1. Każda główna zakładka posiada czytelny adres URL w przeglądarce (np. `/pulpit`, `/plan`, `/oceny`, `/frekwencja`, `/wiadomosci`).
-  2. Zmiana adresu w przeglądarce, odświeżenie strony (F5) oraz przyciski Wstecz/Dalej w przeglądarce poprawnie przełączają widoki i zachowują stan.
-  3. Możliwość bezpośredniego wejścia z linku do konkretnego zasobu (np. `/wiadomosci/:id` lub parametr daty/tygodnia w planie lekcji `/plan?data=YYYY-MM-DD`).
-
-**Plans:** 2/2 plans complete
+**Plans:** 0 plans
 
 Plans:
+- [ ] TBD (run /gsd-plan-phase 18 to break down)
 
-- [x] 13-01-PLAN.md — Architektura routingu webowego (URL strategy, definicja tras i synchronizacja z MainNavigationScreen)
-- [x] 13-02-PLAN.md — Deep linking dla zasobów (wątki wiadomości, widok tygodnia w planie lekcji, filtry frekwencji)
+### Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
+
+**Goal**: Automatyczne generowanie i dostarczanie zwięzłego, ustrukturyzowanego podsumowania nadchodzącego tygodnia szkolnego w każdy piątek wieczorem do rodzica i ucznia za pośrednictwem bota Telegram.  
+**Requirements**: REQ-REPORT-01, REQ-REPORT-02  
+**Depends on**: Phase 18  
+**Success Criteria**:
+1. Zadanie Cloud Scheduler uruchamiane w każdy piątek o godz. 18:00 (Europe/Warsaw) agreguje plan lekcji, zaplanowane sprawdziany, kartkówki oraz zadania domowe na nadchodzący tydzień (poniedziałek–piątek).
+2. Cloud Function formatuje czytelny, estetyczny raport Markdown (z podziałem na dni, listą sprawdzianów, ważnymi ogłoszeniami i zadaniami).
+3. Raport jest automatycznie wysyłany przez bota Telegram do wszystkich sparowanych kont (rodzic oraz uczeń).
+4. W przypadku braku sprawdzianów w danym tygodniu raport zawiera pozytywny komunikat podsumowujący (spokojny tydzień) wraz z ramowym planem zajęć.
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 19 to break down)

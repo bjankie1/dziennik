@@ -2,11 +2,11 @@
 gsd_state_version: "1.0"
 milestone: v3.0
 milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
-status: planning
-last_updated: "2026-09-21T19:36:15.622Z"
+status: ready_to_plan
+last_updated: "2026-09-21T21:42:00.000Z"
 last_activity: 2026-09-21
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -15,13 +15,28 @@ progress:
 
 # Project State
 
-**Current Milestone:** Milestone v2.0
-**Active Phase:** Phase 13: Dedykowane URL i routing dla podstron i zasobów (deep linking)
-**Status:** Completed & Deployed
-**Last Updated:** 2026-09-21
+**Current Milestone:** Milestone v3.0 (Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia)  
+**Active Phase:** Phase 14: Dostęp ucznia (rola student vs parent) i współdzielony cache danych  
+**Status:** Ready to plan  
+**Last Updated:** 2026-09-21  
 
-## Completed in v2.0
+## Milestone v3.0 Roadmap
 
+- [ ] **Phase 14**: Dostęp ucznia (rola student vs parent) i współdzielony cache danych
+- [ ] **Phase 15**: Moduł zadań (Smart To-Do) i widżet na Pulpicie
+- [ ] **Phase 16**: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości
+- [ ] **Phase 17**: Eksport sprawdzianów do Kalendarza Google i iCal
+- [ ] **Phase 18**: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push
+- [ ] **Phase 19**: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
+
+## Completed in Previous Milestones
+
+### Milestone v1.0
+- [x] **Phase 1**: Naprawa nawigacji planu lekcji i kompaktowy pulpit ocen
+- [x] **Phase 2**: Rzeczywista frekwencja (Librus Synergia)
+- [x] **Phase 3**: Rzeczywiste wiadomości i powiadomienia
+
+### Milestone v2.0
 - [x] **Phase 4**: Bezpieczny autologin i trwałe powiązanie profilu Librus (odporność na F5/przeładowanie, sesja w SharedPreferences, automatyczne odzyskiwanie z Firestore).
 - [x] **Phase 5**: Nowy interfejs Ocen wg makiety (zakładki semestrów, karta średniej ważonej z postępem stypendium, pigułki ocen w wierszu bez rozwijania, pełny akordeon szczegółów ocen).
 - [x] **Phase 6**: Moduł usprawiedliwiania nieobecności wg makiety (kołowy wykres frekwencji, filtry, zgrupowane karty lekcji z salami i nauczycielami, pływający dock z szybkimi powodami i autoryzacja PIN rodzica).
@@ -33,29 +48,7 @@ progress:
 - [x] **Phase 12**: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni (odcięcie mocków z MockData, ukrywanie sprawdzianu, neutralny numerek w weekend, dynamiczny profil i wychowawca, frekwencja na kafelkach planu, stała szerokość 430px WeekNavigatorBar).
 - [x] **Phase 13**: Dedykowane URL i routing dla podstron i zasobów (deep linking) (go_router, Path URL Strategy, StatefulShellRoute, trasy po polsku, deep linki /wiadomosci/:id i /plan-lekcji?data=...).
 
-## Milestone v2.0 Roadmap
-
-- [x] **Phase 4**: Bezpieczny autologin i trwałe powiązanie profilu Librus
-- [x] **Phase 5**: Nowy interfejs Ocen wg makiety
-- [x] **Phase 6**: Moduł usprawiedliwiania nieobecności wg makiety
-- [x] **Phase 7**: Funkcjonalny moduł wiadomości (czytanie, odpowiadanie, wysyłanie)
-- [x] **Phase 8**: Pełny design ekranu głównego w wersji web
-- [x] **Phase 9**: Plan lekcji w wersji web (Widok siatki i agendy)
-- [x] **Phase 10**: Pełen panel ocen w wersji na przeglądarkę
-- [x] **Phase 11**: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny)
-- [x] **Phase 12**: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni
-- [x] **Phase 13**: Dedykowane URL i routing dla podstron i zasobów (deep linking)
-
 ## Accumulated Context
-
-### Roadmap Evolution
-
-- Phase 8 added: Pełny design ekranu głównego w wersji web (nowoczesny pulpit webowy z Bento Grid dla wersji desktop/tablet).
-- Phase 9 added: Plan lekcji w wersji web (Widok siatki i agendy) na podstawie makiet docs/plan_lekcji_v1 i docs/plan lekcji agenda.
-- Phase 10 added: Pełen panel ocen w wersji na przeglądarkę na podstawie makiet docs/panel_ocen i docs/szczegoly_oceny.
-- Phase 11 added: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny) na wniosek użytkownika (ochrona przed podejrzeniami o łamanie regulaminu, wyłączenie nocy).
-- Phase 12 added: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni (eliminacja sztucznych danych, naniesienie frekwencji na plan lekcji, fixed-width dla date pickera tygodni).
-- Phase 13 added: Dedykowane URL i routing dla podstron i zasobów (deep linking).
 
 ### Quick Tasks Completed
 
@@ -70,14 +63,14 @@ progress:
 
 ## Session
 
-**Last session:** 2026-09-21T19:30:00.000Z
-**Stopped at:** Milestone v2.0 summary generated
-**Resume file:** .planning/reports/MILESTONE_SUMMARY-v2.0.md
-Last activity: 2026-09-21 - Wygenerowano kompleksowe podsumowanie kamienia milowego v2.0 (MILESTONE_SUMMARY-v2.0.md)
+**Last session:** 2026-09-21T21:40:00.000Z  
+**Stopped at:** Roadmap created for Milestone v3.0  
+**Resume file:** .planning/ROADMAP.md  
+Last activity: 2026-09-21 - Utworzono roadmapę Milestone v3.0 (Fazy 14-19) oraz zaktualizowano wymagania i stan projektu.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-09-21 — Milestone v3.0 started
+Phase: Phase 14: Dostęp ucznia (rola student vs parent) i współdzielony cache danych  
+Plan: —  
+Status: Ready to plan  
+Last activity: 2026-09-21 — Milestone v3.0 roadmap created (Phases 14–19)  

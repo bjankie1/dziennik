@@ -102,17 +102,17 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REQ-ROLE-01 | TBD | Pending |
-| REQ-ROLE-02 | TBD | Pending |
-| REQ-ROLE-03 | TBD | Pending |
-| REQ-TASK-01 | TBD | Pending |
-| REQ-TASK-02 | TBD | Pending |
-| REQ-TASK-03 | TBD | Pending |
-| REQ-TASK-04 | TBD | Pending |
-| REQ-CAL-01 | TBD | Pending |
-| REQ-CAL-02 | TBD | Pending |
-| REQ-NOTIF-01 | TBD | Pending |
-| REQ-NOTIF-02 | TBD | Pending |
-| REQ-NOTIF-03 | TBD | Pending |
-| REQ-REPORT-01 | TBD | Pending |
-| REQ-REPORT-02 | TBD | Pending |
+| REQ-ROLE-01 | Phase 14 | Pending |
+| REQ-ROLE-02 | Phase 14 | Pending |
+| REQ-ROLE-03 | Phase 14 | Pending |
+| REQ-TASK-01 | Phase 15 | Pending |
+| REQ-TASK-02 | Phase 15 | Pending |
+| REQ-TASK-03 | Phase 16 | Pending |
+| REQ-TASK-04 | Phase 16 | Pending |
+| REQ-CAL-01 | Phase 17 | Pending |
+| REQ-CAL-02 | Phase 17 | Pending |
+| REQ-NOTIF-01 | Phase 18 | Pending |
+| REQ-NOTIF-02 | Phase 18 | Pending |
+| REQ-NOTIF-03 | Phase 18 | Pending |
+| REQ-REPORT-01 | Phase 19 | Pending |
+| REQ-REPORT-02 | Phase 19 | Pending |
