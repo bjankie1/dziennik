@@ -1,28 +1,32 @@
 ---
 gsd_state_version: "1.0"
 milestone: v3.0
-milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
-status: ready_to_execute
-last_updated: "2026-09-22T07:05:00.000Z"
+current_phase: 15
+current_phase_name: Moduł zadań (Smart To-Do) i widżet na Pulpicie
+status: ready_to_plan
+stopped_at: Phase 14 completed and verified
+last_updated: "2026-09-22T07:28:00.000Z"
 last_activity: 2026-09-22
+state_head: HEAD
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 3
+  percent: 17
+milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ---
 
 # Project State
 
 **Current Milestone:** Milestone v3.0 (Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia)  
-**Active Phase:** Phase 14: Dostęp ucznia (rola student vs parent) i współdzielony cache danych  
-**Status:** Ready to execute (3 plans ready)  
+**Active Phase:** Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie  
+**Status:** Ready to plan Phase 15  
 **Last Updated:** 2026-09-22  
 
 ## Milestone v3.0 Roadmap
 
-- [ ] **Phase 14**: Dostęp ucznia (rola student vs parent) i współdzielony cache danych
+- [x] **Phase 14**: Dostęp ucznia (rola student vs parent) i współdzielony cache danych (completed 2026-09-22)
 - [ ] **Phase 15**: Moduł zadań (Smart To-Do) i widżet na Pulpicie
 - [ ] **Phase 16**: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości
 - [ ] **Phase 17**: Eksport sprawdzianów do Kalendarza Google i iCal
@@ -32,11 +36,13 @@ progress:
 ## Completed in Previous Milestones
 
 ### Milestone v1.0
+
 - [x] **Phase 1**: Naprawa nawigacji planu lekcji i kompaktowy pulpit ocen
 - [x] **Phase 2**: Rzeczywista frekwencja (Librus Synergia)
 - [x] **Phase 3**: Rzeczywiste wiadomości i powiadomienia
 
 ### Milestone v2.0
+
 - [x] **Phase 4**: Bezpieczny autologin i trwałe powiązanie profilu Librus (odporność na F5/przeładowanie, sesja w SharedPreferences, automatyczne odzyskiwanie z Firestore).
 - [x] **Phase 5**: Nowy interfejs Ocen wg makiety (zakładki semestrów, karta średniej ważonej z postępem stypendium, pigułki ocen w wierszu bez rozwijania, pełny akordeon szczegółów ocen).
 - [x] **Phase 6**: Moduł usprawiedliwiania nieobecności wg makiety (kołowy wykres frekwencji, filtry, zgrupowane karty lekcji z salami i nauczycielami, pływający dock z szybkimi powodami i autoryzacja PIN rodzica).
@@ -63,14 +69,13 @@ progress:
 
 ## Session
 
-**Last session:** 2026-09-21T21:40:00.000Z  
-**Stopped at:** Roadmap created for Milestone v3.0  
+**Last session:** 2026-09-22T07:28:00.000Z  
+**Stopped at:** Phase 14 completed and verified  
 **Resume file:** .planning/ROADMAP.md  
-Last activity: 2026-09-21 - Utworzono roadmapę Milestone v3.0 (Fazy 14-19) oraz zaktualizowano wymagania i stan projektu.
+Last activity: 2026-09-22
 
 ## Current Position
 
-Phase: Phase 14: Dostęp ucznia (rola student vs parent) i współdzielony cache danych  
-Plan: —  
-Status: Ready to plan  
-Last activity: 2026-09-21 — Milestone v3.0 roadmap created (Phases 14–19)  
+Phase: 15 (Moduł zadań (Smart To-Do) i widżet na Pulpicie) — READY TO PLAN
+Status: Phase 14 completed. Ready to discuss / plan Phase 15.
+Last activity: 2026-09-22 — Phase 14 verified and closed

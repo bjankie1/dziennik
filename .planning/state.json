@@ -62,12 +62,47 @@
       "number": "12",
       "name": "Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni",
       "status": "complete"
+    },
+    {
+      "number": "13",
+      "name": "Dedykowane URL i routing dla podstron i zasobów (deep linking)",
+      "status": "complete"
+    },
+    {
+      "number": "14",
+      "name": "Dostęp ucznia (rola student vs parent) i współdzielony cache danych",
+      "status": "complete"
+    },
+    {
+      "number": "15",
+      "name": "Moduł zadań (Smart To-Do) i widżet na Pulpicie",
+      "status": "pending"
+    },
+    {
+      "number": "16",
+      "name": "Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości",
+      "status": "pending"
+    },
+    {
+      "number": "17",
+      "name": "Eksport sprawdzianów do Kalendarza Google i iCal",
+      "status": "pending"
+    },
+    {
+      "number": "18",
+      "name": "Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push",
+      "status": "pending"
+    },
+    {
+      "number": "19",
+      "name": "Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)",
+      "status": "pending"
     }
   ],
   "next": {
-    "command": "/gsd-discuss-phase",
-    "label": "Discuss the first phase",
-    "reason": "Project initialized — plan your first phase"
+    "command": "/gsd-progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 14 of 6 · 0% · executing"
   },
-  "updated_at": "2026-09-21T19:36:15.624Z"
+  "updated_at": "2026-09-22T05:06:38.991Z"
 }

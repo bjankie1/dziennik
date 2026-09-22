@@ -24,7 +24,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 
 ### Active Milestone Phases (v3.0)
 
-- [ ] **Phase 14: Dostęp ucznia (rola student vs parent) i współdzielony cache danych** — Logowanie kontem Google Oskara, separacja ról (`student` vs `parent`) z blokadą e-usprawiedliwień i PIN dla ucznia oraz Single Source of Truth w Firestore bez duplikowania scrapingu.
+- [x] **Phase 14: Dostęp ucznia (rola student vs parent) i współdzielony cache danych** — Logowanie kontem Google Oskara, separacja ról (`student` vs `parent`) z blokadą e-usprawiedliwień i PIN dla ucznia oraz Single Source of Truth w Firestore bez duplikowania scrapingu. (completed 2026-09-22)
 - [ ] **Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie** — Dedykowana podstrona `/zadania` w menu bocznym i nawigacji oraz interaktywny widżet zadań w Bento Grid na Pulpicie z szybkim odhaczaniem.
 - [ ] **Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości** — Automatyczne generowanie zadań przygotowawczych ze sprawdzianów i terminarza oraz heurystyczne wykrywanie zadań, opłat i terminów z wiadomości Librusa.
 - [ ] **Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal** — Przycisk „Dodaj do Kalendarza Google” w kafelkach sprawdzianów i modalu lekcji oraz pobieranie plików kalendarzowych `.ics`.
@@ -49,9 +49,9 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 **Plans:** 3 plans
 
 Plans:
-- [ ] 14-01-PLAN.md: Data Layer & Backend Roles & Shared Cache (Wave 1)
-- [ ] 14-02-PLAN.md: Student Justification Request Flow & Parent PIN Approval (Wave 2)
-- [ ] 14-03-PLAN.md: Role Badge, Connect Screen Selection & Student Message Session (Wave 3)
+- [x] 14-01-PLAN.md: Data Layer & Backend Roles & Shared Cache (Wave 1)
+- [x] 14-02-PLAN.md: Student Justification Request Flow & Parent PIN Approval (Wave 2)
+- [x] 14-03-PLAN.md: Role Badge, Connect Screen Selection & Student Message Session (Wave 3)
 
 ### Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie
 
