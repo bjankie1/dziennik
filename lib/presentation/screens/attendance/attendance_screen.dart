@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../domain/models/attendance_record.dart';
+import '../../../domain/models/justification_request.dart';
 import '../../providers/school_providers.dart';
+import '../../providers/auth_providers.dart';
 import 'justification_modal.dart';
 import 'widgets/dual_ring_attendance_gauge.dart';
+import 'widgets/student_justification_modal.dart';
+import 'widgets/parent_approval_modal.dart';
 
 class AttendanceScreen extends ConsumerStatefulWidget {
   final int? initialFilter;
@@ -65,6 +69,14 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   Widget build(BuildContext context) {
     final attendanceAsync = ref.watch(attendanceProvider);
     final statsAsync = ref.watch(attendanceStatsProvider);
+    final user = ref.watch(appUserProvider);
+    final isStudent = user?.isStudent ?? false;
+    final isParent = !isStudent;
+
+    final justificationRequestsAsync = ref.watch(justificationRequestsProvider);
+    final pendingRequests = (justificationRequestsAsync.value ?? [])
+        .where((r) => r.status.isPending)
+        .toList();
 
     final records = attendanceAsync.value ?? [];
 
@@ -117,6 +129,12 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               bottom: _selectedIds.isNotEmpty ? 220 : 32,
             ),
             children: [
+              // Baner powiadomień dla rodzica o prośbach ucznia (REQ-ROLE-02)
+              if (isParent && pendingRequests.isNotEmpty) ...[
+                _buildParentPendingBanner(context, pendingRequests),
+                const SizedBox(height: 14),
+              ],
+
               // 1. Karta Stanu Semestru (Dual Ring Bento Header)
               _buildSemesterStatusCard(
                 physicalPercentage: physicalPercentage,
@@ -417,7 +435,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               left: 0,
               right: 0,
               bottom: 0,
-              child: _buildFloatingJustificationDock(context),
+              child: _buildFloatingJustificationDock(context, isStudent: isStudent),
             ),
         ],
       ),
@@ -853,7 +871,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             isUnexcused
                                 ? 'Nieobecność nieusprawiedliwiona'
                                 : (isRequested
-                                    ? 'W trakcie decyzji (oczekuje na wychowawcę)'
+                                    ? 'Oczekuje na akceptację rodzica'
                                     : (isExempted
                                         ? 'Zwolnienie z zajęć'
                                         : 'Usprawiedliwiona${record.justificationReason != null ? " (${record.justificationReason})" : ""}')),
@@ -865,6 +883,32 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                           ),
                         ],
                       ),
+                      if (isRequested) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFFDE68A)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.hourglass_bottom_rounded, size: 12, color: Color(0xFF92400E)),
+                              SizedBox(width: 4),
+                              Text(
+                                'Oczekuje na akceptację rodzica',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF92400E),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -877,7 +921,118 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     );
   }
 
-  Widget _buildFloatingJustificationDock(BuildContext context) {
+  Widget _buildParentPendingBanner(BuildContext context, List<JustificationRequest> pendingList) {
+    final firstReq = pendingList.first;
+    final count = firstReq.lessonNumbers.isNotEmpty
+        ? firstReq.lessonNumbers.length
+        : firstReq.recordIds.length;
+    final lessonLabel = _getLessonLabel(count);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF3C7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.family_restroom_rounded, color: Color(0xFFB45309), size: 22),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${firstReq.studentName} prosi o usprawiedliwienie',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF78350F),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$count $lessonLabel • ${firstReq.reason}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF92400E),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          FilledButton.icon(
+            onPressed: () {
+              ParentApprovalModal.show(
+                context,
+                firstReq,
+                onApprove: (pin) async {
+                  final ok = await ref
+                      .read(attendanceProvider.notifier)
+                      .approveJustification(firstReq.id, pin);
+                  if (ok && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Usprawiedliwienie dla ${firstReq.studentName} zostało wysłane do szkoły.',
+                        ),
+                        backgroundColor: const Color(0xFF006C4A),
+                      ),
+                    );
+                  }
+                  return ok;
+                },
+                onReject: (reason) async {
+                  final ok = await ref
+                      .read(attendanceProvider.notifier)
+                      .rejectJustification(firstReq.id, reason: reason);
+                  if (ok && context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Wniosek ucznia został odrzucony.'),
+                        backgroundColor: Color(0xFFDC2626),
+                      ),
+                    );
+                  }
+                  return ok;
+                },
+              );
+            },
+            icon: const Icon(Icons.pin, size: 14),
+            label: const Text(
+              'Zatwierdź (PIN)',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF3525CD),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFloatingJustificationDock(BuildContext context, {bool isStudent = false}) {
     final count = _selectedIds.length;
     final lessonLabel = _getLessonLabel(count);
 
@@ -905,44 +1060,57 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             Row(
               children: [
                 Container(
-                  width: 26,
-                  height: 26,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF3525CD),
-                    shape: BoxShape.circle,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEF2FF),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '$count',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 13,
-                    ),
+                  child: Icon(
+                    isStudent ? Icons.family_restroom_rounded : Icons.mark_email_read_outlined,
+                    color: const Color(0xFF4338CA),
+                    size: 20,
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    'Wybrano lekcje do usprawiedliwienia',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
-                    ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Wybrano $count $lessonLabel',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      Text(
+                        isStudent
+                          ? 'Wyślij wniosek do akceptacji rodzica'
+                          : 'Gotowe do wysłania e-Usprawiedliwienia',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const Icon(Icons.edit_calendar_outlined, size: 20, color: Color(0xFF64748B)),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFF94A3B8), size: 20),
+                  onPressed: () => setState(() => _selectedIds.clear()),
+                  tooltip: 'Odznacz wszystkie',
+                ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
-            // Szybki powód
+            // Szybki wybór powodu
             const Text(
-              'WYBIERZ SZYBKI POWÓD:',
+              'Szybki powód nieobecności:',
               style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
                 letterSpacing: 0.6,
                 color: Color(0xFF64748B),
               ),
@@ -984,36 +1152,63 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             ),
             const SizedBox(height: 14),
 
-            // Przycisk wysyłki (otwiera modal z kodem PIN rodzica)
+            // Przycisk wysyłki (otwiera modal z kodem PIN rodzica lub modal prośby ucznia)
             SizedBox(
               width: double.infinity,
               height: 48,
               child: FilledButton(
                 onPressed: () {
-                  JustificationModal.show(
-                    context,
-                    _selectedIds.toList(),
-                    _selectedQuickReason,
-                    (reason, pin, selectedDate) async {
-                      final selectedList = _selectedIds.toList();
-                      await ref.read(attendanceProvider.notifier).submitJustification(
-                            selectedList,
-                            reason,
-                            date: selectedDate,
-                          );
-                      setState(() => _selectedIds.clear());
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Wniosek o usprawiedliwienie (${selectedList.length} $lessonLabel) został pomyślnie wysłany do wychowawcy.',
+                  if (isStudent) {
+                    StudentJustificationModal.show(
+                      context,
+                      _selectedIds.toList(),
+                      initialReason: _selectedQuickReason,
+                      onConfirm: (reason, selectedDate) async {
+                        final selectedList = _selectedIds.toList();
+                        await ref.read(attendanceProvider.notifier).requestJustification(
+                              selectedList,
+                              reason,
+                              date: selectedDate,
+                            );
+                        setState(() => _selectedIds.clear());
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Prośba o usprawiedliwienie (${selectedList.length} $lessonLabel) została przesłana do rodzica.',
+                              ),
+                              backgroundColor: const Color(0xFF006C4A),
                             ),
-                            backgroundColor: const Color(0xFF006C4A),
-                          ),
-                        );
-                      }
-                    },
-                  );
+                          );
+                        }
+                      },
+                    );
+                  } else {
+                    JustificationModal.show(
+                      context,
+                      _selectedIds.toList(),
+                      _selectedQuickReason,
+                      (reason, pin, selectedDate) async {
+                        final selectedList = _selectedIds.toList();
+                        await ref.read(attendanceProvider.notifier).submitJustification(
+                              selectedList,
+                              reason,
+                              date: selectedDate,
+                            );
+                        setState(() => _selectedIds.clear());
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Wniosek o usprawiedliwienie (${selectedList.length} $lessonLabel) został pomyślnie wysłany do wychowawcy.',
+                              ),
+                              backgroundColor: const Color(0xFF006C4A),
+                            ),
+                          );
+                        }
+                      },
+                    );
+                  }
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF3525CD),
@@ -1025,26 +1220,34 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Wyślij usprawiedliwienie ($count $lessonLabel)',
+                      isStudent
+                          ? 'Poproś rodzica o usprawiedliwienie ($count $lessonLabel)'
+                          : 'Wyślij usprawiedliwienie ($count $lessonLabel)',
                       style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(Icons.arrow_forward_rounded, size: 16),
+                    Icon(isStudent ? Icons.send_rounded : Icons.arrow_forward_rounded, size: 16),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 8),
 
-            // Informacja o autoryzacji kodem PIN rodzica
-            const Row(
+            // Informacja pomocnicza pod przyciskiem
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.shield_outlined, size: 14, color: Color(0xFF64748B)),
-                SizedBox(width: 6),
+                Icon(
+                  isStudent ? Icons.family_restroom_rounded : Icons.shield_outlined,
+                  size: 14,
+                  color: const Color(0xFF64748B),
+                ),
+                const SizedBox(width: 6),
                 Text(
-                  'Wymagane zatwierdzenie kodem PIN rodzica w następnym kroku',
-                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF64748B)),
+                  isStudent
+                      ? 'Wniosek zostanie przekazany rodzicowi do zatwierdzenia kodem PIN'
+                      : 'Wymagane zatwierdzenie kodem PIN rodzica w następnym kroku',
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF64748B)),
                 ),
               ],
             ),

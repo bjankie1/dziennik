@@ -8,10 +8,14 @@ import "../../../domain/models/message_thread.dart";
 import "../../../domain/models/attendance_record.dart";
 import "../../../domain/models/teacher_contact.dart";
 import "../../../domain/models/student_profile.dart";
+import "../../../domain/models/justification_request.dart";
 import "../../providers/school_providers.dart";
 import "../../providers/sync_provider.dart";
+import "../../providers/auth_providers.dart";
 import "../grades/grade_details_modal.dart";
 import "../attendance/justification_modal.dart";
+import "../attendance/widgets/student_justification_modal.dart";
+import "../attendance/widgets/parent_approval_modal.dart";
 import "../messages/new_message_screen.dart";
 import "../messages/message_thread_screen.dart";
 import "../../widgets/modals/librus_query_log_modal.dart";
@@ -50,6 +54,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final attendanceAsync = ref.watch(attendanceProvider);
     final teachersAsync = ref.watch(teachersProvider);
     final examAsync = ref.watch(upcomingExamProvider);
+    final user = ref.watch(appUserProvider);
+    final isStudent = user?.isStudent ?? false;
+    final justificationRequestsAsync = ref.watch(justificationRequestsProvider);
+    final pendingRequests = (justificationRequestsAsync.value ?? [])
+        .where((r) => r.status.isPending)
+        .toList();
 
     final now = DateTime.now();
     final isWeekend = now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
@@ -157,6 +167,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           grades: grades,
                           unexcusedRecords: unexcusedRecords,
                           teachers: teachersAsync.value ?? [],
+                          pendingRequests: pendingRequests,
+                          isStudent: isStudent,
                         ),
                       ),
                     ],
@@ -1370,6 +1382,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required List<Grade> grades,
     required List<AttendanceRecord> unexcusedRecords,
     required List<TeacherContact> teachers,
+    List<JustificationRequest> pendingRequests = const [],
+    bool isStudent = false,
   }) {
     final attendancePct = student?.attendancePercentage ?? 98.6;
 
@@ -1629,6 +1643,103 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ),
               ),
 
+              // Highlighted notification card for parents when student has pending requests (REQ-ROLE-02, D-04)
+              if (!isStudent && pendingRequests.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.family_restroom_rounded, size: 16, color: Color(0xFFB45309)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              "${pendingRequests.first.studentName} prosi o usprawiedliwienie",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF78350F),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "${pendingRequests.first.lessonNumbers.isNotEmpty ? pendingRequests.first.lessonNumbers.length : pendingRequests.first.recordIds.length} godz. • ${pendingRequests.first.reason}",
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF92400E),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 34,
+                        child: FilledButton.icon(
+                          onPressed: () {
+                            final req = pendingRequests.first;
+                            ParentApprovalModal.show(
+                              context,
+                              req,
+                              onApprove: (pin) async {
+                                final ok = await ref
+                                    .read(attendanceProvider.notifier)
+                                    .approveJustification(req.id, pin);
+                                if (ok && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        "Usprawiedliwienie dla ${req.studentName} zostało zatwierdzone.",
+                                      ),
+                                      backgroundColor: const Color(0xFF006C4A),
+                                    ),
+                                  );
+                                }
+                                return ok;
+                              },
+                              onReject: (reason) async {
+                                final ok = await ref
+                                    .read(attendanceProvider.notifier)
+                                    .rejectJustification(req.id, reason: reason);
+                                if (ok && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Wniosek ucznia został odrzucony."),
+                                      backgroundColor: Color(0xFFDC2626),
+                                    ),
+                                  );
+                                }
+                                return ok;
+                              },
+                            );
+                          },
+                          icon: const Icon(Icons.pin, size: 14),
+                          label: const Text(
+                            "Zatwierdź (PIN)",
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                          ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF3525CD),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               if (unexcusedRecords.isNotEmpty) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -1660,29 +1771,51 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ElevatedButton.icon(
                 onPressed: () {
                   final recordIds = unexcusedRecords.map((r) => r.id).toList();
-                  JustificationModal.show(
-                    context,
-                    recordIds,
-                    "Wizyta lekarska",
-                    (reason, pin, selectedDate) async {
-                      await ref.read(attendanceProvider.notifier).submitJustification(
-                            recordIds,
-                            reason,
-                            date: selectedDate,
+                  if (isStudent) {
+                    StudentJustificationModal.show(
+                      context,
+                      recordIds,
+                      onConfirm: (reason, selectedDate) async {
+                        await ref.read(attendanceProvider.notifier).requestJustification(
+                              recordIds,
+                              reason,
+                              date: selectedDate,
+                            );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Prośba o usprawiedliwienie została przesłana do rodzica."),
+                              backgroundColor: Color(0xFF006C4A),
+                            ),
                           );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Wniosek o usprawiedliwienie został pomyślnie wysłany."),
-                            backgroundColor: Color(0xFF006C4A),
-                          ),
-                        );
-                      }
-                    },
-                  );
+                        }
+                      },
+                    );
+                  } else {
+                    JustificationModal.show(
+                      context,
+                      recordIds,
+                      "Wizyta lekarska",
+                      (reason, pin, selectedDate) async {
+                        await ref.read(attendanceProvider.notifier).submitJustification(
+                              recordIds,
+                              reason,
+                              date: selectedDate,
+                            );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Wniosek o usprawiedliwienie został pomyślnie wysłany."),
+                              backgroundColor: Color(0xFF006C4A),
+                            ),
+                          );
+                        }
+                      },
+                    );
+                  }
                 },
-                icon: const Icon(Icons.security, size: 16),
-                label: const Text("Szybkie usprawiedliwienie (PIN)"),
+                icon: Icon(isStudent ? Icons.family_restroom_rounded : Icons.security, size: 16),
+                label: Text(isStudent ? "Poproś o usprawiedliwienie" : "Szybkie usprawiedliwienie (PIN)"),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -1763,30 +1896,52 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 icon: Icons.event_busy_outlined,
                 iconBg: AppColors.surfaceContainerHigh,
                 iconColor: AppColors.onSurface,
-                title: "Zgłoś nieobecność",
-                subtitle: "e-Usprawiedliwienie",
+                title: isStudent ? "Poproś o usprawiedliwienie" : "Zgłoś nieobecność",
+                subtitle: isStudent ? "Wniosek do rodzica" : "e-Usprawiedliwienie",
                 onTap: () {
                   final recordIds = unexcusedRecords.map((r) => r.id).toList();
-                  JustificationModal.show(
-                    context,
-                    recordIds,
-                    "Wizyta lekarska",
-                    (reason, pin, selectedDate) async {
-                      await ref.read(attendanceProvider.notifier).submitJustification(
-                            recordIds,
-                            reason,
-                            date: selectedDate,
+                  if (isStudent) {
+                    StudentJustificationModal.show(
+                      context,
+                      recordIds,
+                      onConfirm: (reason, selectedDate) async {
+                        await ref.read(attendanceProvider.notifier).requestJustification(
+                              recordIds,
+                              reason,
+                              date: selectedDate,
+                            );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Prośba o usprawiedliwienie została przesłana do rodzica."),
+                              backgroundColor: Color(0xFF006C4A),
+                            ),
                           );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Wniosek o usprawiedliwienie został pomyślnie wysłany."),
-                            backgroundColor: Color(0xFF006C4A),
-                          ),
-                        );
-                      }
-                    },
-                  );
+                        }
+                      },
+                    );
+                  } else {
+                    JustificationModal.show(
+                      context,
+                      recordIds,
+                      "Wizyta lekarska",
+                      (reason, pin, selectedDate) async {
+                        await ref.read(attendanceProvider.notifier).submitJustification(
+                              recordIds,
+                              reason,
+                              date: selectedDate,
+                            );
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text("Wniosek o usprawiedliwienie został pomyślnie wysłany."),
+                              backgroundColor: Color(0xFF006C4A),
+                            ),
+                          );
+                        }
+                      },
+                    );
+                  }
                 },
               ),
             ],
@@ -1918,6 +2073,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final messagesAsync = ref.watch(messagesProvider);
     final unreadMessagesCount = ref.watch(unreadMessagesCountProvider);
     final syncState = ref.watch(syncProvider);
+    final user = ref.watch(appUserProvider);
+    final isStudent = user?.isStudent ?? false;
+    final isParent = !isStudent;
+    final justificationRequestsAsync = ref.watch(justificationRequestsProvider);
+    final pendingRequests = (justificationRequestsAsync.value ?? [])
+        .where((r) => r.status.isPending)
+        .toList();
 
     final messages = messagesAsync.value ?? [];
 
@@ -2138,6 +2300,96 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
             const SizedBox(height: 14),
+
+            if (isParent && pendingRequests.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFDE68A)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.family_restroom_rounded, color: Color(0xFFB45309), size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "${pendingRequests.first.studentName} prosi o usprawiedliwienie",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF78350F),
+                            ),
+                          ),
+                          Text(
+                            "${pendingRequests.first.lessonNumbers.isNotEmpty ? pendingRequests.first.lessonNumbers.length : pendingRequests.first.recordIds.length} lekcji • ${pendingRequests.first.reason}",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF92400E),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton.icon(
+                      onPressed: () {
+                        final req = pendingRequests.first;
+                        ParentApprovalModal.show(
+                          context,
+                          req,
+                          onApprove: (pin) async {
+                            final ok = await ref.read(attendanceProvider.notifier).approveJustification(req.id, pin);
+                            if (ok && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("Usprawiedliwienie dla ${req.studentName} zostało wysłane."),
+                                  backgroundColor: const Color(0xFF006C4A),
+                                ),
+                              );
+                            }
+                            return ok;
+                          },
+                          onReject: (reason) async {
+                            final ok = await ref.read(attendanceProvider.notifier).rejectJustification(req.id, reason: reason);
+                            if (ok && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Wniosek ucznia został odrzucony."),
+                                  backgroundColor: Color(0xFFDC2626),
+                                ),
+                              );
+                            }
+                            return ok;
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.pin, size: 12),
+                      label: const Text("Zatwierdź", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF3525CD),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
 
             // Daily Schedule Hero Card (Mobile)
             Container(
