@@ -461,3 +461,149 @@ exports.submitJustification = onRequest(
   }
 );
 
+/**
+ * Endpoint for students to submit a justification request awaiting parental approval (REQ-ROLE-02, D-03).
+ */
+exports.createJustificationRequest = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 30,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const { sanitizeStudentRequest } = require("./src/justification_service");
+      const payload = req.body || {};
+
+      const sanitized = sanitizeStudentRequest(payload);
+      const docRef = await admin.firestore().collection("justification_requests").add(sanitized);
+
+      return res.status(201).json({
+        success: true,
+        id: docRef.id,
+        request: {
+          id: docRef.id,
+          ...sanitized
+        }
+      });
+    } catch (error) {
+      console.error("createJustificationRequest error:", error);
+      return res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+/**
+ * Endpoint for parents to review (approve with PIN or reject) student justification request (REQ-ROLE-02, D-04, T-14-03).
+ */
+exports.reviewJustificationRequest = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 45,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const { processParentReview, formatLibrusJustificationPayload } = require("./src/justification_service");
+      const { LibrusClient } = require("./src/librus_client");
+
+      const { requestId, action, pin, rejectionReason, parentLogin } = req.body || {};
+
+      if (!requestId) {
+        return res.status(400).json({ error: "Brak identyfikatora wniosku (requestId)." });
+      }
+
+      const docRef = admin.firestore().collection("justification_requests").doc(requestId);
+      const snap = await docRef.get();
+
+      if (!snap.exists) {
+        return res.status(404).json({ error: "Wniosek o podanym identyfikatorze nie istnieje." });
+      }
+
+      const existingData = snap.data();
+      const reviewResult = processParentReview(existingData, {
+        action,
+        pin,
+        rejectionReason,
+        parentLogin
+      });
+
+      if (!reviewResult.success) {
+        return res.status(reviewResult.statusCode).json({ error: reviewResult.error });
+      }
+
+      // If approved, forward to Librus if credentials available
+      if (action === "approve") {
+        const parentLog = parentLogin || process.env.LIBRUS_LOGIN;
+        const parentPass = process.env.LIBRUS_PASSWORD;
+
+        if (parentLog && parentPass) {
+          try {
+            const librusPayload = formatLibrusJustificationPayload(existingData);
+            const client = new LibrusClient(parentLog, parentPass);
+            await client.submitJustification(librusPayload);
+          } catch (librusErr) {
+            console.warn("Librus dispatch warning during parental approval:", librusErr.message);
+          }
+        }
+      }
+
+      await docRef.update(reviewResult.updatedRequest);
+
+      return res.status(200).json({
+        success: true,
+        request: {
+          id: snap.id,
+          ...reviewResult.updatedRequest
+        }
+      });
+    } catch (error) {
+      console.error("reviewJustificationRequest error:", error);
+      return res.status(500).json({ error: error.message || "Błąd podczas rozpatrywania wniosku." });
+    }
+  }
+);
+
+/**
+ * Retrieve justification requests for a student or parent.
+ */
+exports.getJustificationRequests = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 30,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const familyId = req.query.familyId || req.body?.familyId;
+      const primaryLogin = req.query.primaryLogin || req.body?.primaryLogin;
+      const studentLogin = req.query.studentLogin || req.body?.studentLogin;
+
+      let query = admin.firestore().collection("justification_requests");
+
+      if (familyId) {
+        query = query.where("familyId", "==", familyId);
+      } else if (primaryLogin) {
+        query = query.where("primaryLogin", "==", primaryLogin);
+      } else if (studentLogin) {
+        query = query.where("studentLogin", "==", studentLogin);
+      }
+
+      const snap = await query.get();
+      const requests = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+
+      return res.status(200).json({ requests });
+    } catch (error) {
+      console.error("getJustificationRequests error:", error);
+      return res.status(500).json({ error: error.message || "Błąd pobierania wniosków." });
+    }
+  }
+);
+
+
