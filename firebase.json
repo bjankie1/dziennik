@@ -68,6 +68,27 @@
         }
       },
       {
+        "source": "/api/createJustificationRequest",
+        "function": {
+          "functionId": "createJustificationRequest",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/api/reviewJustificationRequest",
+        "function": {
+          "functionId": "reviewJustificationRequest",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/api/getJustificationRequests",
+        "function": {
+          "functionId": "getJustificationRequests",
+          "region": "europe-west3"
+        }
+      },
+      {
         "source": "/api/getLibrusLogs",
         "function": {
           "functionId": "getLibrusLogs",
