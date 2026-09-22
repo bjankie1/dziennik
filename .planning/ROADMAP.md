@@ -46,10 +46,12 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 3. Dane szkolne (oceny, frekwencja, plan lekcji, terminarz) są współdzielone w centralnej kolekcji Firestore — logowanie i odświeżenie danych przez ucznia korzysta z tego samego cache'a co rodzic, nie wywołując zdublowanego scrapingu serwerów Librus.
 4. Interfejs aplikacji prezentuje odpowiedni kontekst użytkownika (np. etykietę profilu "Oskar - Uczeń" lub "Rodzic") i poprawnie izoluje preferencje użytkownika przy współdzieleniu danych akademickich.
 
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 14 to break down)
+- [ ] 14-01-PLAN.md: Data Layer & Backend Roles & Shared Cache (Wave 1)
+- [ ] 14-02-PLAN.md: Student Justification Request Flow & Parent PIN Approval (Wave 2)
+- [ ] 14-03-PLAN.md: Role Badge, Connect Screen Selection & Student Message Session (Wave 3)
 
 ### Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie
 
