@@ -77,9 +77,11 @@
 ## v3 Requirements (Active Milestone)
 
 ### Role & Multi-User Access
-- [ ] **REQ-ROLE-01**: Logowanie kontem Google Oskara (ucznia) powiązane z tym samym profilem ucznia w Firestore.
-- [ ] **REQ-ROLE-02**: Separacja uprawnień `student` vs `parent`: tryb ucznia posiada pełny wgląd w dane szkolne, lecz brak uprawnień rodzica (wysyłanie e-usprawiedliwień, podgląd/edycja PIN rodzica).
-- [ ] **REQ-ROLE-03**: Współdzielenie pamięci podręcznej i stanu synchronizacji w Firestore (brak dublowania zapytań do Librusa).
+- [x] **REQ-ROLE-01**: Logowanie kontem Google Oskara (ucznia) powiązane z tym samym profilem ucznia w Firestore.
+- [x] **REQ-ROLE-02**: Separacja uprawnień `student` vs `parent`: tryb ucznia posiada pełny wgląd w dane szkolne, lecz brak uprawnień rodzica (wysyłanie e-usprawiedliwień, podgląd/edycja PIN rodzica).
+- [x] **REQ-ROLE-03**: Współdzielenie pamięci podręcznej i stanu synchronizacji w Firestore (brak dublowania zapytań do Librusa).
+- [ ] **REQ-ROLE-04**: Dwukierunkowy dialog prośby o usprawiedliwienie: bezpośredni przycisk odmowy na kafelku Pulpitu i we Frekwencji, pole komentarza rodzica oraz możliwość odpowiedzi i ponownej prośby przez Oskara.
+- [ ] **REQ-CHAT-01**: Bezpośredni czat rodzinny (Rodzic ↔ Uczeń) w czasie rzeczywistym w Firestore z obsługą konwersacji, powiadomieniami i powiązaniem do sprawdzianów i nieobecności.
 
 ### Smart To-Do & Task Management
 - [ ] **REQ-TASK-01**: Dedykowana podstrona `/zadania` w menu bocznym i nawigacji z wykazem zadań, terminami i filtrami.
@@ -102,9 +104,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REQ-ROLE-01 | Phase 14 | Pending |
-| REQ-ROLE-02 | Phase 14 | Pending |
-| REQ-ROLE-03 | Phase 14 | Pending |
+| REQ-ROLE-01 | Phase 14 | Complete |
+| REQ-ROLE-02 | Phase 14 | Complete |
+| REQ-ROLE-03 | Phase 14 | Complete |
+| REQ-ROLE-04 | Phase 14.1 | Pending |
+| REQ-CHAT-01 | Phase 14.1 | Pending |
 | REQ-TASK-01 | Phase 15 | Pending |
 | REQ-TASK-02 | Phase 15 | Pending |
 | REQ-TASK-03 | Phase 16 | Pending |

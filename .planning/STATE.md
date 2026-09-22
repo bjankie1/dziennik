@@ -1,32 +1,33 @@
 ---
 gsd_state_version: "1.0"
 milestone: v3.0
-current_phase: 15
-current_phase_name: Moduł zadań (Smart To-Do) i widżet na Pulpicie
+current_phase: 14.1
+current_phase_name: Czat rodzinny i dwukierunkowy dialog usprawiedliwień
 status: ready_to_plan
-stopped_at: Phase 14 completed and verified
-last_updated: "2026-09-22T07:28:00.000Z"
+stopped_at: Phase 14.1 inserted for family chat & bidirectional excuse dialogue
+last_updated: "2026-09-22T10:10:00.000Z"
 last_activity: 2026-09-22
 state_head: HEAD
 progress:
-  total_phases: 6
+  total_phases: 7
   completed_phases: 1
   total_plans: 3
   completed_plans: 3
-  percent: 17
+  percent: 14
 milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ---
 
 # Project State
 
 **Current Milestone:** Milestone v3.0 (Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia)  
-**Active Phase:** Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie  
-**Status:** Ready to plan Phase 15  
+**Active Phase:** Phase 14.1: Czat rodzinny i dwukierunkowy dialog usprawiedliwień (INSERTED)  
+**Status:** Ready to plan Phase 14.1  
 **Last Updated:** 2026-09-22  
 
 ## Milestone v3.0 Roadmap
 
 - [x] **Phase 14**: Dostęp ucznia (rola student vs parent) i współdzielony cache danych (completed 2026-09-22)
+- [ ] **Phase 14.1**: Czat rodzinny i dwukierunkowy dialog usprawiedliwień (INSERTED)
 - [ ] **Phase 15**: Moduł zadań (Smart To-Do) i widżet na Pulpicie
 - [ ] **Phase 16**: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości
 - [ ] **Phase 17**: Eksport sprawdzianów do Kalendarza Google i iCal
@@ -56,6 +57,10 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 14.1 inserted: Czat rodzinny i dwukierunkowy dialog usprawiedliwień (URGENT)
+
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |
@@ -69,13 +74,13 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 ## Session
 
-**Last session:** 2026-09-22T07:28:00.000Z  
-**Stopped at:** Phase 14 completed and verified  
+**Last session:** 2026-09-22T10:10:00.000Z  
+**Stopped at:** Phase 14.1 inserted and ready to plan  
 **Resume file:** .planning/ROADMAP.md  
 Last activity: 2026-09-22
 
 ## Current Position
 
-Phase: 15 (Moduł zadań (Smart To-Do) i widżet na Pulpicie) — READY TO PLAN
-Status: Phase 14 completed. Ready to discuss / plan Phase 15.
-Last activity: 2026-09-22 — Phase 14 verified and closed
+Phase: 14.1 (Czat rodzinny i dwukierunkowy dialog usprawiedliwień) — READY TO PLAN
+Status: Phase 14.1 inserted as urgent work. Ready to discuss / plan Phase 14.1.
+Last activity: 2026-09-22 — Phase 14.1 inserted into roadmap

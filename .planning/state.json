@@ -74,6 +74,11 @@
       "status": "complete"
     },
     {
+      "number": "14.1",
+      "name": "Czat rodzinny i dwukierunkowy dialog usprawiedliwień",
+      "status": "pending"
+    },
+    {
       "number": "15",
       "name": "Moduł zadań (Smart To-Do) i widżet na Pulpicie",
       "status": "pending"
@@ -100,9 +105,9 @@
     }
   ],
   "next": {
-    "command": "/gsd-progress --next",
-    "label": "Advance to the next step",
-    "reason": "Phase 14 of 6 · 0% · executing"
+    "command": "/gsd-progress",
+    "label": "Show progress",
+    "reason": "Unsure of state — showing progress"
   },
-  "updated_at": "2026-09-22T05:06:38.991Z"
+  "updated_at": "2026-09-22T08:08:53.596Z"
 }

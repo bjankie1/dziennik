@@ -25,6 +25,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 ### Active Milestone Phases (v3.0)
 
 - [x] **Phase 14: Dostęp ucznia (rola student vs parent) i współdzielony cache danych** — Logowanie kontem Google Oskara, separacja ról (`student` vs `parent`) z blokadą e-usprawiedliwień i PIN dla ucznia oraz Single Source of Truth w Firestore bez duplikowania scrapingu. (completed 2026-09-22)
+- [ ] **Phase 14.1: Czat rodzinny i dwukierunkowy dialog usprawiedliwień** (INSERTED) — Komunikator rodzinny (Rodzic ↔ Uczeń) w czasie rzeczywistym, bezpośredni przycisk „Odrzuć” z komentarzem rodzica na Pulpicie i we Frekwencji oraz wątek dialogu Q&A i ponownej prośby ucznia.
 - [ ] **Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie** — Dedykowana podstrona `/zadania` w menu bocznym i nawigacji oraz interaktywny widżet zadań w Bento Grid na Pulpicie z szybkim odhaczaniem.
 - [ ] **Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości** — Automatyczne generowanie zadań przygotowawczych ze sprawdzianów i terminarza oraz heurystyczne wykrywanie zadań, opłat i terminów z wiadomości Librusa.
 - [ ] **Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal** — Przycisk „Dodaj do Kalendarza Google” w kafelkach sprawdzianów i modalu lekcji oraz pobieranie plików kalendarzowych `.ics`.
@@ -41,6 +42,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 **Requirements**: REQ-ROLE-01, REQ-ROLE-02, REQ-ROLE-03  
 **Depends on**: Phase 13  
 **Success Criteria**:
+
 1. Użytkownik logujący się adresem e-mail Oskara (Google OAuth) zostaje przypisany do profilu ucznia z rolą `student`, podczas gdy konto rodzica zachowuje rolę `parent`.
 2. Użytkownik z rolą `student` nie ma dostępu do modułu wysyłania e-usprawiedliwień (formularz i przyciski wysyłania są zablokowane/ukryte) ani do wglądu i konfiguracji kodu PIN rodzica.
 3. Dane szkolne (oceny, frekwencja, plan lekcji, terminarz) są współdzielone w centralnej kolekcji Firestore — logowanie i odświeżenie danych przez ucznia korzysta z tego samego cache'a co rodzic, nie wywołując zdublowanego scrapingu serwerów Librus.
@@ -49,9 +51,27 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 **Plans:** 3 plans
 
 Plans:
+
 - [x] 14-01-PLAN.md: Data Layer & Backend Roles & Shared Cache (Wave 1)
 - [x] 14-02-PLAN.md: Student Justification Request Flow & Parent PIN Approval (Wave 2)
 - [x] 14-03-PLAN.md: Role Badge, Connect Screen Selection & Student Message Session (Wave 3)
+
+### Phase 14.1: Czat rodzinny i dwukierunkowy dialog usprawiedliwień (INSERTED)
+
+**Goal**: Wdrożenie bezpośredniego czatu rodzinnego w czasie rzeczywistym między kontem rodzica a ucznia w aplikacji oraz rozszerzenie obiegu e-usprawiedliwień o akcję odmowy z komentarzem rodzica na Pulpicie i we Frekwencji, a także wątek pytań i odpowiedzi (Q&A) z możliwością ponownej prośby Oskara.  
+**Requirements**: REQ-ROLE-04, REQ-CHAT-01  
+**Depends on**: Phase 14  
+**Success Criteria**:
+1. Na kafelku prośby na Pulpicie (`DashboardScreen`) oraz we Frekwencji (`AttendanceScreen`) obok przycisku „Zatwierdź (PIN)” widnieje przycisk „Odrzuć”, otwierający formularz wpisania komentarza/pytania do Oskara.
+2. Oskar na swoim koncie widzi powód odmowy i ma możliwość natychmiastowej odpowiedzi / ponownej prośby z dodatkowym wyjaśnieniem (wątek konwersacji w dokumencie wniosku w Firestore).
+3. Powstaje dedykowany moduł Czatu Rodzinnego (Rodzic ↔ Uczeń) w czasie rzeczywistym w Firestore z obsługą konwersacji tekstowych.
+4. Wnioski o usprawiedliwienie mogą być automatycznie podlinkowane lub osadzone w konwersacji czatu jako interaktywne karty.
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 14.1 to break down)
 
 ### Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie
 
@@ -59,6 +79,7 @@ Plans:
 **Requirements**: REQ-TASK-01, REQ-TASK-02  
 **Depends on**: Phase 14  
 **Success Criteria**:
+
 1. W menu bocznym (`AppSidebar`) oraz dolnym pasku nawigacji pojawia się nowa pozycja `/zadania` prowadząca do podstrony To-Do z obsługą deep linkingu go_router.
 2. Widok `/zadania` umożliwia tworzenie, edycję, oznaczanie ukończenia i usuwanie zadań wraz z terminami (Due Date), priorytetami i filtrowaniem (Wszystkie, Dzisiaj, Nadchodzące, Ukończone).
 3. Karta Bento Grid na Pulpicie (`DashboardScreen`) wyświetla listę najpilniejszych zadań na dany dzień z możliwością natychmiastowego odhaczenia jednym kliknięciem bez opuszczania pulpitu.
@@ -67,6 +88,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 15 to break down)
 
 ### Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości
@@ -75,6 +97,7 @@ Plans:
 **Requirements**: REQ-TASK-03, REQ-TASK-04  
 **Depends on**: Phase 15  
 **Success Criteria**:
+
 1. Przy wykryciu sprawdzianu lub kartkówki w terminarzu/planie lekcji system automatycznie proponuje lub generuje zadanie przygotowania (np. „Powtórka do: Sprawdzian z Chemii”) z sugerowaną datą realizacji (np. 1-2 dni przed terminem).
 2. W widoku wątku wiadomości (`/wiadomosci/:id`) mechanizm heurystyczny analizuje treść pod kątem kwot (np. "50 zł", "wpłata"), dat/terminów (np. "do 15 października", "do piątku") oraz zgód i wyświetla wyróżniony baner podpowiedzi zadania („Wykryto zadanie/opłatę”).
 3. Kliknięcie podpowiedzi jednym tapnięciem tworzy sformatowane zadanie z wypełnioną nazwą, kwotą/opisem i terminem w module `/zadania`.
@@ -83,6 +106,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 16 to break down)
 
 ### Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal
@@ -91,6 +115,7 @@ Plans:
 **Requirements**: REQ-CAL-01, REQ-CAL-02  
 **Depends on**: Phase 14  
 **Success Criteria**:
+
 1. Kafelki sprawdzianów w terminarzu, widżecie Bento Grid oraz w modalu szczegółów lekcji posiadają przycisk „Dodaj do Kalendarza Google”, otwierający w nowej karcie predefiniowane wydarzenie z poprawnym tytułem, zakresem, datą i godzinami zajęć.
 2. Każde wydarzenie/sprawdzian udostępnia opcję pobrania pliku `.ics` ze sformatowanym standardem RFC 5545 (strefa Europe/Warsaw, opis, lokalizacja sali).
 3. Użytkownik może pobrać zbiorczy plik `.ics` dla wszystkich nadchodzących sprawdzianów w danym miesiącu/semestrze jednym kliknięciem.
@@ -99,6 +124,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 17 to break down)
 
 ### Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push
@@ -107,6 +133,7 @@ Plans:
 **Requirements**: REQ-NOTIF-01, REQ-NOTIF-02, REQ-NOTIF-03  
 **Depends on**: Phase 14  
 **Success Criteria**:
+
 1. Integracja Telegram Bot w Firebase Cloud Functions z generowaniem jednorazowego 6-cyfrowego kodu parowania w ustawieniach aplikacji, umożliwiającego powiązanie czatu Telegram rodzica lub ucznia z ich kontem.
 2. Wykrycie w cyklu synchronizacji nowej oceny, nowej wiadomości lub dodanego sprawdzianu powoduje natychmiastowe wysłanie sformatowanego powiadomienia na powiązany czat Telegram z kluczowymi szczegółami (przedmiot, ocena, waga, nadawca).
 3. Aplikacja webowa rejestruje Service Worker i obsługuje subskrypcję Web Push API (VAPID / FCM), wyświetlając natywne powiadomienia w przeglądarce po uzyskaniu zgody użytkownika.
@@ -115,6 +142,7 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 18 to break down)
 
 ### Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
@@ -123,6 +151,7 @@ Plans:
 **Requirements**: REQ-REPORT-01, REQ-REPORT-02  
 **Depends on**: Phase 18  
 **Success Criteria**:
+
 1. Zadanie Cloud Scheduler uruchamiane w każdy piątek o godz. 18:00 (Europe/Warsaw) agreguje plan lekcji, zaplanowane sprawdziany, kartkówki oraz zadania domowe na nadchodzący tydzień (poniedziałek–piątek).
 2. Cloud Function formatuje czytelny, estetyczny raport Markdown (z podziałem na dni, listą sprawdzianów, ważnymi ogłoszeniami i zadaniami).
 3. Raport jest automatycznie wysyłany przez bota Telegram do wszystkich sparowanych kont (rodzic oraz uczeń).
@@ -131,4 +160,5 @@ Plans:
 **Plans:** 0 plans
 
 Plans:
+
 - [ ] TBD (run /gsd-plan-phase 19 to break down)
