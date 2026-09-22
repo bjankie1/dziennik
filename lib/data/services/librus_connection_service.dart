@@ -3,12 +3,18 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'librus_auth_service.dart';
+import '../../domain/models/user_role.dart';
+import '../../presentation/providers/auth_providers.dart';
 
 class LibrusConnectionService {
   static const String _keyConnected = 'librus_is_connected';
   static const String _keyLogin = 'librus_login_name';
   static const String _keyDemo = 'librus_demo_mode';
   static const String _keyExplicitDisconnect = 'librus_explicit_disconnect';
+  static const String _keyRole = 'app_user_role';
+  static const String _keyStudentLogin = 'app_user_student_login';
+  static const String _keyPrimaryLogin = 'app_user_primary_login';
+  static const String _keyFamilyId = 'app_user_family_id';
 
   final LibrusAuthService _authService;
   final SharedPreferences? _prefs;
@@ -63,6 +69,25 @@ class LibrusConnectionService {
             await prefs.setString(_keyLogin, login);
             await prefs.setBool(_keyDemo, data['isDemoMode'] == true);
             await prefs.setBool(_keyExplicitDisconnect, false);
+
+            final roleStr = data['role'] as String? ?? 'parent';
+            await prefs.setString(_keyRole, roleStr);
+            if (data['studentLogin'] != null) {
+              await prefs.setString(_keyStudentLogin, data['studentLogin'] as String);
+            } else {
+              await prefs.remove(_keyStudentLogin);
+            }
+            if (data['primaryLogin'] != null) {
+              await prefs.setString(_keyPrimaryLogin, data['primaryLogin'] as String);
+            } else {
+              await prefs.remove(_keyPrimaryLogin);
+            }
+            if (data['familyId'] != null) {
+              await prefs.setString(_keyFamilyId, data['familyId'] as String);
+            } else {
+              await prefs.remove(_keyFamilyId);
+            }
+
             return true;
           }
         }
@@ -84,7 +109,36 @@ class LibrusConnectionService {
     return prefs.getBool(_keyDemo) ?? false;
   }
 
-  Future<bool> connectWithCredentials(String login, String password) async {
+  Future<AppUser?> getSavedAppUser() async {
+    final prefs = await _getPrefs();
+    final email = prefs.getString('app_user_email');
+    if (email == null || email.isEmpty) return null;
+
+    final name = prefs.getString('app_user_name') ?? 'Użytkownik';
+    final photo = prefs.getString('app_user_photo');
+    final roleStr = prefs.getString(_keyRole);
+    final studentLogin = prefs.getString(_keyStudentLogin);
+    final primaryLogin = prefs.getString(_keyPrimaryLogin);
+    final familyId = prefs.getString(_keyFamilyId);
+
+    return AppUser(
+      displayName: name,
+      email: email,
+      photoUrl: photo,
+      role: UserRole.fromString(roleStr),
+      studentLogin: studentLogin,
+      primaryLogin: primaryLogin,
+      familyId: familyId,
+    );
+  }
+
+  Future<bool> connectWithCredentials(
+    String login,
+    String password, {
+    UserRole role = UserRole.parent,
+    String? primaryLogin,
+    String? familyId,
+  }) async {
     try {
       await _authService.login(login, password);
     } catch (_) {}
@@ -95,15 +149,37 @@ class LibrusConnectionService {
     await prefs.setBool(_keyDemo, false);
     await prefs.setBool(_keyExplicitDisconnect, false);
 
+    await prefs.setString(_keyRole, role.name);
+    if (role.isStudent) {
+      await prefs.setString(_keyStudentLogin, login);
+    } else {
+      await prefs.remove(_keyStudentLogin);
+    }
+
+    final resolvedPrimaryLogin = primaryLogin ?? (role.isParent ? login : null);
+    if (resolvedPrimaryLogin != null) {
+      await prefs.setString(_keyPrimaryLogin, resolvedPrimaryLogin);
+    } else {
+      await prefs.remove(_keyPrimaryLogin);
+    }
+
+    final resolvedFamilyId = familyId ?? 'jankiewicz_family';
+    await prefs.setString(_keyFamilyId, resolvedFamilyId);
+
     try {
       final user = FirebaseAuth.instance.currentUser;
       final savedEmail = prefs.getString('app_user_email');
       final userId = user?.uid ?? savedEmail ?? 'bartosz.jankiewicz@gmail.com';
       final email = user?.email ?? savedEmail ?? 'bartosz.jankiewicz@gmail.com';
 
+      final roleParam = '&role=${role.name}';
+      final studentLoginParam = role.isStudent ? '&studentLogin=$login' : '';
+      final primaryLoginParam = resolvedPrimaryLogin != null ? '&primaryLogin=$resolvedPrimaryLogin' : '';
+      final familyIdParam = '&familyId=$resolvedFamilyId';
+
       await http
           .get(Uri.parse(
-              '/api/saveConnection?userId=$userId&login=$login&email=$email'))
+              '/api/saveConnection?userId=$userId&login=$login&email=$email$roleParam$studentLoginParam$primaryLoginParam$familyIdParam'))
           .timeout(const Duration(seconds: 4));
     } catch (_) {}
 
@@ -123,6 +199,10 @@ class LibrusConnectionService {
     final prefs = await _getPrefs();
     await prefs.setBool(_keyConnected, false);
     await prefs.remove(_keyLogin);
+    await prefs.remove(_keyRole);
+    await prefs.remove(_keyStudentLogin);
+    await prefs.remove(_keyPrimaryLogin);
+    await prefs.remove(_keyFamilyId);
   }
 
   /// Świadome rozłączenie konta Librus — trwale czyści powiązanie w Firestore i lokalnie.
@@ -133,6 +213,10 @@ class LibrusConnectionService {
     await prefs.remove(_keyLogin);
     await prefs.setBool(_keyDemo, false);
     await prefs.setBool(_keyExplicitDisconnect, true);
+    await prefs.remove(_keyRole);
+    await prefs.remove(_keyStudentLogin);
+    await prefs.remove(_keyPrimaryLogin);
+    await prefs.remove(_keyFamilyId);
 
     try {
       final user = FirebaseAuth.instance.currentUser;

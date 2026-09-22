@@ -79,13 +79,32 @@ class FirestoreSchoolRepository implements SchoolRepository {
         _connectionService = connectionService ?? LibrusConnectionService(),
         _mockFallback = MockSchoolRepository();
 
+  Future<String?> _getTargetStudentDocLogin() async {
+    final appUser = await _connectionService.getSavedAppUser();
+    if (appUser?.isStudent == true && appUser?.primaryLogin != null && appUser!.primaryLogin!.isNotEmpty) {
+      return appUser.primaryLogin;
+    }
+    return _connectionService.getConnectedLogin();
+  }
+
   Future<Map<String, dynamic>?> _getStudentData() async {
     final isDemo = await _connectionService.isDemoMode();
     if (isDemo) return null;
 
+    final appUser = await _connectionService.getSavedAppUser();
+    final isStudent = appUser?.isStudent ?? false;
     final connectedLogin = await _connectionService.getConnectedLogin();
-    final queryStr = (connectedLogin != null && connectedLogin.isNotEmpty)
-        ? '?login=$connectedLogin'
+
+    // Single Source of Truth (D-05, REQ-ROLE-03):
+    // For student accounts, academic data is retrieved from primaryLogin (fallback to connectedLogin).
+    final targetLogin = (isStudent && appUser?.primaryLogin != null && appUser!.primaryLogin!.isNotEmpty)
+        ? appUser.primaryLogin!
+        : (connectedLogin ?? '');
+
+    final roleParam = isStudent ? '&role=student' : '&role=parent';
+    final primaryParam = (appUser?.primaryLogin != null) ? '&primaryLogin=${appUser!.primaryLogin}' : '';
+    final queryStr = targetLogin.isNotEmpty
+        ? '?login=$targetLogin$roleParam$primaryParam'
         : '';
 
     // Check memory cache (valid for 2 minutes)
@@ -119,10 +138,10 @@ class FirestoreSchoolRepository implements SchoolRepository {
       }
     } catch (_) {}
 
-    // Method 3: Cloud Firestore SDK
-    if (connectedLogin != null && connectedLogin.isNotEmpty) {
+    // Method 3: Cloud Firestore SDK (Single Source of Truth)
+    if (targetLogin.isNotEmpty) {
       try {
-        final doc = await _firestore.collection('students').doc(connectedLogin).get();
+        final doc = await _firestore.collection('students').doc(targetLogin).get();
         if (doc.exists && doc.data() != null) {
           final data = doc.data()!;
           _memoryCache = data;
@@ -137,12 +156,12 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
     // Default real Oskar profile if network hiccup
     return {
-      'login': connectedLogin ?? '',
+      'login': targetLogin,
       'luckyNumber': 18,
       'overallAverage': 5.0,
       'unreadNotificationsCount': 0,
       'student': {
-        'id': connectedLogin ?? '',
+        'id': targetLogin,
         'name': 'Oskar Jankiewicz',
         'className': '4 k Lic',
         'schoolNumber': '8',
@@ -1282,9 +1301,9 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
     // Persist to Firestore document asynchronously
     try {
-      final connectedLogin = await _connectionService.getConnectedLogin();
-      if (connectedLogin != null && connectedLogin.isNotEmpty) {
-        final docRef = _firestore.collection('students').doc(connectedLogin);
+      final targetLogin = await _getTargetStudentDocLogin();
+      if (targetLogin != null && targetLogin.isNotEmpty) {
+        final docRef = _firestore.collection('students').doc(targetLogin);
         final doc = await docRef.get();
         if (doc.exists) {
           final msgs = List<dynamic>.from(doc.data()?['messages'] ?? []);
@@ -1322,9 +1341,9 @@ class FirestoreSchoolRepository implements SchoolRepository {
     await _mockFallback.markAllMessagesAsRead();
 
     try {
-      final connectedLogin = await _connectionService.getConnectedLogin();
-      if (connectedLogin != null && connectedLogin.isNotEmpty) {
-        final docRef = _firestore.collection('students').doc(connectedLogin);
+      final targetLogin = await _getTargetStudentDocLogin();
+      if (targetLogin != null && targetLogin.isNotEmpty) {
+        final docRef = _firestore.collection('students').doc(targetLogin);
         final doc = await docRef.get();
         if (doc.exists) {
           final rawMsgs = List<dynamic>.from(doc.data()?['messages'] ?? []);

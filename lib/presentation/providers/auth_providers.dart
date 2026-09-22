@@ -163,9 +163,21 @@ class LibrusConnectionNotifier extends AsyncNotifier<bool> {
     return service.isConnected();
   }
 
-  Future<bool> connectLibrus(String login, String password) async {
+  Future<bool> connectLibrus(
+    String login,
+    String password, {
+    UserRole role = UserRole.parent,
+    String? primaryLogin,
+    String? familyId,
+  }) async {
     final service = ref.read(librusConnectionServiceProvider);
-    final success = await service.connectWithCredentials(login, password);
+    final success = await service.connectWithCredentials(
+      login,
+      password,
+      role: role,
+      primaryLogin: primaryLogin,
+      familyId: familyId,
+    );
     state = AsyncValue.data(success);
     return success;
   }
