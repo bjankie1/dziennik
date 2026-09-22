@@ -316,8 +316,12 @@ exports.sendMessage = onRequest(
   async (req, res) => {
     try {
       const { LibrusClient } = require("./src/librus_client");
-      const login = req.query.login || req.body?.login || process.env.LIBRUS_LOGIN;
-      const pass = process.env.LIBRUS_PASSWORD;
+      const { resolveMessageSession, buildMessageResponse } = require("./src/message_service");
+
+      const role = req.query.role || req.body?.role;
+      const studentLogin = req.query.studentLogin || req.body?.studentLogin;
+      const login = req.query.login || req.body?.login;
+      const pass = req.body?.password || req.query?.password || process.env.LIBRUS_PASSWORD;
       const recipients = req.body?.recipients || req.query.recipients || [];
       const subject = req.body?.subject || req.query.subject || "";
       const body = req.body?.body || req.query.body || "";
@@ -327,20 +331,74 @@ exports.sendMessage = onRequest(
         return res.status(400).json({ error: "Brak tematu lub treści wiadomości." });
       }
 
-      if (login && pass) {
-        const client = new LibrusClient(login, pass);
-        await client.authenticate();
-        const result = await client.sendMessage({ recipients, subject, body, replyToMsgId: replyToId });
-        return res.status(200).json(result);
+      const sessionInfo = resolveMessageSession({
+        role,
+        studentLogin,
+        login,
+        defaultParentLogin: process.env.LIBRUS_LOGIN
+      });
+
+      // Attempt to restore isolated session cookies from Firestore
+      let client = null;
+      let restoredSession = false;
+
+      if (sessionInfo.sessionKey) {
+        try {
+          const sessionDoc = await admin
+            .firestore()
+            .collection("librus_sessions")
+            .doc(sessionInfo.sessionKey)
+            .get();
+
+          if (sessionDoc.exists && sessionDoc.data()?.serializedJar) {
+            client = new LibrusClient(sessionInfo.sessionKey, pass || "cached_pass");
+            client.importCookies(sessionDoc.data().serializedJar);
+            restoredSession = true;
+          }
+        } catch (sessErr) {
+          console.warn("[sendMessage] Could not load cached session:", sessErr.message);
+        }
       }
 
-      return res.status(200).json({
-        success: true,
-        simulated: true,
-        sentAt: new Date().toISOString(),
-        recipients,
-        subject
-      });
+      if (client && restoredSession) {
+        const result = await client.sendMessage({ recipients, subject, body, replyToMsgId: replyToId });
+        return res.status(200).json(
+          buildMessageResponse({
+            success: true,
+            simulated: false,
+            recipients,
+            subject,
+            sessionInfo,
+            result
+          })
+        );
+      }
+
+      if (sessionInfo.sessionKey && pass) {
+        client = new LibrusClient(sessionInfo.sessionKey, pass);
+        await client.authenticate();
+        const result = await client.sendMessage({ recipients, subject, body, replyToMsgId: replyToId });
+        return res.status(200).json(
+          buildMessageResponse({
+            success: true,
+            simulated: false,
+            recipients,
+            subject,
+            sessionInfo,
+            result
+          })
+        );
+      }
+
+      return res.status(200).json(
+        buildMessageResponse({
+          success: true,
+          simulated: true,
+          recipients,
+          subject,
+          sessionInfo
+        })
+      );
     } catch (error) {
       console.error("sendMessage error:", error);
       res.status(500).json({ error: error.message });

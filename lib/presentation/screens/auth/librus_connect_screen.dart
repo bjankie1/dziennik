@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../domain/models/user_role.dart';
 import '../../providers/auth_providers.dart';
 
 class LibrusConnectScreen extends ConsumerStatefulWidget {
@@ -13,6 +14,7 @@ class LibrusConnectScreen extends ConsumerStatefulWidget {
 class _LibrusConnectScreenState extends ConsumerState<LibrusConnectScreen> {
   final _loginController = TextEditingController();
   final _passwordController = TextEditingController();
+  UserRole _selectedRole = UserRole.parent;
   bool _obscurePassword = true;
   bool _isConnecting = false;
   String? _errorMessage;
@@ -43,9 +45,15 @@ class _LibrusConnectScreenState extends ConsumerState<LibrusConnectScreen> {
     try {
       final success = await ref
           .read(librusConnectionStateProvider.notifier)
-          .connectLibrus(login, password);
+          .connectLibrus(
+            login,
+            password,
+            role: _selectedRole,
+          );
 
-      if (!success) {
+      if (success) {
+        ref.read(appUserProvider.notifier).updateRole(_selectedRole);
+      } else {
         setState(() {
           _errorMessage =
               'Nie udało się połączyć z serwerem Librus.\nSprawdź poprawność danych lub skorzystaj z trybu demo.';
@@ -69,6 +77,7 @@ class _LibrusConnectScreenState extends ConsumerState<LibrusConnectScreen> {
     });
 
     await ref.read(librusConnectionStateProvider.notifier).connectDemo();
+    ref.read(appUserProvider.notifier).updateRole(_selectedRole);
 
     if (mounted) {
       setState(() => _isConnecting = false);
@@ -168,7 +177,74 @@ class _LibrusConnectScreenState extends ConsumerState<LibrusConnectScreen> {
                     'Wprowadź login i hasło, którymi logujesz się na synergia.librus.pl, aby połączyć aplikację.',
                     style: TextStyle(fontSize: 13, color: AppColors.onSurfaceVariant),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+
+                  // Role Selector
+                  SegmentedButton<UserRole>(
+                    segments: const [
+                      ButtonSegment<UserRole>(
+                        value: UserRole.parent,
+                        icon: Icon(Icons.family_restroom, size: 18),
+                        label: Text('Konto Rodzica'),
+                      ),
+                      ButtonSegment<UserRole>(
+                        value: UserRole.student,
+                        icon: Icon(Icons.school, size: 18),
+                        label: Text('Konto Ucznia (Oskar)'),
+                      ),
+                    ],
+                    selected: {_selectedRole},
+                    onSelectionChanged: (newSelection) {
+                      setState(() {
+                        _selectedRole = newSelection.first;
+                      });
+                    },
+                    style: const ButtonStyle(
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Role Explanation Subtitle Banner
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _selectedRole.isStudent
+                          ? AppColors.primaryFixed.withValues(alpha: 0.5)
+                          : AppColors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _selectedRole.isStudent
+                            ? AppColors.primary.withValues(alpha: 0.25)
+                            : AppColors.outlineVariant.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          _selectedRole.isStudent ? Icons.info_outline : Icons.verified_user_outlined,
+                          size: 18,
+                          color: _selectedRole.isStudent ? AppColors.primary : AppColors.secondary,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            _selectedRole.isStudent
+                                ? 'Podgląd ocen, planu i terminarza; wysyłanie próśb o usprawiedliwienie do rodzica; wysyłanie wiadomości jako Oskar.'
+                                : 'Pełne uprawnienia do zatwierdzania e-usprawiedliwień kodem PIN.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _selectedRole.isStudent ? AppColors.primary : AppColors.onSurfaceVariant,
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
 
                   // Form Container
                   Container(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/models/attendance_record.dart';
+import '../../domain/models/user_role.dart';
 import '../providers/school_providers.dart';
 import '../providers/auth_providers.dart';
 import '../providers/sync_provider.dart';
@@ -201,6 +202,9 @@ class MainNavigationScreen extends ConsumerWidget {
     final student = ref.read(studentProfileProvider).value;
     if (student == null) return;
 
+    final appUser = ref.read(appUserProvider);
+    final role = appUser?.role ?? UserRole.parent;
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -239,7 +243,64 @@ class MainNavigationScreen extends ConsumerWidget {
                 '${student.className} • ${student.schoolName}',
                 style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
               ),
-              const SizedBox(height: 20),
+              if (appUser?.email != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  appUser!.email,
+                  style: const TextStyle(fontSize: 11, color: AppColors.onSurfaceVariant),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: role.isStudent
+                      ? AppColors.primaryFixed
+                      : AppColors.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  role.isStudent ? "🎓 Rola: Uczeń (Oskar)" : "👨‍👩‍👦 Rola: Rodzic",
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: role.isStudent ? AppColors.primary : AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.outlineVariant.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      role.isStudent ? Icons.school_outlined : Icons.verified_user_outlined,
+                      size: 20,
+                      color: role.isStudent ? AppColors.primary : AppColors.secondary,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        role.isStudent
+                            ? "Zalogowano jako Uczeń: pełny wgląd w oceny, plan i frekwencję; e-usprawiedliwienia przesyłane do akceptacji rodzica; wiadomości wysyłane jako Oskar."
+                            : "Zalogowano jako Rodzic: pełne uprawnienia do zatwierdzania e-usprawiedliwień kodem PIN oraz zarządzania kontem.",
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.onSurfaceVariant,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               ListTile(
                 leading: const Icon(Icons.sync, color: AppColors.primary),
                 title: const Text('Status synchronizacji z Librusem'),

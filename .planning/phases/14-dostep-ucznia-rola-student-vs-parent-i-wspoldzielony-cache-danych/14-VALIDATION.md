@@ -1,9 +1,9 @@
 ---
 phase: "14"
 slug: "dostep-ucznia-rola-student-vs-parent-i-wspoldzielony-cache-danych"
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-09-22"
 ---
 
@@ -21,7 +21,7 @@ created: "2026-09-22"
 | **Config file** | `functions/package.json` |
 | **Quick run command** | `npm test --prefix functions` |
 | **Full suite command** | `npm test --prefix functions && flutter analyze` |
-| **Estimated runtime** | ~5 seconds |
+| **Estimated runtime** | ~4 seconds |
 
 ---
 
@@ -38,14 +38,14 @@ created: "2026-09-22"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 14-01-01 | 01 | 1 | REQ-ROLE-01 | — | Obsługa ról `parent`/`student` w SharedPreferences i modelu AppUser | unit | `flutter analyze` | ✅ | ⬜ pending |
-| 14-01-02 | 01 | 1 | REQ-ROLE-02 | T-14-01 | Endpointy `saveConnection` i `getConnection` obsługują rolę i studentLogin | unit | `node --test functions/test/user_roles.test.js` | ❌ W0 | ⬜ pending |
-| 14-01-03 | 01 | 1 | REQ-ROLE-03 | — | Pobieranie danych z `primaryLogin` w Firestore bez podwójnego scrapingu | unit | `node --test functions/test/shared_cache.test.js` | ❌ W0 | ⬜ pending |
-| 14-02-01 | 02 | 2 | REQ-ROLE-02 | — | Model i tworzenie dokumentu prośby o usprawiedliwienie w Firestore | unit | `node --test functions/test/justification_requests.test.js` | ❌ W0 | ⬜ pending |
-| 14-02-02 | 02 | 2 | REQ-ROLE-02 | T-14-02 | Weryfikacja PIN-u rodzica przy zatwierdzaniu prośby ucznia | unit | `node --test functions/test/justification_requests.test.js` | ❌ W0 | ⬜ pending |
-| 14-02-03 | 02 | 2 | REQ-ROLE-02 | — | Modal ucznia bez PIN-u oraz widżet powiadomień rodzica na Pulpicie | visual / unit | `flutter analyze` | ✅ | ⬜ pending |
-| 14-03-01 | 03 | 3 | REQ-ROLE-01 | — | Badge roli w nagłówku i selektor profilu w logowaniu | visual | `flutter analyze` | ✅ | ⬜ pending |
-| 14-03-02 | 03 | 3 | REQ-ROLE-01 | T-14-03 | Wysyłanie wiadomości z sesji Librus ucznia w sendMessage | unit | `node --test functions/test/student_messages.test.js` | ❌ W0 | ⬜ pending |
+| 14-01-01 | 01 | 1 | REQ-ROLE-01 | — | Obsługa ról `parent`/`student` w SharedPreferences i modelu AppUser | unit | `flutter analyze` | ✅ | ✅ green |
+| 14-01-02 | 01 | 1 | REQ-ROLE-02 | T-14-01 | Endpointy `saveConnection` i `getConnection` obsługują rolę i studentLogin | unit | `node --test functions/test/user_roles.test.js` | ✅ | ✅ green |
+| 14-01-03 | 01 | 1 | REQ-ROLE-03 | — | Pobieranie danych z `primaryLogin` w Firestore bez podwójnego scrapingu | unit | `node --test functions/test/shared_cache.test.js` | ✅ | ✅ green |
+| 14-02-01 | 02 | 2 | REQ-ROLE-02 | — | Model i tworzenie dokumentu prośby o usprawiedliwienie w Firestore | unit | `node --test functions/test/justification_requests.test.js` | ✅ | ✅ green |
+| 14-02-02 | 02 | 2 | REQ-ROLE-02 | T-14-02 | Weryfikacja PIN-u rodzica przy zatwierdzaniu prośby ucznia | unit | `node --test functions/test/justification_requests.test.js` | ✅ | ✅ green |
+| 14-02-03 | 02 | 2 | REQ-ROLE-02 | — | Modal ucznia bez PIN-u oraz widżet powiadomień rodzica na Pulpicie | visual / unit | `flutter analyze` | ✅ | ✅ green |
+| 14-03-01 | 03 | 3 | REQ-ROLE-01 | — | Badge roli w nagłówku i selektor profilu w logowaniu | visual | `flutter analyze` | ✅ | ✅ green |
+| 14-03-02 | 03 | 3 | REQ-ROLE-01 | T-14-03 | Wysyłanie wiadomości z sesji Librus ucznia w sendMessage | unit | `node --test functions/test/student_messages.test.js` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -53,10 +53,10 @@ created: "2026-09-22"
 
 ## Wave 0 Requirements
 
-- [ ] `functions/test/user_roles.test.js` — testy endpointów powiązania i odczytu ról
-- [ ] `functions/test/shared_cache.test.js` — testy współdzielenia cache w Firestore
-- [ ] `functions/test/justification_requests.test.js` — testy maszyny stanów próśb o usprawiedliwienie i autoryzacji PIN
-- [ ] `functions/test/student_messages.test.js` — testy wyboru sesji ucznia przy wysyłce wiadomości
+- [x] `functions/test/user_roles.test.js` — testy endpointów powiązania i odczytu ról
+- [x] `functions/test/shared_cache.test.js` — testy współdzielenia cache w Firestore
+- [x] `functions/test/justification_requests.test.js` — testy maszyny stanów próśb o usprawiedliwienie i autoryzacji PIN
+- [x] `functions/test/student_messages.test.js` — testy wyboru sesji ucznia przy wysyłce wiadomości
 
 ---
 
@@ -71,11 +71,11 @@ created: "2026-09-22"
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 10s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 10s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending 2026-09-22
+**Approval:** approved 2026-09-22

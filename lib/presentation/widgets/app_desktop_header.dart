@@ -1,9 +1,12 @@
 import "package:flutter/material.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
 import "../../core/theme/app_colors.dart";
 import "../../domain/models/student_profile.dart";
+import "../../domain/models/user_role.dart";
+import "../providers/auth_providers.dart";
 import "modals/librus_query_log_modal.dart";
 
-class AppDesktopHeader extends StatelessWidget {
+class AppDesktopHeader extends ConsumerWidget {
   final StudentProfile? student;
   final int unreadCount;
   final VoidCallback? onNotificationsTap;
@@ -18,7 +21,10 @@ class AppDesktopHeader extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appUser = ref.watch(appUserProvider);
+    final role = appUser?.role ?? UserRole.parent;
+
     return Container(
       height: 64,
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -151,13 +157,38 @@ class AppDesktopHeader extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        student?.name ?? "Uczeń",
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.onSurface,
-                              fontSize: 13,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: role.isStudent
+                                  ? AppColors.primaryFixed
+                                  : AppColors.surfaceContainerHigh,
+                              borderRadius: BorderRadius.circular(6),
                             ),
+                            child: Text(
+                              role.isStudent ? "🎓 Uczeń" : "Rodzic",
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: role.isStudent
+                                    ? AppColors.primary
+                                    : AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            student?.name ?? "Uczeń",
+                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.onSurface,
+                                  fontSize: 13,
+                                ),
+                          ),
+                        ],
                       ),
                       Text(
                         student?.className ?? "Klasa 4 k Lic",
