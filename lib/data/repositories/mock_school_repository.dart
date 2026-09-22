@@ -7,6 +7,7 @@ import '../../domain/models/lesson_slot.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/message_thread.dart';
 import '../../domain/models/teacher_contact.dart';
+import '../../domain/models/justification_request.dart';
 
 import '../services/librus_connection_service.dart';
 
@@ -19,6 +20,22 @@ class MockSchoolRepository implements SchoolRepository {
   List<AttendanceRecord> _attendance = List.from(MockData.attendanceRecords);
   final List<MessageThread> _messages = List.from(MockData.messages);
   final List<Announcement> _announcements = List.from(MockData.announcements);
+  final List<JustificationRequest> _justificationRequests = [
+    JustificationRequest(
+      id: 'req_init_01',
+      studentLogin: '1234567u',
+      studentName: 'Oskar Jankiewicz',
+      familyId: 'jankiewicz_family',
+      primaryLogin: '7654321r',
+      recordIds: ['att_003', 'att_004'],
+      lessonNumbers: [3, 4],
+      subjectNames: ['Historia', 'Geografia'],
+      date: DateTime(2026, 9, 22),
+      reason: 'Wizyta u lekarza specjalisty',
+      status: JustificationRequestStatus.pendingParentApproval,
+      requestedAt: DateTime.now().subtract(const Duration(minutes: 30)),
+    ),
+  ];
 
   @override
   Future<StudentProfile> getStudentProfile() async {
@@ -196,6 +213,100 @@ class MockSchoolRepository implements SchoolRepository {
       }
       return rec;
     }).toList();
+  }
+
+  @override
+  Future<void> requestJustification(List<String> recordIds, String reason, {DateTime? date}) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final matching = _attendance.where((r) {
+      final matchesDate = date != null &&
+          r.date.year == date.year &&
+          r.date.month == date.month &&
+          r.date.day == date.day;
+      return recordIds.contains(r.id) || matchesDate;
+    }).toList();
+
+    final lessonNumbers = matching.map((r) => r.lessonNumber).toList()..sort();
+    final subjects = matching.map((r) => r.subjectName).toSet().toList();
+    final effectiveDate = date ?? (matching.isNotEmpty ? matching.first.date : DateTime.now());
+
+    final req = JustificationRequest(
+      id: 'req_${DateTime.now().millisecondsSinceEpoch}',
+      studentLogin: '1234567u',
+      studentName: 'Oskar Jankiewicz',
+      familyId: 'jankiewicz_family',
+      primaryLogin: '7654321r',
+      recordIds: recordIds,
+      lessonNumbers: lessonNumbers,
+      subjectNames: subjects,
+      date: effectiveDate,
+      reason: reason,
+      status: JustificationRequestStatus.pendingParentApproval,
+      requestedAt: DateTime.now(),
+    );
+    _justificationRequests.insert(0, req);
+
+    _attendance = _attendance.map((rec) {
+      if (recordIds.contains(rec.id) || matching.any((m) => m.id == rec.id)) {
+        return AttendanceRecord(
+          id: rec.id,
+          date: rec.date,
+          lessonNumber: rec.lessonNumber,
+          subjectName: rec.subjectName,
+          type: rec.type,
+          timeSlot: rec.timeSlot,
+          justificationStatus: JustificationStatus.requested,
+          justificationReason: reason,
+          classroom: rec.classroom,
+          teacherName: rec.teacherName,
+        );
+      }
+      return rec;
+    }).toList();
+  }
+
+  @override
+  Future<List<JustificationRequest>> getJustificationRequests() async {
+    await Future.delayed(const Duration(milliseconds: 50));
+    return List.unmodifiable(_justificationRequests);
+  }
+
+  @override
+  Future<bool> approveJustificationRequest(String requestId, String pin) async {
+    await Future.delayed(const Duration(milliseconds: 150));
+    if (pin != '1234') {
+      return false;
+    }
+    final index = _justificationRequests.indexWhere((r) => r.id == requestId);
+    if (index == -1) return false;
+
+    final existing = _justificationRequests[index];
+    final updated = existing.copyWith(
+      status: JustificationRequestStatus.approved,
+      reviewedAt: DateTime.now(),
+      reviewedBy: 'parent',
+    );
+    _justificationRequests[index] = updated;
+
+    await submitJustification(existing.recordIds, existing.reason, date: existing.date);
+    return true;
+  }
+
+  @override
+  Future<bool> rejectJustificationRequest(String requestId, {String? reason}) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final index = _justificationRequests.indexWhere((r) => r.id == requestId);
+    if (index == -1) return false;
+
+    final existing = _justificationRequests[index];
+    final updated = existing.copyWith(
+      status: JustificationRequestStatus.rejected,
+      rejectionReason: reason ?? 'Odrzucone przez rodzica',
+      reviewedAt: DateTime.now(),
+      reviewedBy: 'parent',
+    );
+    _justificationRequests[index] = updated;
+    return true;
   }
 
   @override

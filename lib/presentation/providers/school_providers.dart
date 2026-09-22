@@ -8,6 +8,7 @@ import '../../domain/models/lesson_slot.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/message_thread.dart';
 import '../../domain/models/teacher_contact.dart';
+import '../../domain/models/justification_request.dart';
 
 final schoolRepositoryProvider = Provider<SchoolRepository>((ref) {
   return FirestoreSchoolRepository();
@@ -241,10 +242,39 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
     await repo.cancelJustification(recordIds);
     state = AsyncValue.data(await repo.getAttendanceRecords());
   }
+
+  Future<void> requestJustification(List<String> recordIds, String reason, {DateTime? date}) async {
+    state = const AsyncValue.loading();
+    final repo = ref.read(schoolRepositoryProvider);
+    await repo.requestJustification(recordIds, reason, date: date);
+    ref.invalidate(justificationRequestsProvider);
+    state = AsyncValue.data(await repo.getAttendanceRecords());
+  }
+
+  Future<bool> approveJustification(String requestId, String pin) async {
+    final repo = ref.read(schoolRepositoryProvider);
+    final success = await repo.approveJustificationRequest(requestId, pin);
+    ref.invalidate(justificationRequestsProvider);
+    state = AsyncValue.data(await repo.getAttendanceRecords());
+    return success;
+  }
+
+  Future<bool> rejectJustification(String requestId, {String? reason}) async {
+    final repo = ref.read(schoolRepositoryProvider);
+    final success = await repo.rejectJustificationRequest(requestId, reason: reason);
+    ref.invalidate(justificationRequestsProvider);
+    state = AsyncValue.data(await repo.getAttendanceRecords());
+    return success;
+  }
 }
 
 final attendanceProvider =
     AsyncNotifierProvider<AttendanceNotifier, List<AttendanceRecord>>(AttendanceNotifier.new);
+
+final justificationRequestsProvider = FutureProvider<List<JustificationRequest>>((ref) async {
+  final repo = ref.watch(schoolRepositoryProvider);
+  return repo.getJustificationRequests();
+});
 
 final messagesProvider = FutureProvider<List<MessageThread>>((ref) async {
   final repo = ref.watch(schoolRepositoryProvider);

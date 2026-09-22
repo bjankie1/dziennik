@@ -14,6 +14,7 @@ import '../../domain/models/lesson_slot.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/message_thread.dart';
 import '../../domain/models/teacher_contact.dart';
+import '../../domain/models/justification_request.dart';
 
 class FirestoreSchoolRepository implements SchoolRepository {
   final FirebaseFirestore _firestore;
@@ -1135,6 +1136,154 @@ class FirestoreSchoolRepository implements SchoolRepository {
     }
     await _saveJustificationOverrides();
     return _mockFallback.cancelJustification(recordIds);
+  }
+
+  @override
+  Future<void> requestJustification(List<String> recordIds, String reason, {DateTime? date}) async {
+    try {
+      final appUser = await _connectionService.getSavedAppUser();
+      final dateStr = date != null
+          ? "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}"
+          : null;
+
+      final records = await getAttendanceRecords();
+      final matching = records.where((r) {
+        final matchesDate = date != null &&
+            r.date.year == date.year &&
+            r.date.month == date.month &&
+            r.date.day == date.day;
+        return recordIds.contains(r.id) || matchesDate;
+      }).toList();
+
+      final lessonNumbers = matching.map((r) => r.lessonNumber).toList()..sort();
+      final subjects = matching.map((r) => r.subjectName).toSet().toList();
+
+      final payload = jsonEncode({
+        'studentLogin': appUser?.studentLogin ?? appUser?.primaryLogin ?? '1234567u',
+        'studentName': appUser?.displayName ?? 'Oskar Jankiewicz',
+        'primaryLogin': appUser?.primaryLogin ?? '7654321r',
+        'familyId': appUser?.familyId ?? 'jankiewicz_family',
+        'recordIds': recordIds,
+        'lessonNumbers': lessonNumbers,
+        'subjectNames': subjects,
+        'date': dateStr,
+        'reason': reason,
+      });
+
+      http.Response? res;
+      try {
+        res = await http.post(
+          Uri.parse('/api/createJustificationRequest'),
+          headers: {'Content-Type': 'application/json'},
+          body: payload,
+        );
+      } catch (_) {
+        res = await http.post(
+          Uri.parse('https://europe-west3-lepsza-szkola.cloudfunctions.net/createJustificationRequest'),
+          headers: {'Content-Type': 'application/json'},
+          body: payload,
+        );
+      }
+      if (res.statusCode == 201) {
+        debugPrint('[FirestoreSchoolRepository] Prośba o usprawiedliwienie wysłana do rodzica: ${res.body}');
+      }
+    } catch (e) {
+      debugPrint('[FirestoreSchoolRepository] requestJustification error: $e');
+    }
+
+    return _mockFallback.requestJustification(recordIds, reason, date: date);
+  }
+
+  @override
+  Future<List<JustificationRequest>> getJustificationRequests() async {
+    try {
+      final snap = await _firestore
+          .collection('justification_requests')
+          .orderBy('requestedAt', descending: true)
+          .get();
+
+      if (snap.docs.isNotEmpty) {
+        return snap.docs
+            .map((d) => JustificationRequest.fromJson(d.data(), d.id))
+            .toList();
+      }
+    } catch (e) {
+      debugPrint('[FirestoreSchoolRepository] getJustificationRequests firestore query error: $e');
+    }
+
+    return _mockFallback.getJustificationRequests();
+  }
+
+  @override
+  Future<bool> approveJustificationRequest(String requestId, String pin) async {
+    try {
+      final appUser = await _connectionService.getSavedAppUser();
+      final payload = jsonEncode({
+        'requestId': requestId,
+        'action': 'approve',
+        'pin': pin,
+        'parentLogin': appUser?.primaryLogin ?? '7654321r',
+      });
+
+      http.Response? res;
+      try {
+        res = await http.post(
+          Uri.parse('/api/reviewJustificationRequest'),
+          headers: {'Content-Type': 'application/json'},
+          body: payload,
+        );
+      } catch (_) {
+        res = await http.post(
+          Uri.parse('https://europe-west3-lepsza-szkola.cloudfunctions.net/reviewJustificationRequest'),
+          headers: {'Content-Type': 'application/json'},
+          body: payload,
+        );
+      }
+
+      if (res.statusCode == 200) {
+        debugPrint('[FirestoreSchoolRepository] Wniosek zatwierdzony pomyślnie z PIN: ${res.body}');
+      }
+    } catch (e) {
+      debugPrint('[FirestoreSchoolRepository] approveJustificationRequest error: $e');
+    }
+
+    return _mockFallback.approveJustificationRequest(requestId, pin);
+  }
+
+  @override
+  Future<bool> rejectJustificationRequest(String requestId, {String? reason}) async {
+    try {
+      final appUser = await _connectionService.getSavedAppUser();
+      final payload = jsonEncode({
+        'requestId': requestId,
+        'action': 'reject',
+        'rejectionReason': reason,
+        'parentLogin': appUser?.primaryLogin ?? '7654321r',
+      });
+
+      http.Response? res;
+      try {
+        res = await http.post(
+          Uri.parse('/api/reviewJustificationRequest'),
+          headers: {'Content-Type': 'application/json'},
+          body: payload,
+        );
+      } catch (_) {
+        res = await http.post(
+          Uri.parse('https://europe-west3-lepsza-szkola.cloudfunctions.net/reviewJustificationRequest'),
+          headers: {'Content-Type': 'application/json'},
+          body: payload,
+        );
+      }
+
+      if (res.statusCode == 200) {
+        debugPrint('[FirestoreSchoolRepository] Wniosek odrzucony: ${res.body}');
+      }
+    } catch (e) {
+      debugPrint('[FirestoreSchoolRepository] rejectJustificationRequest error: $e');
+    }
+
+    return _mockFallback.rejectJustificationRequest(requestId, reason: reason);
   }
 
   @override

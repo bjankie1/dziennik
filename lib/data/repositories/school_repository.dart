@@ -5,6 +5,7 @@ import '../../domain/models/lesson_slot.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/message_thread.dart';
 import '../../domain/models/teacher_contact.dart';
+import '../../domain/models/justification_request.dart';
 
 abstract class SchoolRepository {
   Future<StudentProfile> getStudentProfile();
@@ -20,6 +21,10 @@ abstract class SchoolRepository {
   Future<List<Announcement>> getAnnouncements();
   Future<void> submitJustification(List<String> recordIds, String reason, {DateTime? date});
   Future<void> cancelJustification(List<String> recordIds);
+  Future<void> requestJustification(List<String> recordIds, String reason, {DateTime? date});
+  Future<List<JustificationRequest>> getJustificationRequests();
+  Future<bool> approveJustificationRequest(String requestId, String pin);
+  Future<bool> rejectJustificationRequest(String requestId, {String? reason});
   Future<List<TeacherContact>> getTeachers();
   Future<void> sendMessage({
     required List<String> recipientNames,
