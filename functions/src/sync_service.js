@@ -1,11 +1,48 @@
 const admin = require("firebase-admin");
 const { LibrusClient, deriveLibrusModule } = require("./librus_client");
 
+function resolveCacheDocumentId({ role, librusLogin, primaryLogin }) {
+  const isStudent = role === "student";
+  if (isStudent && primaryLogin && primaryLogin.trim().length > 0) {
+    return primaryLogin.trim();
+  }
+  return (librusLogin || "").trim();
+}
+
+function shouldDispatchLibrusScrape({ role, isBackgroundCron, forceRefresh }) {
+  if (role === "student") {
+    return false;
+  }
+  if (isBackgroundCron || forceRefresh) {
+    return true;
+  }
+  return false;
+}
+
 async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = process.env.LIBRUS_PASSWORD, options = {}) {
+  const role = options.role || "parent";
+  const primaryLogin = options.primaryLogin;
+  const db = admin.firestore();
+
+  // If role is student, never dispatch scraping requests; serve directly from primary shared cache (D-05, REQ-ROLE-03)
+  if (role === "student") {
+    const targetDocId = resolveCacheDocumentId({ role, librusLogin: login, primaryLogin }) || process.env.LIBRUS_LOGIN || "7654321r";
+    console.log(`[SyncService] Student account detected (${login}). Reading shared cache from students/${targetDocId}.`);
+    const cachedDoc = await db.collection("students").doc(targetDocId).get();
+    if (cachedDoc.exists) {
+      return {
+        success: true,
+        fromCache: true,
+        isSharedCache: true,
+        primaryLogin: targetDocId,
+        ...cachedDoc.data()
+      };
+    }
+  }
+
   if (!login || !password) {
     throw new Error("Brak danych logowania Librus. Ustaw zmienne LIBRUS_LOGIN i LIBRUS_PASSWORD.");
   }
-  const db = admin.firestore();
   const trigger = options.trigger || "manual";
   const syncRunId = `${trigger}-${Date.now()}`;
 
@@ -236,4 +273,8 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
   };
 }
 
-module.exports = { syncStudentData };
+module.exports = {
+  syncStudentData,
+  resolveCacheDocumentId,
+  shouldDispatchLibrusScrape
+};

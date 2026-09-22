@@ -24,6 +24,13 @@ exports.syncNow = onRequest(
     try {
       const login = req.query.login || req.body?.login || process.env.LIBRUS_LOGIN;
       const pass = req.query.password || req.body?.password || process.env.LIBRUS_PASSWORD;
+      const role = req.query.role || req.body?.role || "parent";
+      const primaryLogin = req.query.primaryLogin || req.body?.primaryLogin;
+
+      if (role === "student") {
+        const result = await syncStudentData(login, pass, { trigger: "manual", role: "student", primaryLogin });
+        return res.status(200).json(result);
+      }
 
       if (!login || !pass) {
         return res.status(400).json({
@@ -32,7 +39,7 @@ exports.syncNow = onRequest(
         });
       }
 
-      const result = await syncStudentData(login, pass, { trigger: "manual" });
+      const result = await syncStudentData(login, pass, { trigger: "manual", role: "parent", primaryLogin });
       res.status(200).json(result);
     } catch (error) {
       console.error("syncNow error:", error);
@@ -56,15 +63,23 @@ exports.getStudentData = onRequest(
   },
   async (req, res) => {
     try {
-      const login = req.query.login || process.env.LIBRUS_LOGIN;
+      let login = req.query.login || process.env.LIBRUS_LOGIN;
+      const role = req.query.role || "parent";
+      const primaryLogin = req.query.primaryLogin;
+
+      // If user is student, resolve target document from primaryLogin (D-05, REQ-ROLE-03)
+      if (role === "student" && primaryLogin) {
+        login = primaryLogin;
+      }
+
       if (!login) {
         return res.status(400).json({ error: "Brak parametru login" });
       }
       const doc = await admin.firestore().collection("students").doc(login).get();
       if (!doc.exists) {
-        // If not yet synced, run sync once
+        // If not yet synced, run sync once for parent only
         const pass = process.env.LIBRUS_PASSWORD;
-        if (!pass) {
+        if (!pass || role === "student") {
           return res.status(404).json({ error: "Dane ucznia nie zostały jeszcze zsynchronizowane." });
         }
         await syncStudentData(login, pass);
@@ -109,17 +124,46 @@ exports.saveConnection = onRequest(
 
       const login = req.query.login || req.body?.login || process.env.LIBRUS_LOGIN || "";
       const email = req.query.email || req.body?.email || "";
+      const rawRole = req.query.role || req.body?.role || "parent";
+      const role = String(rawRole).trim().toLowerCase() === "student" ? "student" : "parent";
+      const rawStudentLogin = req.query.studentLogin || req.body?.studentLogin;
+      const rawPrimaryLogin = req.query.primaryLogin || req.body?.primaryLogin;
+      const rawFamilyId = req.query.familyId || req.body?.familyId || "jankiewicz_family";
+
+      let studentLogin = rawStudentLogin || null;
+      let primaryLogin = rawPrimaryLogin || null;
+
+      if (role === "student") {
+        studentLogin = login || studentLogin || null;
+        if (!primaryLogin) {
+          primaryLogin = process.env.LIBRUS_PRIMARY_LOGIN || process.env.LIBRUS_LOGIN || "7654321r";
+        }
+      } else {
+        primaryLogin = login || primaryLogin || null;
+      }
 
       await admin.firestore().collection("users").doc(userId).set({
         userId,
         email,
+        role,
+        studentLogin,
+        primaryLogin,
+        familyId: rawFamilyId,
         connected: true,
         librusLogin: login,
         isDemoMode: false,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
 
-      res.status(200).json({ success: true, userId, librusLogin: login });
+      res.status(200).json({
+        success: true,
+        userId,
+        librusLogin: login,
+        role,
+        studentLogin,
+        primaryLogin,
+        familyId: rawFamilyId
+      });
     } catch (error) {
       console.error("saveConnection error:", error);
       res.status(500).json({ error: error.message });
@@ -157,7 +201,11 @@ exports.getConnection = onRequest(
       res.status(200).json({
         connected: true,
         librusLogin: data.librusLogin,
-        isDemoMode: data.isDemoMode || false
+        isDemoMode: data.isDemoMode || false,
+        role: data.role || "parent",
+        studentLogin: data.studentLogin || null,
+        primaryLogin: data.primaryLogin || data.librusLogin,
+        familyId: data.familyId || "jankiewicz_family"
       });
     } catch (error) {
       console.error("getConnection error:", error);
