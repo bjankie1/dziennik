@@ -39,10 +39,12 @@ Błyskawiczny, czytelny i niezależny dostęp do rzeczywistych danych edukacyjny
 - [x] **REQ-AUDIT-01 & REQ-ROUTING-01-02 (Audyt i Routing):** Czyste stany puste bez mocków, polskie ścieżki w go_router i deep linking zasobów.
 
 ### Active Scope (v3.0)
-- [ ] **REQ-ROLE-01 (Dostęp ucznia / rola):** Logowanie kontem Google Oskara powiązane z tym samym profilem ucznia w Firestore. Dostęp w trybie student (brak uprawnień rodzica do usprawiedliwień i PIN).
-- [ ] **REQ-ROLE-02 (Współdzielony cache):** Dzielenie pamięci podręcznej i danych pobieranych z Librusa w Firestore – brak ponownego pobierania tych samych danych przez ucznia.
-- [ ] **REQ-TASK-01 (Moduł To-Do):** Dedykowana podstrona `/zadania` w menu bocznym i nawigacji z listą zadań, terminami i filtrami.
-- [ ] **REQ-TASK-02 (Widget zadań na Pulpicie):** Karta zadań w Bento Grid na Pulpicie z szybkim oznaczaniem ukończenia.
+- [x] **REQ-ROLE-01 (Dostęp ucznia / rola):** Logowanie kontem Google Oskara powiązane z tym samym profilem ucznia w Firestore. Dostęp w trybie student (brak uprawnień rodzica do usprawiedliwień i PIN). (Complete — Phase 14)
+- [x] **REQ-ROLE-02 (Współdzielony cache):** Dzielenie pamięci podręcznej i danych pobieranych z Librusa w Firestore – brak ponownego pobierania tych samych danych przez ucznia. (Complete — Phase 14)
+- [x] **REQ-ROLE-04 (Dialog usprawiedliwień):** Dwukierunkowy dialog prośby o usprawiedliwienie z odmową rodzica i odpowiedzią Oskara. (Complete — Phase 14.1)
+- [x] **REQ-CHAT-01 (Czat rodzinny):** Bezpośredni czat rodzinny (Rodzic ↔ Uczeń) w czasie rzeczywistym w Firestore. (Complete — Phase 14.1)
+- [x] **REQ-TASK-01 (Moduł To-Do):** Dedykowana podstrona `/zadania` w menu bocznym i nawigacji z listą zadań, terminami i filtrami. (Complete — Phase 15)
+- [x] **REQ-TASK-02 (Widget zadań na Pulpicie):** Karta zadań w Bento Grid na Pulpicie z szybkim oznaczaniem ukończenia. (Complete — Phase 15)
 - [ ] **REQ-TASK-03 (Inteligentne podpowiedzi zadań):** Wykrywanie zadań/opłat z wiadomości Librusa oraz automatyczne podpowiedzi przygotowania do sprawdzianu z terminarza.
 - [ ] **REQ-CAL-01 (Eksport do Kalendarza Google):** Bezpośredni link „Dodaj do Kalendarza Google” oraz plik `.ics` dla sprawdzianów i wydarzeń.
 - [ ] **REQ-NOTIF-01 (Telegram Bot & Web Push):** Bot Telegram do natychmiastowych powiadomień na telefonie (oceny, wiadomości, sprawdziany) oraz obsługa Web Push w przeglądarce.

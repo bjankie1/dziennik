@@ -80,12 +80,12 @@
 - [x] **REQ-ROLE-01**: Logowanie kontem Google Oskara (ucznia) powiązane z tym samym profilem ucznia w Firestore.
 - [x] **REQ-ROLE-02**: Separacja uprawnień `student` vs `parent`: tryb ucznia posiada pełny wgląd w dane szkolne, lecz brak uprawnień rodzica (wysyłanie e-usprawiedliwień, podgląd/edycja PIN rodzica).
 - [x] **REQ-ROLE-03**: Współdzielenie pamięci podręcznej i stanu synchronizacji w Firestore (brak dublowania zapytań do Librusa).
-- [ ] **REQ-ROLE-04**: Dwukierunkowy dialog prośby o usprawiedliwienie: bezpośredni przycisk odmowy na kafelku Pulpitu i we Frekwencji, pole komentarza rodzica oraz możliwość odpowiedzi i ponownej prośby przez Oskara.
-- [ ] **REQ-CHAT-01**: Bezpośredni czat rodzinny (Rodzic ↔ Uczeń) w czasie rzeczywistym w Firestore z obsługą konwersacji, powiadomieniami i powiązaniem do sprawdzianów i nieobecności.
+- [x] **REQ-ROLE-04**: Dwukierunkowy dialog prośby o usprawiedliwienie: bezpośredni przycisk odmowy na kafelku Pulpitu i we Frekwencji, pole komentarza rodzica oraz możliwość odpowiedzi i ponownej prośby przez Oskara.
+- [x] **REQ-CHAT-01**: Bezpośredni czat rodzinny (Rodzic ↔ Uczeń) w czasie rzeczywistym w Firestore z obsługą konwersacji, powiadomieniami i powiązaniem do sprawdzianów i nieobecności.
 
 ### Smart To-Do & Task Management
-- [ ] **REQ-TASK-01**: Dedykowana podstrona `/zadania` w menu bocznym i nawigacji z wykazem zadań, terminami i filtrami.
-- [ ] **REQ-TASK-02**: Karta Bento Grid na Pulpicie (desktop oraz mobile) prezentująca najpilniejsze zadania z natychmiastowym odhaczaniem.
+- [x] **REQ-TASK-01**: Dedykowana podstrona `/zadania` w menu bocznym i nawigacji z wykazem zadań, terminami i filtrami.
+- [x] **REQ-TASK-02**: Karta Bento Grid na Pulpicie (desktop oraz mobile) prezentująca najpilniejsze zadania z natychmiastowym odhaczaniem.
 - [ ] **REQ-TASK-03**: Automatyczne i półautomatyczne generowanie zadań przygotowania do sprawdzianu/kartkówki z planu lekcji i terminarza.
 - [ ] **REQ-TASK-04**: Heurystyczne wykrywanie zadań podczas czytania wiadomości Librusa (kwoty, wpłaty, terminy, zgody) z przyciskiem szybkiego utworzenia zadania.
 
@@ -107,10 +107,10 @@
 | REQ-ROLE-01 | Phase 14 | Complete |
 | REQ-ROLE-02 | Phase 14 | Complete |
 | REQ-ROLE-03 | Phase 14 | Complete |
-| REQ-ROLE-04 | Phase 14.1 | Pending |
-| REQ-CHAT-01 | Phase 14.1 | Pending |
-| REQ-TASK-01 | Phase 15 | Pending |
-| REQ-TASK-02 | Phase 15 | Pending |
+| REQ-ROLE-04 | Phase 14.1 | Complete |
+| REQ-CHAT-01 | Phase 14.1 | Complete |
+| REQ-TASK-01 | Phase 15 | Complete |
+| REQ-TASK-02 | Phase 15 | Complete |
 | REQ-TASK-03 | Phase 16 | Pending |
 | REQ-TASK-04 | Phase 16 | Pending |
 | REQ-CAL-01 | Phase 17 | Pending |
