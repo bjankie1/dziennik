@@ -16,6 +16,8 @@ import "../grades/grade_details_modal.dart";
 import "../attendance/justification_modal.dart";
 import "../attendance/widgets/student_justification_modal.dart";
 import "../attendance/widgets/parent_approval_modal.dart";
+import "../attendance/widgets/parent_rejection_modal.dart";
+import "../attendance/widgets/student_response_modal.dart";
 import "../messages/new_message_screen.dart";
 import "../messages/message_thread_screen.dart";
 import "../../widgets/modals/librus_query_log_modal.dart";
@@ -57,8 +59,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final user = ref.watch(appUserProvider);
     final isStudent = user?.isStudent ?? false;
     final justificationRequestsAsync = ref.watch(justificationRequestsProvider);
-    final pendingRequests = (justificationRequestsAsync.value ?? [])
+    final allJustificationRequests = justificationRequestsAsync.value ?? [];
+    final pendingRequests = allJustificationRequests
         .where((r) => r.status.isPending)
+        .toList();
+    final rejectedRequests = allJustificationRequests
+        .where((r) => r.status.isRejected)
         .toList();
 
     final now = DateTime.now();
@@ -168,6 +174,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           unexcusedRecords: unexcusedRecords,
                           teachers: teachersAsync.value ?? [],
                           pendingRequests: pendingRequests,
+                          rejectedRequests: rejectedRequests,
                           isStudent: isStudent,
                         ),
                       ),
@@ -1383,6 +1390,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     required List<AttendanceRecord> unexcusedRecords,
     required List<TeacherContact> teachers,
     List<JustificationRequest> pendingRequests = const [],
+    List<JustificationRequest> rejectedRequests = const [],
     bool isStudent = false,
   }) {
     final attendancePct = student?.attendancePercentage ?? 98.6;
@@ -1681,41 +1689,169 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: SizedBox(
+                              height: 34,
+                              child: FilledButton.icon(
+                                onPressed: () {
+                                  final req = pendingRequests.first;
+                                  ParentApprovalModal.show(
+                                    context,
+                                    req,
+                                    onApprove: (pin) async {
+                                      final ok = await ref
+                                          .read(attendanceProvider.notifier)
+                                          .approveJustification(req.id, pin);
+                                      if (ok && context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              "Usprawiedliwienie dla ${req.studentName} zostało zatwierdzone.",
+                                            ),
+                                            backgroundColor: const Color(0xFF006C4A),
+                                          ),
+                                        );
+                                      }
+                                      return ok;
+                                    },
+                                    onReject: (reason) async {
+                                      final ok = await ref
+                                          .read(attendanceProvider.notifier)
+                                          .rejectJustification(req.id, reason: reason);
+                                      if (ok && context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text("Wniosek ucznia został odrzucony."),
+                                            backgroundColor: Color(0xFFDC2626),
+                                          ),
+                                        );
+                                      }
+                                      return ok;
+                                    },
+                                  );
+                                },
+                                icon: const Icon(Icons.pin, size: 14),
+                                label: const Text(
+                                  "Zatwierdź (PIN)",
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                                ),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF3525CD),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 34,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                final req = pendingRequests.first;
+                                ParentRejectionModal.show(
+                                  context,
+                                  req,
+                                  onReject: (reason) async {
+                                    final ok = await ref
+                                        .read(attendanceProvider.notifier)
+                                        .rejectJustification(req.id, reason: reason);
+                                    if (ok && context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text("Wniosek ucznia został odrzucony z komentarzem."),
+                                          backgroundColor: Color(0xFFDC2626),
+                                        ),
+                                      );
+                                    }
+                                    return ok;
+                                  },
+                                );
+                              },
+                              icon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFFDC2626)),
+                              label: const Text(
+                                "Odrzuć",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFDC2626),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFFFCA5A5)),
+                                padding: const EdgeInsets.symmetric(horizontal: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Highlighted notification card for student when parent rejected request (REQ-ROLE-04, D-02)
+              if (isStudent && rejectedRequests.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFFECACA)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded, size: 16, color: Color(0xFFDC2626)),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              "Rodzic odrzucił prośbę o usprawiedliwienie",
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF991B1B),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        "Komentarz: „${rejectedRequests.first.rejectionReason ?? 'Wymagane dodatkowe wyjaśnienie'}”",
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF7F1D1D),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       SizedBox(
                         width: double.infinity,
                         height: 34,
                         child: FilledButton.icon(
                           onPressed: () {
-                            final req = pendingRequests.first;
-                            ParentApprovalModal.show(
+                            final req = rejectedRequests.first;
+                            StudentResponseModal.show(
                               context,
                               req,
-                              onApprove: (pin) async {
+                              onRespond: (responseText) async {
                                 final ok = await ref
                                     .read(attendanceProvider.notifier)
-                                    .approveJustification(req.id, pin);
-                                if (ok && context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        "Usprawiedliwienie dla ${req.studentName} zostało zatwierdzone.",
-                                      ),
-                                      backgroundColor: const Color(0xFF006C4A),
-                                    ),
-                                  );
-                                }
-                                return ok;
-                              },
-                              onReject: (reason) async {
-                                final ok = await ref
-                                    .read(attendanceProvider.notifier)
-                                    .rejectJustification(req.id, reason: reason);
+                                    .respondToJustification(req.id, responseText);
                                 if (ok && context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
-                                      content: Text("Wniosek ucznia został odrzucony."),
-                                      backgroundColor: Color(0xFFDC2626),
+                                      content: Text("Twoje wyjaśnienie zostało przekazane rodzicowi."),
+                                      backgroundColor: Color(0xFF2563EB),
                                     ),
                                   );
                                 }
@@ -1723,13 +1859,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               },
                             );
                           },
-                          icon: const Icon(Icons.pin, size: 14),
+                          icon: const Icon(Icons.reply_rounded, size: 15),
                           label: const Text(
-                            "Zatwierdź (PIN)",
+                            "Odpowiedz / Poproś ponownie",
                             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
                           ),
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF3525CD),
+                            backgroundColor: const Color(0xFF2563EB),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
@@ -2077,8 +2213,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final isStudent = user?.isStudent ?? false;
     final isParent = !isStudent;
     final justificationRequestsAsync = ref.watch(justificationRequestsProvider);
-    final pendingRequests = (justificationRequestsAsync.value ?? [])
+    final allMobileJustifications = justificationRequestsAsync.value ?? [];
+    final pendingRequests = allMobileJustifications
         .where((r) => r.status.isPending)
+        .toList();
+    final rejectedRequests = allMobileJustifications
+        .where((r) => r.status.isRejected)
         .toList();
 
     final messages = messagesAsync.value ?? [];
@@ -2344,31 +2484,145 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    FilledButton.icon(
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        FilledButton.icon(
+                          onPressed: () {
+                            final req = pendingRequests.first;
+                            ParentApprovalModal.show(
+                              context,
+                              req,
+                              onApprove: (pin) async {
+                                final ok = await ref.read(attendanceProvider.notifier).approveJustification(req.id, pin);
+                                if (ok && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text("Usprawiedliwienie dla ${req.studentName} zostało wysłane."),
+                                      backgroundColor: const Color(0xFF006C4A),
+                                    ),
+                                  );
+                                }
+                                return ok;
+                              },
+                              onReject: (reason) async {
+                                final ok = await ref.read(attendanceProvider.notifier).rejectJustification(req.id, reason: reason);
+                                if (ok && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Wniosek ucznia został odrzucony."),
+                                      backgroundColor: Color(0xFFDC2626),
+                                    ),
+                                  );
+                                }
+                                return ok;
+                              },
+                            );
+                          },
+                          icon: const Icon(Icons.pin, size: 12),
+                          label: const Text("Zatwierdź", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF3525CD),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            minimumSize: const Size(0, 28),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            final req = pendingRequests.first;
+                            ParentRejectionModal.show(
+                              context,
+                              req,
+                              onReject: (reason) async {
+                                final ok = await ref.read(attendanceProvider.notifier).rejectJustification(req.id, reason: reason);
+                                if (ok && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Wniosek ucznia został odrzucony z komentarzem."),
+                                      backgroundColor: Color(0xFFDC2626),
+                                    ),
+                                  );
+                                }
+                                return ok;
+                              },
+                            );
+                          },
+                          icon: const Icon(Icons.close_rounded, size: 12, color: Color(0xFFDC2626)),
+                          label: const Text("Odrzuć", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFDC2626))),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFFCA5A5)),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            minimumSize: const Size(0, 28),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+
+            if (isStudent && rejectedRequests.isNotEmpty) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFFECACA)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.info_outline_rounded, color: Color(0xFFDC2626), size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Odrzucona prośba o usprawiedliwienie",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF991B1B),
+                            ),
+                          ),
+                          Text(
+                            "„${rejectedRequests.first.rejectionReason ?? 'Brak podanego powodu'}”",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF7F1D1D),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
                       onPressed: () {
-                        final req = pendingRequests.first;
-                        ParentApprovalModal.show(
+                        final req = rejectedRequests.first;
+                        StudentResponseModal.show(
                           context,
                           req,
-                          onApprove: (pin) async {
-                            final ok = await ref.read(attendanceProvider.notifier).approveJustification(req.id, pin);
-                            if (ok && context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text("Usprawiedliwienie dla ${req.studentName} zostało wysłane."),
-                                  backgroundColor: const Color(0xFF006C4A),
-                                ),
-                              );
-                            }
-                            return ok;
-                          },
-                          onReject: (reason) async {
-                            final ok = await ref.read(attendanceProvider.notifier).rejectJustification(req.id, reason: reason);
+                          onRespond: (responseText) async {
+                            final ok = await ref.read(attendanceProvider.notifier).respondToJustification(req.id, responseText);
                             if (ok && context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text("Wniosek ucznia został odrzucony."),
-                                  backgroundColor: Color(0xFFDC2626),
+                                  content: Text("Twoje wyjaśnienie zostało przekazane rodzicowi."),
+                                  backgroundColor: Color(0xFF2563EB),
                                 ),
                               );
                             }
@@ -2376,14 +2630,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           },
                         );
                       },
-                      icon: const Icon(Icons.pin, size: 12),
-                      label: const Text("Zatwierdź", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF3525CD),
+                        backgroundColor: const Color(0xFF2563EB),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        minimumSize: const Size(0, 32),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
+                      child: const Text("Odpowiedz", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
                     ),
                   ],
                 ),

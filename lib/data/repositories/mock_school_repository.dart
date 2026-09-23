@@ -299,11 +299,42 @@ class MockSchoolRepository implements SchoolRepository {
     if (index == -1) return false;
 
     final existing = _justificationRequests[index];
+    final reasonText = reason ?? 'Odrzucone przez rodzica';
+    final entry = JustificationDialogEntry(
+      senderRole: 'parent',
+      senderName: 'Tata',
+      message: reasonText,
+      timestamp: DateTime.now(),
+    );
     final updated = existing.copyWith(
       status: JustificationRequestStatus.rejected,
-      rejectionReason: reason ?? 'Odrzucone przez rodzica',
+      rejectionReason: reasonText,
       reviewedAt: DateTime.now(),
       reviewedBy: 'parent',
+      dialogHistory: [...existing.dialogHistory, entry],
+    );
+    _justificationRequests[index] = updated;
+    return true;
+  }
+
+  @override
+  Future<bool> respondJustificationRequest(String requestId, {required String responseText}) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final index = _justificationRequests.indexWhere((r) => r.id == requestId);
+    if (index == -1) return false;
+
+    final existing = _justificationRequests[index];
+    final entry = JustificationDialogEntry(
+      senderRole: 'student',
+      senderName: existing.studentName,
+      message: responseText.trim(),
+      timestamp: DateTime.now(),
+    );
+    final updated = existing.copyWith(
+      status: JustificationRequestStatus.pendingParentApproval,
+      reviewedAt: null,
+      reviewedBy: null,
+      dialogHistory: [...existing.dialogHistory, entry],
     );
     _justificationRequests[index] = updated;
     return true;

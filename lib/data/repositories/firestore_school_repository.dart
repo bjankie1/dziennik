@@ -1287,6 +1287,42 @@ class FirestoreSchoolRepository implements SchoolRepository {
   }
 
   @override
+  Future<bool> respondJustificationRequest(String requestId, {required String responseText}) async {
+    try {
+      final appUser = await _connectionService.getSavedAppUser();
+      final payload = jsonEncode({
+        'requestId': requestId,
+        'responseText': responseText,
+        'studentLogin': appUser?.studentLogin ?? '1234567u',
+        'studentName': appUser?.displayName ?? 'Oskar Jankiewicz',
+      });
+
+      http.Response? res;
+      try {
+        res = await http.post(
+          Uri.parse('/api/respondJustificationRequest'),
+          headers: {'Content-Type': 'application/json'},
+          body: payload,
+        );
+      } catch (_) {
+        res = await http.post(
+          Uri.parse('https://europe-west3-lepsza-szkola.cloudfunctions.net/respondJustificationRequest'),
+          headers: {'Content-Type': 'application/json'},
+          body: payload,
+        );
+      }
+
+      if (res.statusCode == 200) {
+        debugPrint('[FirestoreSchoolRepository] Odpowiedź ucznia wysłana: ${res.body}');
+      }
+    } catch (e) {
+      debugPrint('[FirestoreSchoolRepository] respondJustificationRequest error: $e');
+    }
+
+    return _mockFallback.respondJustificationRequest(requestId, responseText: responseText);
+  }
+
+  @override
   Future<List<TeacherContact>> getTeachers() async {
     final data = await _getStudentData();
     if (data == null) {

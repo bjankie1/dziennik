@@ -25,6 +25,7 @@ abstract class SchoolRepository {
   Future<List<JustificationRequest>> getJustificationRequests();
   Future<bool> approveJustificationRequest(String requestId, String pin);
   Future<bool> rejectJustificationRequest(String requestId, {String? reason});
+  Future<bool> respondJustificationRequest(String requestId, {required String responseText});
   Future<List<TeacherContact>> getTeachers();
   Future<void> sendMessage({
     required List<String> recipientNames,

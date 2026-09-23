@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/justification_request.dart';
+import 'parent_rejection_modal.dart';
 
 /// Modal bottom sheet allowing a parent to review, approve with 4-digit PIN,
 /// or reject an excuse request submitted by a student (REQ-ROLE-02, D-04, T-14-03).
@@ -91,15 +92,12 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
   }
 
   Future<void> _handleReject() async {
-    setState(() => _isProcessing = true);
-    final success = await widget.onReject('Odrzucone przez rodzica');
-    if (!mounted) return;
-
-    if (success) {
-      Navigator.pop(context);
-    } else {
-      setState(() => _isProcessing = false);
-    }
+    Navigator.pop(context);
+    ParentRejectionModal.show(
+      context,
+      widget.request,
+      onReject: (reason) => widget.onReject(reason),
+    );
   }
 
   @override
