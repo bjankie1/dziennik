@@ -13,6 +13,7 @@ import '../screens/grades/grades_screen.dart';
 import '../screens/attendance/attendance_screen.dart';
 import '../screens/messages/messages_screen.dart';
 import '../screens/messages/message_thread_screen.dart';
+import '../screens/tasks/tasks_screen.dart';
 import '../screens/chat/family_chat_screen.dart';
 import '../../domain/models/message_thread.dart';
 
@@ -209,7 +210,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Branch 5: Czat Rodzinny
+          // Branch 5: Zadania (Smart To-Do)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/zadania',
+                builder: (context, state) => const TasksScreen(),
+              ),
+            ],
+          ),
+          // Branch 6: Czat Rodzinny
           StatefulShellBranch(
             routes: [
               GoRoute(

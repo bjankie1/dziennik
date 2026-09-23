@@ -14,8 +14,10 @@ import 'grades/grades_screen.dart';
 import 'schedule/schedule_screen.dart';
 import 'attendance/attendance_screen.dart';
 import 'messages/messages_screen.dart';
+import 'tasks/tasks_screen.dart';
 import 'chat/family_chat_screen.dart';
 import '../providers/family_chat_provider.dart';
+import '../providers/tasks_provider.dart';
 
 import 'package:go_router/go_router.dart';
 
@@ -30,6 +32,7 @@ class MainNavigationScreen extends ConsumerWidget {
     'Oceny',
     'Frekwencja',
     'Wiadomości',
+    'Zadania',
     'Czat Rodzinny',
   ];
 
@@ -39,6 +42,7 @@ class MainNavigationScreen extends ConsumerWidget {
     '/oceny',
     '/frekwencja',
     '/wiadomosci',
+    '/zadania',
     '/czat',
   ];
 
@@ -61,6 +65,7 @@ class MainNavigationScreen extends ConsumerWidget {
     final attendanceAsync = ref.watch(attendanceProvider);
     final messagesAsync = ref.watch(messagesProvider);
     final chatUnreadCount = ref.watch(familyChatUnreadCountProvider);
+    final tasksBadgeCount = ref.watch(activeTasksBadgeCountProvider);
 
     ref.listen(familyChatMessagesProvider, (previous, next) {
       if (previous?.value == null || next.value == null) return;
@@ -114,6 +119,7 @@ class MainNavigationScreen extends ConsumerWidget {
       GradesScreen(),
       AttendanceScreen(),
       MessagesScreen(),
+      TasksScreen(),
       FamilyChatScreen(),
     ];
 
@@ -131,6 +137,7 @@ class MainNavigationScreen extends ConsumerWidget {
                   onIndexSelected: (index) => _onDestinationSelected(context, ref, index),
                   unexcusedCount: unexcusedCount,
                   unreadCount: messageBadgeCount,
+                  tasksBadgeCount: tasksBadgeCount,
                   chatUnreadCount: chatUnreadCount,
                   student: studentAsync.value,
                 ),
@@ -164,7 +171,9 @@ class MainNavigationScreen extends ConsumerWidget {
           appBar: studentAsync.when(
             data: (student) => AppHeader(
               student: student,
-              currentSectionTitle: _screenTitles[activeIndex],
+              currentSectionTitle: activeIndex < _screenTitles.length
+                  ? _screenTitles[activeIndex]
+                  : _screenTitles[0],
               onNotificationsTap: () => _onDestinationSelected(context, ref, 4),
               onProfileTap: () {
                 _showProfileSheet(context, ref);
@@ -179,7 +188,8 @@ class MainNavigationScreen extends ConsumerWidget {
                 children: screens,
               ),
           bottomNavigationBar: NavigationBar(
-            selectedIndex: activeIndex,
+            selectedIndex: activeIndex < 6 ? activeIndex : 0,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             onDestinationSelected: (index) => _onDestinationSelected(context, ref, index),
             destinations: [
               const NavigationDestination(
@@ -229,18 +239,18 @@ class MainNavigationScreen extends ConsumerWidget {
               ),
               NavigationDestination(
                 icon: Badge(
-                  isLabelVisible: chatUnreadCount > 0,
-                  label: Text('$chatUnreadCount'),
-                  backgroundColor: AppColors.primary,
-                  child: const Icon(Icons.forum_outlined),
+                  isLabelVisible: tasksBadgeCount > 0,
+                  label: Text('$tasksBadgeCount'),
+                  backgroundColor: AppColors.error,
+                  child: const Icon(Icons.task_alt_outlined),
                 ),
                 selectedIcon: Badge(
-                  isLabelVisible: chatUnreadCount > 0,
-                  label: Text('$chatUnreadCount'),
-                  backgroundColor: AppColors.primary,
-                  child: const Icon(Icons.forum),
+                  isLabelVisible: tasksBadgeCount > 0,
+                  label: Text('$tasksBadgeCount'),
+                  backgroundColor: AppColors.error,
+                  child: const Icon(Icons.task_alt),
                 ),
-                label: 'Czat',
+                label: 'Zadania',
               ),
             ],
           ),

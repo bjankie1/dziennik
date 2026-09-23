@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/models/student_profile.dart';
+import '../providers/family_chat_provider.dart';
 import '../providers/sync_provider.dart';
 import '../providers/school_providers.dart';
 import 'modals/librus_query_log_modal.dart';
@@ -27,6 +29,7 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final syncState = ref.watch(syncProvider);
     final unreadMessagesCount = ref.watch(unreadMessagesCountProvider);
+    final chatUnreadCount = ref.watch(familyChatUnreadCountProvider);
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest.withValues(alpha: 0.95),
@@ -153,6 +156,22 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                   Icons.terminal_rounded,
                   color: AppColors.onSurfaceVariant,
                   size: 21,
+                ),
+              ),
+
+              // Family Chat Action with Badge (D-09)
+              IconButton(
+                tooltip: 'Czat Rodzinny',
+                onPressed: () => context.go('/czat'),
+                icon: Badge(
+                  isLabelVisible: chatUnreadCount > 0,
+                  label: Text('$chatUnreadCount'),
+                  backgroundColor: AppColors.primary,
+                  child: const Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    color: AppColors.onSurface,
+                    size: 22,
+                  ),
                 ),
               ),
 
