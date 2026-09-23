@@ -14,6 +14,8 @@ import 'grades/grades_screen.dart';
 import 'schedule/schedule_screen.dart';
 import 'attendance/attendance_screen.dart';
 import 'messages/messages_screen.dart';
+import 'chat/family_chat_screen.dart';
+import '../providers/family_chat_provider.dart';
 
 import 'package:go_router/go_router.dart';
 
@@ -28,6 +30,7 @@ class MainNavigationScreen extends ConsumerWidget {
     'Oceny',
     'Frekwencja',
     'Wiadomości',
+    'Czat Rodzinny',
   ];
 
   static const _routePaths = [
@@ -36,6 +39,7 @@ class MainNavigationScreen extends ConsumerWidget {
     '/oceny',
     '/frekwencja',
     '/wiadomosci',
+    '/czat',
   ];
 
   void _onDestinationSelected(BuildContext context, WidgetRef ref, int index) {
@@ -56,6 +60,36 @@ class MainNavigationScreen extends ConsumerWidget {
     final studentAsync = ref.watch(studentProfileProvider);
     final attendanceAsync = ref.watch(attendanceProvider);
     final messagesAsync = ref.watch(messagesProvider);
+    final chatUnreadCount = ref.watch(familyChatUnreadCountProvider);
+
+    ref.listen(familyChatMessagesProvider, (previous, next) {
+      if (previous?.value == null || next.value == null) return;
+      final prevList = previous!.value!;
+      final nextList = next.value!;
+      if (nextList.length > prevList.length) {
+        final newMsg = nextList.last;
+        final user = ref.read(appUserProvider);
+        final isStudent = user?.isStudent ?? false;
+        final isFromOther = isStudent ? newMsg.isParentSender : newMsg.isStudentSender;
+        final currentRoute = GoRouterState.of(context).matchedLocation;
+        if (isFromOther && currentRoute != '/czat') {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Nowa wiadomość od: ${newMsg.senderName}'),
+              duration: const Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+              action: SnackBarAction(
+                label: 'Otwórz czat',
+                onPressed: () {
+                  context.go('/czat');
+                },
+              ),
+            ),
+          );
+        }
+      }
+    });
 
     // Keep currentNavIndexProvider synced if route changed via browser back/forward
     if (ref.read(currentNavIndexProvider) != activeIndex) {
@@ -80,6 +114,7 @@ class MainNavigationScreen extends ConsumerWidget {
       GradesScreen(),
       AttendanceScreen(),
       MessagesScreen(),
+      FamilyChatScreen(),
     ];
 
     return LayoutBuilder(
@@ -96,6 +131,7 @@ class MainNavigationScreen extends ConsumerWidget {
                   onIndexSelected: (index) => _onDestinationSelected(context, ref, index),
                   unexcusedCount: unexcusedCount,
                   unreadCount: messageBadgeCount,
+                  chatUnreadCount: chatUnreadCount,
                   student: studentAsync.value,
                 ),
                 Expanded(
@@ -190,6 +226,21 @@ class MainNavigationScreen extends ConsumerWidget {
                   child: const Icon(Icons.mail),
                 ),
                 label: 'Wiadomości',
+              ),
+              NavigationDestination(
+                icon: Badge(
+                  isLabelVisible: chatUnreadCount > 0,
+                  label: Text('$chatUnreadCount'),
+                  backgroundColor: AppColors.primary,
+                  child: const Icon(Icons.forum_outlined),
+                ),
+                selectedIcon: Badge(
+                  isLabelVisible: chatUnreadCount > 0,
+                  label: Text('$chatUnreadCount'),
+                  backgroundColor: AppColors.primary,
+                  child: const Icon(Icons.forum),
+                ),
+                label: 'Czat',
               ),
             ],
           ),

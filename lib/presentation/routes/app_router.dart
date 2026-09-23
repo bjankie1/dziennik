@@ -13,6 +13,7 @@ import '../screens/grades/grades_screen.dart';
 import '../screens/attendance/attendance_screen.dart';
 import '../screens/messages/messages_screen.dart';
 import '../screens/messages/message_thread_screen.dart';
+import '../screens/chat/family_chat_screen.dart';
 import '../../domain/models/message_thread.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'rootNav');
@@ -205,6 +206,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     },
                   ),
                 ],
+              ),
+            ],
+          ),
+          // Branch 5: Czat Rodzinny
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/czat',
+                builder: (context, state) => const FamilyChatScreen(),
               ),
             ],
           ),

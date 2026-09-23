@@ -1,9 +1,11 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:go_router/go_router.dart";
 import "../../core/theme/app_colors.dart";
 import "../../domain/models/student_profile.dart";
 import "../../domain/models/user_role.dart";
 import "../providers/auth_providers.dart";
+import "../providers/family_chat_provider.dart";
 import "modals/librus_query_log_modal.dart";
 
 class AppDesktopHeader extends ConsumerWidget {
@@ -24,6 +26,7 @@ class AppDesktopHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appUser = ref.watch(appUserProvider);
     final role = appUser?.role ?? UserRole.parent;
+    final chatUnreadCount = ref.watch(familyChatUnreadCountProvider);
 
     return Container(
       height: 64,
@@ -97,6 +100,49 @@ class AppDesktopHeader extends ConsumerWidget {
               Icons.terminal_rounded,
               color: AppColors.onSurfaceVariant,
               size: 21,
+            ),
+          ),
+
+          const SizedBox(width: 4),
+
+          // Family Chat Button
+          IconButton(
+            tooltip: "Czat rodzinny",
+            onPressed: () => context.go('/czat'),
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(
+                  Icons.forum_outlined,
+                  color: AppColors.onSurfaceVariant,
+                  size: 21,
+                ),
+                if (chatUnreadCount > 0)
+                  Positioned(
+                    top: -2,
+                    right: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 14,
+                        minHeight: 14,
+                      ),
+                      child: Text(
+                        "$chatUnreadCount",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
 

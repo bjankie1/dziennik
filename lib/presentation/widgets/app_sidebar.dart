@@ -9,6 +9,7 @@ class AppSidebar extends ConsumerWidget {
   final ValueChanged<int> onIndexSelected;
   final int unexcusedCount;
   final int unreadCount;
+  final int chatUnreadCount;
   final StudentProfile? student;
 
   const AppSidebar({
@@ -17,6 +18,7 @@ class AppSidebar extends ConsumerWidget {
     required this.onIndexSelected,
     this.unexcusedCount = 0,
     this.unreadCount = 0,
+    this.chatUnreadCount = 0,
     this.student,
   });
 
@@ -192,6 +194,16 @@ class AppSidebar extends ConsumerWidget {
                   icon: Icons.chat_bubble_outline_rounded,
                   isSelected: currentIndex == 4,
                   badgeCount: unreadCount,
+                  badgeColor: AppColors.primary,
+                ),
+                const SizedBox(height: 4),
+                _buildNavItem(
+                  context: context,
+                  index: 5,
+                  label: "Czat Rodzinny",
+                  icon: Icons.forum_outlined,
+                  isSelected: currentIndex == 5,
+                  badgeCount: chatUnreadCount,
                   badgeColor: AppColors.primary,
                 ),
               ],
