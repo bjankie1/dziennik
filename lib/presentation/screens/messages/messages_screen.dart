@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/message_thread.dart';
+import '../../../domain/models/school_task.dart';
 import '../../providers/school_providers.dart';
+import '../../providers/tasks_provider.dart';
+import '../tasks/widgets/task_form_modal.dart';
 import 'new_message_screen.dart';
 import 'package:go_router/go_router.dart';
 
@@ -497,10 +500,156 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                         ],
                       ),
                     ],
+                    const SizedBox(height: 8),
+                    _buildMessageTaskActionRow(thread),
                   ],
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMessageTaskActionRow(MessageThread thread) {
+    final tasks = ref.watch(tasksStreamProvider).value ?? const [];
+    final existingTask =
+        tasks.where((t) => t.matchesMessage(thread.id)).firstOrNull;
+    final suggestion = SchoolTask.suggestFromMessage(
+      messageId: thread.id,
+      subject: thread.subject,
+      body: thread.body.isNotEmpty ? thread.body : thread.preview,
+      senderName: thread.senderName,
+    );
+
+    if (existingTask != null) {
+      final isDone = existingTask.isCompleted;
+      return Wrap(
+        spacing: 8,
+        runSpacing: 4,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Material(
+            color: AppColors.secondaryContainer.withValues(alpha: 0.75),
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              onTap: () =>
+                  TaskFormModal.show(context, existingTask: existingTask),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isDone
+                          ? Icons.check_circle_rounded
+                          : Icons.link_rounded,
+                      size: 13,
+                      color: AppColors.onSecondaryContainer,
+                    ),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        isDone
+                            ? '✓ Wykonane: ${existingTask.title}'
+                            : '✓ Powiązane zadanie: ${existingTask.title}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSecondaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          InkWell(
+            onTap: () => context.go('/zadania'),
+            borderRadius: BorderRadius.circular(6),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: Text(
+                'Pokaż w zadaniach →',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final isSmart = suggestion.isHeuristicMatch;
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Material(
+        color: isSmart
+            ? AppColors.primaryFixed.withValues(alpha: 0.65)
+            : AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: () {
+            TaskFormModal.show(
+              context,
+              initialTitle: suggestion.suggestedTitle,
+              initialDescription: suggestion.suggestedDescription,
+              initialSubject: suggestion.suggestedSubject,
+              initialAssignedTo: suggestion.suggestedAssignee,
+              initialPriority: suggestion.suggestedPriority,
+              initialDueDate: suggestion.suggestedDueDate,
+              initialSource: TaskSource.message,
+              initialSourceId: suggestion.sourceId,
+              initialMetadata: suggestion.metadata,
+            );
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isSmart
+                    ? AppColors.primary.withValues(alpha: 0.35)
+                    : AppColors.outlineVariant.withValues(alpha: 0.4),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isSmart
+                      ? Icons.auto_awesome_rounded
+                      : Icons.add_task_rounded,
+                  size: 13,
+                  color: isSmart
+                      ? AppColors.primary
+                      : AppColors.onSurfaceVariant,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  isSmart
+                      ? '+ Utwórz zadanie: ${suggestion.detectedAmount != null ? "Opłata (${suggestion.detectedAmount})" : suggestion.suggestedSubject}'
+                      : '+ Utwórz zadanie z wiadomości',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: isSmart
+                        ? AppColors.primary
+                        : AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

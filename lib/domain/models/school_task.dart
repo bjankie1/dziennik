@@ -165,6 +165,245 @@ class SchoolTask {
     return true;
   }
 
+  /// Normalizes text for deterministic `sourceId` matching (lowercase, ASCII, alphanumeric + underscores).
+  static String normalizeSlug(String? input) {
+    if (input == null || input.trim().isEmpty) return '';
+    var s = input.trim().toLowerCase();
+    const diacritics = {
+      'ą': 'a',
+      'ć': 'c',
+      'ę': 'e',
+      'ł': 'l',
+      'ń': 'n',
+      'ó': 'o',
+      'ś': 's',
+      'ź': 'z',
+      'ż': 'z',
+    };
+    diacritics.forEach((k, v) => s = s.replaceAll(k, v));
+    s = s.replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    s = s.replaceAll(RegExp(r'^_+|_+$'), '');
+    return s;
+  }
+
+  /// Canonical `sourceId` for an exam (`exam_<yyyy-MM-dd>_<subjectSlug>`).
+  static String canonicalExamSourceId(String dateStr, String subject) {
+    final cleanDate = dateStr.trim();
+    final slug = normalizeSlug(subject);
+    return slug.isNotEmpty ? 'exam_${cleanDate}_$slug' : 'exam_$cleanDate';
+  }
+
+  /// Canonical `sourceId` for a message (`msg_<messageId>`).
+  static String canonicalMessageSourceId(String messageId) {
+    return 'msg_${messageId.trim()}';
+  }
+
+  /// Checks whether this task is linked to the given exam (`dateStr` in `yyyy-MM-dd` and `subject`).
+  bool matchesExam({required String dateStr, required String subject}) {
+    final cleanDate = dateStr.trim();
+    final canonicalId = canonicalExamSourceId(cleanDate, subject);
+    final legacyId = 'exam_${subject.trim()}_$cleanDate';
+    if (sourceId != null) {
+      final sid = sourceId!.trim();
+      if (sid == canonicalId || sid == legacyId) return true;
+      if (normalizeSlug(sid) == normalizeSlug(canonicalId) ||
+          normalizeSlug(sid) == normalizeSlug(legacyId)) {
+        return true;
+      }
+    }
+    if (source == TaskSource.exam) {
+      final metaDate = metadata?['examDate']?.toString().trim();
+      if (metaDate == cleanDate) {
+        final thisSlug = normalizeSlug(this.subject);
+        final targetSlug = normalizeSlug(subject);
+        if (thisSlug.isEmpty ||
+            targetSlug.isEmpty ||
+            thisSlug.contains(targetSlug) ||
+            targetSlug.contains(thisSlug)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /// Checks whether this task is linked to the given message thread `messageId`.
+  bool matchesMessage(String messageId) {
+    final cleanId = messageId.trim();
+    if (cleanId.isEmpty) return false;
+    final canonicalId = canonicalMessageSourceId(cleanId);
+    if (sourceId?.trim() == canonicalId || sourceId?.trim() == cleanId) {
+      return true;
+    }
+    if (source == TaskSource.message &&
+        metadata?['messageId']?.toString().trim() == cleanId) {
+      return true;
+    }
+    return false;
+  }
+
+  /// Deep-link route to jump back to the source of this task (`/plan-lekcji?data=...` or `/wiadomosci/...`), if linked.
+  String? get sourceNavigationRoute {
+    if (source == TaskSource.exam) {
+      final examDate = metadata?['examDate']?.toString().trim();
+      if (examDate != null && examDate.isNotEmpty) {
+        return '/plan-lekcji?data=$examDate';
+      }
+      // Try extracting yyyy-MM-dd from sourceId
+      final match = RegExp(r'(\d{4}-\d{2}-\d{2})').firstMatch(sourceId ?? '');
+      if (match != null) {
+        return '/plan-lekcji?data=${match.group(1)}';
+      }
+      return '/plan-lekcji';
+    }
+    if (source == TaskSource.message) {
+      final msgId = metadata?['messageId']?.toString().trim() ??
+          sourceId?.replaceFirst(RegExp(r'^msg_'), '').trim();
+      if (msgId != null && msgId.isNotEmpty) {
+        return '/wiadomosci/$msgId';
+      }
+      return '/wiadomosci';
+    }
+    return null;
+  }
+
+  /// Human-readable label for the linked source chip on task cards and modals.
+  String? get sourceBadgeLabel {
+    if (source == TaskSource.exam) {
+      final examDate = metadata?['examDate']?.toString().trim();
+      final subj = subject?.trim();
+      if (examDate != null && examDate.length >= 10) {
+        final dayMonth = '${examDate.substring(8, 10)}.${examDate.substring(5, 7)}';
+        return subj != null && subj.isNotEmpty
+            ? 'Sprawdzian: $subj ($dayMonth)'
+            : 'Sprawdzian ($dayMonth)';
+      }
+      return subj != null && subj.isNotEmpty
+          ? 'Sprawdzian: $subj'
+          : 'Sprawdzian w terminarzu';
+    }
+    if (source == TaskSource.message) {
+      final msgSubj = metadata?['messageSubject']?.toString().trim();
+      if (msgSubj != null && msgSubj.isNotEmpty) {
+        final shortSubj =
+            msgSubj.length > 28 ? '${msgSubj.substring(0, 28)}…' : msgSubj;
+        return 'Wiadomość: $shortSubj';
+      }
+      return 'Wiadomość Librus';
+    }
+    return null;
+  }
+
+  /// Analyzes a message thread (`id`, `subject`, `body`, `senderName`) and builds a smart task suggestion (`REQ-TASK-04`).
+  static MessageTaskSuggestion suggestFromMessage({
+    required String messageId,
+    required String subject,
+    required String body,
+    required String senderName,
+  }) {
+    final cleanSubject = subject.trim();
+    final cleanBody = body.trim();
+    final combined = '$cleanSubject\n$cleanBody'.toLowerCase();
+
+    // Extract optional currency amount (e.g. "50 zł", "85 PLN", "120,00 zł")
+    final amountMatch = RegExp(
+      r'(\d{1,4}(?:[.,]\d{1,2})?\s*(?:zł|pln|złotych))',
+      caseSensitive: false,
+    ).firstMatch('$cleanSubject $cleanBody');
+    final detectedAmount = amountMatch?.group(1)?.trim();
+
+    final isPayment = RegExp(
+      r'(składk|skladk|opłat|oplat|wpłat|wplat|przelew|konto|rada rodzic|ubezpiecz|wycieczk|kino|teatr|obiad|zł|pln|kieszonkow|zbiórk|zbiork)',
+      caseSensitive: false,
+    ).hasMatch(combined);
+
+    final isConsent = RegExp(
+      r'(zgod[ayę]|oświadczen|deklaracj|podpis|ankiet|formularz|zaświadczen|legitymacj)',
+      caseSensitive: false,
+    ).hasMatch(combined);
+
+    final isStudyOrExam = RegExp(
+      r'(sprawdzian|kartkówk|kartkowk|konkurs|projekt|lektur|referat|zadanie domowe|przygotowa)',
+      caseSensitive: false,
+    ).hasMatch(combined);
+
+    String suggestedTitle;
+    String categoryLabel;
+    TaskAssignee suggestedAssignee;
+    TaskPriority suggestedPriority;
+    String suggestedSubject;
+    bool isHeuristicMatch = false;
+
+    if (isPayment) {
+      isHeuristicMatch = true;
+      categoryLabel = detectedAmount != null
+          ? 'Wykryto składkę / opłatę ($detectedAmount)'
+          : 'Wykryto składkę / opłatę w wiadomości';
+      final hasPaymentVerb = RegExp(
+        r'^(opłacić|oplacic|wpłacić|wplacic)',
+        caseSensitive: false,
+      ).hasMatch(cleanSubject);
+      final baseTitle =
+          hasPaymentVerb ? cleanSubject : 'Opłacić: $cleanSubject';
+      suggestedTitle = (detectedAmount != null &&
+              !baseTitle.toLowerCase().contains(detectedAmount.toLowerCase()))
+          ? '$baseTitle ($detectedAmount)'
+          : baseTitle;
+      suggestedAssignee = TaskAssignee.parent;
+      suggestedPriority = TaskPriority.high;
+      suggestedSubject = 'Opłata/Formalności';
+    } else if (isConsent) {
+      isHeuristicMatch = true;
+      categoryLabel = 'Wykryto wymaganą zgodę / dokument';
+      suggestedTitle = 'Podpisać / dostarczyć: $cleanSubject';
+      suggestedAssignee = TaskAssignee.parent;
+      suggestedPriority = TaskPriority.high;
+      suggestedSubject = 'Opłata/Formalności';
+    } else if (isStudyOrExam) {
+      isHeuristicMatch = true;
+      categoryLabel = 'Wykryto zadanie / przygotowanie dla ucznia';
+      suggestedTitle = 'Przygotować: $cleanSubject';
+      suggestedAssignee = TaskAssignee.student;
+      suggestedPriority = TaskPriority.high;
+      suggestedSubject = 'Szkoła';
+    } else {
+      categoryLabel = 'Utwórz zadanie z tej wiadomości';
+      suggestedTitle = 'Zadanie: $cleanSubject';
+      suggestedAssignee = TaskAssignee.parent;
+      suggestedPriority = TaskPriority.medium;
+      suggestedSubject = 'Szkoła';
+    }
+
+    final snippet = cleanBody.length > 360
+        ? '${cleanBody.substring(0, 360)}...'
+        : cleanBody;
+    final suggestedDescription = [
+      'Od: $senderName',
+      'Temat: $cleanSubject',
+      if (detectedAmount != null) 'Wykryta kwota: $detectedAmount',
+      if (snippet.isNotEmpty) '\nTreść:\n$snippet',
+    ].join('\n');
+
+    final today = SchoolTask.todayStart;
+    final suggestedDueDate = today.add(const Duration(days: 2));
+
+    return MessageTaskSuggestion(
+      sourceId: canonicalMessageSourceId(messageId),
+      messageId: messageId.trim(),
+      messageSubject: cleanSubject,
+      senderName: senderName.trim(),
+      categoryLabel: categoryLabel,
+      suggestedTitle: suggestedTitle,
+      suggestedDescription: suggestedDescription,
+      suggestedAssignee: suggestedAssignee,
+      suggestedPriority: suggestedPriority,
+      suggestedSubject: suggestedSubject,
+      suggestedDueDate: suggestedDueDate,
+      detectedAmount: detectedAmount,
+      isHeuristicMatch: isHeuristicMatch,
+    );
+  }
+
   /// Role relevance weight for sorting urgent tasks on the Dashboard (`0` = primary/shared, `1` = other role).
   int roleSortWeight({required bool isStudent}) {
     if (isStudent) {
@@ -380,4 +619,44 @@ class SchoolTask {
   @override
   String toString() =>
       'SchoolTask(id: $id, title: $title, priority: ${priority.name}, assignedTo: ${assignedTo.name}, isCompleted: $isCompleted)';
+}
+
+/// Heuristic suggestion extracted from a Librus message (`REQ-TASK-04`).
+class MessageTaskSuggestion {
+  final String sourceId;
+  final String messageId;
+  final String messageSubject;
+  final String senderName;
+  final String categoryLabel;
+  final String suggestedTitle;
+  final String suggestedDescription;
+  final TaskAssignee suggestedAssignee;
+  final TaskPriority suggestedPriority;
+  final String suggestedSubject;
+  final DateTime suggestedDueDate;
+  final String? detectedAmount;
+  final bool isHeuristicMatch;
+
+  const MessageTaskSuggestion({
+    required this.sourceId,
+    required this.messageId,
+    required this.messageSubject,
+    required this.senderName,
+    required this.categoryLabel,
+    required this.suggestedTitle,
+    required this.suggestedDescription,
+    required this.suggestedAssignee,
+    required this.suggestedPriority,
+    required this.suggestedSubject,
+    required this.suggestedDueDate,
+    this.detectedAmount,
+    required this.isHeuristicMatch,
+  });
+
+  Map<String, dynamic> get metadata => {
+        'messageId': messageId,
+        'messageSubject': messageSubject,
+        'sender': senderName,
+        if (detectedAmount != null) 'amount': detectedAmount,
+      };
 }

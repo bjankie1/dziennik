@@ -27,7 +27,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 14: Dostęp ucznia (rola student vs parent) i współdzielony cache danych** — Logowanie kontem Google Oskara, separacja ról (`student` vs `parent`) z blokadą e-usprawiedliwień i PIN dla ucznia oraz Single Source of Truth w Firestore bez duplikowania scrapingu. (completed 2026-09-22)
 - [x] **Phase 14.1: Czat rodzinny i dwukierunkowy dialog usprawiedliwień** (INSERTED) — Komunikator rodzinny (Rodzic ↔ Uczeń) w czasie rzeczywistym, bezpośredni przycisk „Odrzuć” z komentarzem rodzica na Pulpicie i we Frekwencji oraz wątek dialogu Q&A i ponownej prośby ucznia. (completed 2026-09-23)
 - [x] **Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie** — Dedykowana podstrona `/zadania` w menu bocznym i nawigacji oraz interaktywny widżet zadań w Bento Grid na Pulpicie z szybkim odhaczaniem. (completed 2026-09-23)
-- [ ] **Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości** — Automatyczne generowanie zadań przygotowawczych ze sprawdzianów i terminarza oraz heurystyczne wykrywanie zadań, opłat i terminów z wiadomości Librusa.
+- [x] **Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości oraz dwukierunkowe linkowanie źródeł** — Trwałe powiązanie zadań ze źródłem (`sourceId` dla sprawdzianów i wiadomości), blokada duplikacji po odświeżeniu strony (F5), bezpośrednie linki do już utworzonych zadań oraz tworzenie zadań z widoku wiadomości (np. opłacenie składki). (completed 2026-09-23)
 - [ ] **Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal** — Przycisk „Dodaj do Kalendarza Google” w kafelkach sprawdzianów i modalu lekcji oraz pobieranie plików kalendarzowych `.ics`.
 - [ ] **Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push** — Integracja bota Telegram w Cloud Functions z kodem parowania, natychmiastowe alerty o ocenach/wiadomościach/sprawdzianach oraz powiadomienia Web Push w przeglądarce.
 - [ ] **Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)** — Automatyczny harmonogram Cloud Scheduler w piątki wieczorem generujący i wysyłający raport podsumowujący nadchodzący tydzień przez bota Telegram do rodzica i ucznia.
@@ -95,23 +95,23 @@ Plans:
 - [x] 15-02-PLAN.md: `/zadania` Screen (`TasksScreen` + `TaskFormModal`) & 7-Branch Navigation Shell (Wave 2)
 - [x] 15-03-PLAN.md: Dashboard Bento Grid Widget „Zadania na dziś” in Desktop Column 2 & Mobile (Wave 3)
 
-### Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości
+### Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości oraz dwukierunkowe linkowanie źródeł
 
-**Goal**: Automatyzacja tworzenia zadań edukacyjnych i organizacyjnych poprzez generowanie propozycji zadań przygotowawczych do nadchodzących sprawdzianów/kartkówek z planu i terminarza oraz heurystyczne wykrywanie zadań, wpłat i terminów z wiadomości Librusa.  
+**Goal**: Automatyzacja tworzenia zadań edukacyjnych i organizacyjnych ze sprawdzianów i wiadomości z deterministycznym powiązaniem ze źródłem (`sourceId`), trwałą pamięcią między odświeżeniami (Firestore + `SharedPreferences`), ochroną przed duplikacją oraz dwukierunkowymi linkami między zadaniem a źródłem (sprawdzianem w planie / wiadomością w skrzynce).  
 **Requirements**: REQ-TASK-03, REQ-TASK-04  
 **Depends on**: Phase 15  
 **Success Criteria**:
 
-1. Przy wykryciu sprawdzianu lub kartkówki w terminarzu/planie lekcji system automatycznie proponuje lub generuje zadanie przygotowania (np. „Powtórka do: Sprawdzian z Chemii”) z sugerowaną datą realizacji (np. 1-2 dni przed terminem).
-2. W widoku wątku wiadomości (`/wiadomosci/:id`) mechanizm heurystyczny analizuje treść pod kątem kwot (np. "50 zł", "wpłata"), dat/terminów (np. "do 15 października", "do piątku") oraz zgód i wyświetla wyróżniony baner podpowiedzi zadania („Wykryto zadanie/opłatę”).
-3. Kliknięcie podpowiedzi jednym tapnięciem tworzy sformatowane zadanie z wypełnioną nazwą, kwotą/opisem i terminem w module `/zadania`.
-4. Użytkownik ma możliwość odrzucenia podpowiedzi lub dostosowania parametrów zadania przed zatwierdzeniem.
+1. Zadania tworzone ze sprawdzianów (na Pulpicie i w modalu lekcji) oraz z wiadomości otrzymują kanoniczny identyfikator źródła (`sourceId`) i są trwale zapisywane w Firestore oraz `SharedPreferences` — po odświeżeniu strony (`F5`) nie można utworzyć duplikatu, a w miejscu przycisku wyświetla się link do już utworzonego zadania (`✓ Powiązane zadanie` + `Pokaż zadanie`).
+2. W widoku wątku wiadomości (`/wiadomosci/:id`) oraz na liście wiadomości (`/wiadomosci`) mechanizm heurystyczny analizuje treść pod kątem składek/opłat (np. „opłacenie składki”, kwoty w zł), zgód i terminów, prezentując baner „Wykryto składkę / opłatę” z akcją `+ Dodaj zadanie (1-klik)` lub `Dostosuj przed dodaniem...`.
+3. Na kartach zadań w `/zadania` oraz w modalu zadania wyświetlana jest klikalna pigułka źródła (`Źródło: Sprawdzian: ...` / `Źródło: Wiadomość: ...`), która przenosi użytkownika bezpośrednio do powiązanej lekcji w planie lub wiadomości w skrzynce.
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 16 to break down)
+- [x] 16-01-PLAN.md: Canonical Source Linking (`sourceId`), Deduplication & Persistent Storage Across Page Reloads (`Firestore` + `SharedPreferences`)
+- [x] 16-02-PLAN.md: Smart Task Creation & Heuristic Fee/Consent Detection in Messages View (`MessageThreadScreen` & `MessagesScreen`) + Bidirectional Source Links
 
 ### Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal
 

@@ -1,18 +1,18 @@
 ---
 gsd_state_version: "1.0"
 milestone: v3.0
-current_phase: 16
-current_phase_name: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości
+current_phase: 17
+current_phase_name: Eksport sprawdzianów do Kalendarza Google i iCal
 status: completed_phase
-stopped_at: Verified Phase 15 (13/13 must-haves passed) — ready for Phase 16
-last_updated: "2026-09-23T14:45:00Z"
+stopped_at: Completed Phase 16 (Source-linked tasks, deduplication across refresh, and smart task creation from messages)
+last_updated: "2026-09-23T16:20:00Z"
 last_activity: 2026-09-23
-state_head: c5b6903
+state_head: b9ea3ee
 progress:
   total_phases: 7
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  completed_phases: 4
+  total_plans: 11
+  completed_plans: 11
   percent: 100
 milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ---
@@ -20,8 +20,8 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 # Project State
 
 **Current Milestone:** Milestone v3.0 (Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia)  
-**Active Phase:** Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości  
-**Status:** Phase 15 verified & completed (3/3 phases completed in v3.0 so far)  
+**Active Phase:** Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal  
+**Status:** Phase 16 verified & completed (4/7 phases completed in v3.0 so far)  
 **Last Updated:** 2026-09-23  
 
 ## Milestone v3.0 Roadmap
@@ -29,7 +29,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - [x] **Phase 14**: Dostęp ucznia (rola student vs parent) i współdzielony cache danych (completed 2026-09-22)
 - [x] **Phase 14.1**: Czat rodzinny i dwukierunkowy dialog usprawiedliwień (completed 2026-09-23)
 - [x] **Phase 15**: Moduł zadań (Smart To-Do) i widżet na Pulpicie (completed 2026-09-23)
-- [ ] **Phase 16**: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości
+- [x] **Phase 16**: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości oraz dwukierunkowe linkowanie źródeł (completed 2026-09-23)
 - [ ] **Phase 17**: Eksport sprawdzianów do Kalendarza Google i iCal
 - [ ] **Phase 18**: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push
 - [ ] **Phase 19**: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)

@@ -768,49 +768,81 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   Widget _buildExamStudyTaskButton(BuildContext context, UpcomingEvent exam) {
     final examDateStr = DateFormat('yyyy-MM-dd').format(exam.date);
-    final examSourceId = 'exam_${exam.subject}_$examDateStr';
+    final examSourceId = SchoolTask.canonicalExamSourceId(examDateStr, exam.subject);
     final tasksAsync = ref.watch(tasksStreamProvider);
     final existingTask = tasksAsync.value
-        ?.where((t) =>
-            t.sourceId == examSourceId ||
-            (t.source == TaskSource.exam && t.metadata?['examDate'] == examDateStr))
+        ?.where((t) => t.matchesExam(dateStr: examDateStr, subject: exam.subject))
         .firstOrNull;
 
     if (existingTask != null) {
       final isDone = existingTask.isCompleted;
-      return Material(
-        color: isDone
-            ? AppColors.secondaryContainer
-            : AppColors.secondaryContainer.withValues(alpha: 0.65),
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: () => TaskFormModal.show(context, existingTask: existingTask),
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isDone ? Icons.check_circle_rounded : Icons.task_alt_rounded,
-                  size: 14,
-                  color: AppColors.onSecondaryContainer,
+      return Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Material(
+            color: isDone
+                ? AppColors.secondaryContainer
+                : AppColors.secondaryContainer.withValues(alpha: 0.75),
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              onTap: () => TaskFormModal.show(context, existingTask: existingTask),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isDone ? Icons.check_circle_rounded : Icons.link_rounded,
+                      size: 14,
+                      color: AppColors.onSecondaryContainer,
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        isDone
+                            ? "✓ Wykonane: ${existingTask.title}"
+                            : "✓ Powiązane: ${existingTask.title}",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSecondaryContainer,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 5),
-                Text(
-                  isDone
-                      ? "Oskar wykonał zadanie!"
-                      : "Zadanie dla Oskara dodane",
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.onSecondaryContainer,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+          InkWell(
+            onTap: () => context.go('/zadania'),
+            borderRadius: BorderRadius.circular(6),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Pokaż zadanie",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                  SizedBox(width: 2),
+                  Icon(Icons.open_in_new_rounded, size: 12, color: AppColors.primary),
+                ],
+              ),
+            ),
+          ),
+        ],
       );
     }
 

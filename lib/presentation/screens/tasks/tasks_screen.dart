@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/school_task.dart';
@@ -854,6 +855,55 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                   : Icons.event_outlined,
                             ),
                           _buildAssigneePill(task.assignedTo),
+                          if (task.sourceBadgeLabel != null)
+                            InkWell(
+                              onTap: task.sourceNavigationRoute != null
+                                  ? () => context.go(task.sourceNavigationRoute!)
+                                  : null,
+                              borderRadius: BorderRadius.circular(8),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.secondaryContainer.withValues(alpha: 0.7),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: AppColors.secondary.withValues(alpha: 0.35),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      task.source == TaskSource.exam
+                                          ? Icons.assignment_late_rounded
+                                          : Icons.mail_outline_rounded,
+                                      size: 13,
+                                      color: AppColors.onSecondaryContainer,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Źródło: ${task.sourceBadgeLabel!}',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.onSecondaryContainer,
+                                      ),
+                                    ),
+                                    if (task.sourceNavigationRoute != null) ...[
+                                      const SizedBox(width: 4),
+                                      const Icon(
+                                        Icons.open_in_new_rounded,
+                                        size: 11,
+                                        color: AppColors.onSecondaryContainer,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                       const SizedBox(height: 6),

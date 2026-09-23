@@ -672,15 +672,12 @@ class LessonDetailsModal extends ConsumerWidget {
     final teacherName = (slot.substituteTeacher ?? slot.teacher).trim();
 
     final examDateStr = DateFormat('yyyy-MM-dd').format(date);
-    final examSourceId = 'exam_${slot.subjectName}_$examDateStr';
+    final examSourceId =
+        SchoolTask.canonicalExamSourceId(examDateStr, slot.subjectName);
     final tasksAsync = ref.watch(tasksStreamProvider);
     final existingTask = tasksAsync.value
         ?.where((t) =>
-            t.sourceId == examSourceId ||
-            (t.source == TaskSource.exam &&
-                t.metadata?['examDate'] == examDateStr &&
-                (t.subject?.toLowerCase() == slot.subjectName.toLowerCase() ||
-                    t.sourceId?.contains('sprawdzian') == true)))
+            t.matchesExam(dateStr: examDateStr, subject: slot.subjectName))
         .firstOrNull;
 
     return Container(
@@ -792,7 +789,7 @@ class LessonDetailsModal extends ConsumerWidget {
                 ? Material(
                     color: existingTask.isCompleted
                         ? AppColors.secondaryContainer
-                        : AppColors.secondaryContainer.withValues(alpha: 0.75),
+                        : AppColors.secondaryContainer.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(8),
                     child: InkWell(
                       onTap: () {
@@ -808,19 +805,23 @@ class LessonDetailsModal extends ConsumerWidget {
                             Icon(
                               existingTask.isCompleted
                                   ? Icons.check_circle_rounded
-                                  : Icons.task_alt_rounded,
+                                  : Icons.link_rounded,
                               size: 14,
                               color: AppColors.onSecondaryContainer,
                             ),
                             const SizedBox(width: 5),
-                            Text(
-                              existingTask.isCompleted
-                                  ? 'Oskar wykonał zadanie!'
-                                  : 'Zadanie dla Oskara dodane',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.onSecondaryContainer,
+                            Flexible(
+                              child: Text(
+                                existingTask.isCompleted
+                                    ? '✓ Wykonane: ${existingTask.title} — Otwórz'
+                                    : '✓ Powiązane zadanie: ${existingTask.title} — Otwórz',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.onSecondaryContainer,
+                                ),
                               ),
                             ),
                           ],

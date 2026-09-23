@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/school_task.dart';
@@ -358,6 +359,80 @@ class _TaskFormModalState extends ConsumerState<TaskFormModal> {
               ],
             ),
             const SizedBox(height: 16),
+
+            // Linked source banner (Exam / Message)
+            if (existing?.sourceBadgeLabel != null ||
+                (widget.initialSource != null &&
+                    widget.initialSource != TaskSource.manual)) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.secondaryContainer.withValues(alpha: 0.65),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.secondary.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      (existing?.source ?? widget.initialSource) == TaskSource.exam
+                          ? Icons.assignment_late_rounded
+                          : Icons.mail_outline_rounded,
+                      size: 18,
+                      color: AppColors.onSecondaryContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Powiązane źródło zadania',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.onSecondaryContainer,
+                            ),
+                          ),
+                          Text(
+                            existing?.sourceBadgeLabel ??
+                                (widget.initialSource == TaskSource.exam
+                                    ? 'Sprawdzian w terminarzu'
+                                    : 'Wiadomość Librus (${widget.initialMetadata?['messageSubject'] ?? ''})'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onSecondaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (existing?.sourceNavigationRoute != null)
+                      TextButton.icon(
+                        onPressed: () {
+                          final route = existing!.sourceNavigationRoute!;
+                          Navigator.of(context).pop();
+                          context.go(route);
+                        },
+                        icon: const Icon(Icons.open_in_new_rounded, size: 14),
+                        label: const Text(
+                          'Otwórz źródło',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.onSecondaryContainer,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
 
             // Parent lock banner (D-03)
             if (isLockedForStudent) ...[
