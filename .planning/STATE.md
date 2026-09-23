@@ -74,14 +74,14 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 ## Session
 
-**Last session:** 2026-09-23T12:09:38.704Z
-**Stopped at:** Phase 15 planned and verified (3 plans)
-**Resume file:** .planning/phases/15-modu-zada-smart-to-do-i-wid-et-na-pulpicie/15-01-PLAN.md
-Last activity: 2026-09-22
+**Last session:** 2026-09-23T14:18:54Z
+**Stopped at:** Completed 15-01-PLAN.md (Wave 1: SchoolTask domain model & TasksRepository)
+**Resume file:** .planning/phases/15-modu-zada-smart-to-do-i-wid-et-na-pulpicie/15-02-PLAN.md
+Last activity: 2026-09-23
 
 ## Current Position
 
-Phase: 14.1 (Czat rodzinny i dwukierunkowy dialog usprawiedliwień) — COMPLETED
-Next Phase: 15 (Moduł zadań (Smart To-Do) i widżet na Pulpicie)
-Status: Phase 14.1 completed. Ready for Phase 15.
-Last activity: 2026-09-23 — Phase 14.1 verified and completed
+Phase: 15 (Moduł zadań (Smart To-Do) i widżet na Pulpicie) — IN PROGRESS (1/3 plans completed)
+Next Plan: 15-02-PLAN.md (Wave 2: `/zadania` Screen & 7-Branch Navigation Shell)
+Status: Wave 1 (15-01) completed. Ready for Wave 2 (15-02).
+Last activity: 2026-09-23 — Completed 15-01-PLAN.md
