@@ -987,8 +987,10 @@ class LibrusClient {
           if (subMatch) {
             subject = subMatch[1].trim();
           } else if (type === "sprawdzian" || type === "kartkówka") {
-            const parts = text.split(/,|\n/);
-            if (parts.length > 1) subject = parts[0].replace(/Nr lekcji:\s*\d+/i, "").trim();
+            const cleanedText = text.replace(/Nr\s+lekcji:\s*\d+\s*/i, "");
+            const parts = cleanedText.split(/,|\n/).map(p => p.trim()).filter(Boolean);
+            const nonTypePart = parts.find(p => !/^(sprawdzian|kartkówk)/i.test(p));
+            subject = nonTypePart || (parts[0] || "");
           }
         }
 

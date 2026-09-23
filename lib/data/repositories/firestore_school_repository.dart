@@ -283,19 +283,95 @@ class FirestoreSchoolRepository implements SchoolRepository {
     );
   }
 
+  String _cleanEventSubjectName(Map<String, dynamic> event, List<dynamic> timetable) {
+    final rawSubject = (event['subject'] as String? ?? '').trim();
+    final rawText = (event['rawText'] as String? ?? '').trim();
+    final evTeacher = (event['teacher'] as String? ?? '').trim();
+
+    final knownSubjects = <String>{};
+    for (final item in timetable) {
+      if (item is Map) {
+        var s = (item['subject'] as String? ?? '').trim();
+        s = s
+            .replaceFirst(RegExp(r'^odwołane\s*', caseSensitive: false), '')
+            .replaceFirst(RegExp(r'^zastępstwo\s*', caseSensitive: false), '')
+            .trim();
+        if (s.isNotEmpty) knownSubjects.add(s);
+      }
+    }
+
+    final isPolluted = rawSubject.isEmpty ||
+        RegExp(r'^(sprawdzian|kartkówk|nr\s*lekcji)', caseSensitive: false)
+            .hasMatch(rawSubject);
+
+    if (!isPolluted) {
+      for (final ks in knownSubjects) {
+        if (ks.toLowerCase() == rawSubject.toLowerCase()) return ks;
+      }
+      return rawSubject;
+    }
+
+    // 1. Check comma-separated parts of rawText (e.g. "Nr lekcji: 0sprawdzian4KL, Język angielski")
+    if (rawText.isNotEmpty) {
+      final cleanedRaw = rawText.replaceFirst(RegExp(r'^Nr\s+lekcji:\s*\d+\s*', caseSensitive: false), '');
+      final parts = cleanedRaw.split(',').map((p) => p.trim()).where((p) => p.isNotEmpty).toList();
+      for (final part in parts) {
+        if (!RegExp(r'^(sprawdzian|kartkówk)', caseSensitive: false).hasMatch(part)) {
+          for (final ks in knownSubjects) {
+            if (part.toLowerCase().contains(ks.toLowerCase()) ||
+                ks.toLowerCase().contains(part.toLowerCase())) {
+              return ks;
+            }
+          }
+          return part;
+        }
+      }
+
+      // 2. Check if any known subject appears anywhere in rawText
+      for (final ks in knownSubjects) {
+        if (rawText.toLowerCase().contains(ks.toLowerCase())) {
+          return ks;
+        }
+      }
+    }
+
+    // 3. Fallback: match by teacher name in timetable
+    if (evTeacher.isNotEmpty) {
+      for (final item in timetable) {
+        if (item is Map) {
+          final t = (item['teacher'] as String? ?? '').trim();
+          if (t.isNotEmpty &&
+              (t.toLowerCase() == evTeacher.toLowerCase() ||
+                  t.toLowerCase().contains(evTeacher.toLowerCase()) ||
+                  evTeacher.toLowerCase().contains(t.toLowerCase()))) {
+            var s = (item['subject'] as String? ?? '').trim();
+            s = s
+                .replaceFirst(RegExp(r'^odwołane\s*', caseSensitive: false), '')
+                .replaceFirst(RegExp(r'^zastępstwo\s*', caseSensitive: false), '')
+                .trim();
+            if (s.isNotEmpty) return s;
+          }
+        }
+      }
+    }
+
+    return rawSubject.isNotEmpty ? rawSubject : 'Wydarzenie';
+  }
+
   @override
   Future<UpcomingEvent?> getUpcomingExam() async {
     final data = await _getStudentData();
     if (data != null) {
       final upcomingExamMap = data['upcomingExam'] as Map<String, dynamic>?;
       if (upcomingExamMap != null) {
+        final timetable = data['timetable'] as List<dynamic>? ?? [];
         final dateStr = upcomingExamMap['date'] as String? ?? '';
         final date = DateTime.tryParse(dateStr) ?? DateTime.now().add(const Duration(days: 7));
         final now = DateTime.now();
         final diff = DateTime(date.year, date.month, date.day)
             .difference(DateTime(now.year, now.month, now.day))
             .inDays;
-        final subject = upcomingExamMap['subject'] as String? ?? 'Wydarzenie';
+        final subject = _cleanEventSubjectName(upcomingExamMap, timetable);
         final rawType = upcomingExamMap['type'] as String? ?? 'sprawdzian';
         final type = rawType.isNotEmpty
             ? '${rawType[0].toUpperCase()}${rawType.substring(1)}'
@@ -332,19 +408,25 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   List<Map<String, dynamic>> _extractAllEvents(Map<String, dynamic> data) {
     final list = <Map<String, dynamic>>[];
+    final timetable = data['timetable'] as List<dynamic>? ?? [];
+
+    Map<String, dynamic> normalizeEvent(Map raw) {
+      final m = Map<String, dynamic>.from(raw);
+      m['subject'] = _cleanEventSubjectName(m, timetable);
+      return m;
+    }
+
     if (data['events'] is List) {
       for (final e in data['events']) {
-        if (e is Map<String, dynamic>) {
-          list.add(e);
-        } else if (e is Map) {
-          list.add(Map<String, dynamic>.from(e));
+        if (e is Map) {
+          list.add(normalizeEvent(e));
         }
       }
     }
     if (data['upcomingExams'] is List) {
       for (final e in data['upcomingExams']) {
         if (e is Map) {
-          final m = Map<String, dynamic>.from(e);
+          final m = normalizeEvent(e);
           if (!list.any((x) => x['date'] == m['date'] && x['subject'] == m['subject'])) {
             list.add(m);
           }
@@ -352,7 +434,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
       }
     }
     if (data['upcomingExam'] is Map) {
-      final m = Map<String, dynamic>.from(data['upcomingExam'] as Map);
+      final m = normalizeEvent(data['upcomingExam'] as Map);
       if (!list.any((x) => x['date'] == m['date'] && x['subject'] == m['subject'])) {
         list.add(m);
       }
@@ -443,14 +525,37 @@ class FirestoreSchoolRepository implements SchoolRepository {
       // Enrich with calendar events for this specific date (from Terminarz)
       if (dayEvents.isNotEmpty) {
         final lessonNumber = item['lessonNumber'] as int? ?? 1;
-        // 1. Try matching by both lessonNumber and subject name
+        bool matchesLessonSubjectOrTeacher(Map<String, dynamic> e) {
+          final eSub = (e['subject'] as String? ?? '').toLowerCase().trim();
+          final eRaw = (e['rawText'] as String? ?? '').toLowerCase().trim();
+          final eTeacher = (e['teacher'] as String? ?? '').toLowerCase().trim();
+          final curSub = subject.toLowerCase().trim();
+          final curTeacher = teacher.toLowerCase().trim();
+
+          if (eSub.isNotEmpty &&
+              !eSub.startsWith('sprawdzian') &&
+              !eSub.startsWith('kartkówk') &&
+              (curSub.contains(eSub) || eSub.contains(curSub))) {
+            return true;
+          }
+          if (curSub.isNotEmpty && eRaw.contains(curSub)) {
+            return true;
+          }
+          if (eTeacher.isNotEmpty &&
+              curTeacher.isNotEmpty &&
+              (curTeacher == eTeacher ||
+                  curTeacher.contains(eTeacher) ||
+                  eTeacher.contains(curTeacher))) {
+            return true;
+          }
+          return false;
+        }
+
+        // 1. Try matching by both lessonNumber and subject/teacher
         var matchedEvent = dayEvents.firstWhere(
           (e) {
             final eLesson = e['lessonNumber'] as num? ?? 0;
-            final eSub = (e['subject'] as String? ?? '').toLowerCase();
-            final curSub = subject.toLowerCase();
-            final subMatches = eSub.isNotEmpty && (curSub.contains(eSub) || eSub.contains(curSub));
-            return eLesson == lessonNumber && subMatches;
+            return eLesson == lessonNumber && matchesLessonSubjectOrTeacher(e);
           },
           orElse: () => <String, dynamic>{},
         );
@@ -464,14 +569,10 @@ class FirestoreSchoolRepository implements SchoolRepository {
             orElse: () => <String, dynamic>{},
           );
         }
-        // 3. Try matching by subject name
+        // 3. Try matching by subject name, rawText, or teacher (when lessonNumber is 0 / unspecified)
         if (matchedEvent.isEmpty) {
           matchedEvent = dayEvents.firstWhere(
-            (e) {
-              final eSub = (e['subject'] as String? ?? '').toLowerCase();
-              final curSub = subject.toLowerCase();
-              return eSub.isNotEmpty && (curSub.contains(eSub) || eSub.contains(curSub));
-            },
+            (e) => matchesLessonSubjectOrTeacher(e),
             orElse: () => <String, dynamic>{},
           );
         }
@@ -484,11 +585,9 @@ class FirestoreSchoolRepository implements SchoolRepository {
           if (rawType.contains('sprawdzian')) {
             eventType = 'Sprawdzian';
             eventTitle = desc.isNotEmpty ? desc : 'Sprawdzian';
-            topic = desc.isNotEmpty ? desc : topic;
           } else if (rawType.contains('kartkówk')) {
             eventType = 'Kartkówka';
             eventTitle = desc.isNotEmpty ? desc : 'Kartkówka';
-            topic = desc.isNotEmpty ? desc : topic;
           } else if (rawType.contains('odwołan')) {
             status = LessonStatus.canceled;
             statusNote = desc.isNotEmpty ? desc : 'Lekcja odwołana';

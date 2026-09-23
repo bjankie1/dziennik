@@ -245,14 +245,28 @@ class _AgendaLessonCardState extends State<AgendaLessonCard> with SingleTickerPr
                                 decoration: BoxDecoration(
                                   color: AppColors.primaryFixed,
                                   borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  slot.eventType ?? 'Sprawdzian',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.onPrimaryFixedVariant,
+                                  border: Border.all(
+                                    color: AppColors.primary.withValues(alpha: 0.25),
                                   ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.assignment_late_rounded,
+                                      size: 12,
+                                      color: AppColors.primary,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      slot.eventType ?? 'Sprawdzian',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ] else if (slot.attendanceType != null && slot.attendanceType != AttendanceType.present) ...[
@@ -298,6 +312,58 @@ class _AgendaLessonCardState extends State<AgendaLessonCard> with SingleTickerPr
                             ),
                           ],
                         ),
+
+                        // Exam Scope Alert Box
+                        if (isExam) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryFixed.withValues(alpha: 0.45),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.25),
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.fact_check_outlined,
+                                  size: 16,
+                                  color: AppColors.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${slot.eventType ?? 'Sprawdzian'} — zakres materiału:',
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        (slot.eventTitle != null && slot.eventTitle!.isNotEmpty)
+                                            ? slot.eventTitle!
+                                            : 'Brak dodatkowego opisu zakresu od nauczyciela',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.onSurface,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
 
                         // Canceled Alert Box
                         if (isCanceled && slot.statusNote != null) ...[

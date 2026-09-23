@@ -771,7 +771,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final examSourceId = 'exam_${exam.subject}_$examDateStr';
     final tasksAsync = ref.watch(tasksStreamProvider);
     final existingTask = tasksAsync.value
-        ?.where((t) => t.sourceId == examSourceId)
+        ?.where((t) =>
+            t.sourceId == examSourceId ||
+            (t.source == TaskSource.exam && t.metadata?['examDate'] == examDateStr))
         .firstOrNull;
 
     if (existingTask != null) {

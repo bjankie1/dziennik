@@ -23,11 +23,13 @@ class WeeklyGridView extends ConsumerWidget {
     {'number': '1', 'start': '08:00', 'end': '08:45'},
     {'number': '2', 'start': '08:50', 'end': '09:35'},
     {'number': '3', 'start': '09:45', 'end': '10:30'},
-    {'number': '4', 'start': '10:45', 'end': '11:30'},
+    {'number': '4', 'start': '10:50', 'end': '11:35'},
     {'number': '5', 'start': '11:45', 'end': '12:30'},
     {'number': '6', 'start': '12:40', 'end': '13:25'},
     {'number': '7', 'start': '13:35', 'end': '14:20'},
     {'number': '8', 'start': '14:25', 'end': '15:10'},
+    {'number': '9', 'start': '15:15', 'end': '16:00'},
+    {'number': '10', 'start': '16:05', 'end': '16:50'},
   ];
 
   bool _isSameDay(DateTime a, DateTime b) {
@@ -42,7 +44,7 @@ class WeeklyGridView extends ConsumerWidget {
     final dayNames = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek'];
     final dayDates = List.generate(5, (i) => currentWeekMonday.add(Duration(days: i)));
 
-    // Calculate maximum lesson number to display (at least 6, up to 8)
+    // Calculate maximum lesson number to display (at least 6, up to 10)
     int maxLessonNumber = 6;
     for (final dayLessons in weekMap.values) {
       for (final slot in dayLessons) {
@@ -51,7 +53,7 @@ class WeeklyGridView extends ConsumerWidget {
         }
       }
     }
-    final timeSlots = defaultTimeSlots.take(maxLessonNumber.clamp(6, 8)).toList();
+    final timeSlots = defaultTimeSlots.take(maxLessonNumber.clamp(6, 10)).toList();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -511,18 +513,67 @@ class WeeklyGridView extends ConsumerWidget {
 
                 // Bottom: Teacher or Exam tag or Topic
                 if (isExam) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      slot.eventTitle ?? slot.eventType ?? 'Sprawdzian',
-                      style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w800, color: Colors.white),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.assignment_late_rounded,
+                              size: 9,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 3),
+                            Text(
+                              slot.eventType ?? 'Sprawdzian',
+                              style: const TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (slot.eventTitle != null &&
+                          slot.eventTitle!.isNotEmpty &&
+                          slot.eventTitle!.toLowerCase() !=
+                              (slot.eventType ?? 'sprawdzian').toLowerCase()) ...[
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            slot.eventTitle!,
+                            style: const TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ] else ...[
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            slot.substituteTeacher ?? slot.teacher,
+                            style: const TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ] else if (isCanceled) ...[
                   const Text(

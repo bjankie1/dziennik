@@ -72,12 +72,13 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 260921-9sd | Uporządkowanie kalkulacji frekwencji: dual ring gauge i spójne wskaźniki obecności | 2026-09-21 | HEAD | [260921-9sd-uporzadkowanie-kalkulacji-frekwencji-dua](./quick/260921-9sd-uporzadkowanie-kalkulacji-frekwencji-dua/) |
 | 260921-msg | Naprawa licznika nieprzeczytanych wiadomości oraz dodanie kafelków wiadomości na pulpicie mobilnym | 2026-09-21 | HEAD | [260921-msg-licznik-nieprzeczytanych-i-kafelki-wiadomosci-mobile](./quick/260921-msg-licznik-nieprzeczytanych-i-kafelki-wiadomosci-mobile/) |
 | 260923-l4t | Dodanie zadania nauki dla Oskara bezpośrednio z kafelka Nadchodzący sprawdzian na Pulpicie | 2026-09-23 | 3e5d25d | [260923-l4t-dodanie-zadania-nauki-dla-oskara-bezpo-r](./quick/260923-l4t-dodanie-zadania-nauki-dla-oskara-bezpo-r/) |
-| 260923-osk | Naprawa braku planu lekcji na koncie Oskara (rozwiązywanie primaryLogin 11010033 dla roli ucznia) | 2026-09-23 | HEAD | [260923-osk-naprawa-braku-planu-lekcji-na-koncie-oskara](./quick/260923-osk-naprawa-braku-planu-lekcji-na-koncie-oskara/) |
+| 260923-osk | Naprawa braku planu lekcji na koncie Oskara (rozwiązywanie primaryLogin 11010033 dla roli ucznia) | 2026-09-23 | 15ce87d | [260923-osk-naprawa-braku-planu-lekcji-na-koncie-oskara](./quick/260923-osk-naprawa-braku-planu-lekcji-na-koncie-oskara/) |
+| 260923-spr | Oznaczenie sprawdzianu w planie lekcji (chip na lekcji + szczegóły i zakres w modalu) | 2026-09-23 | HEAD | [260923-spr-sprawdzian-w-planie-lekcji-chip-i-szczegoly](./quick/260923-spr-sprawdzian-w-planie-lekcji-chip-i-szczegoly/) |
 
 ## Session
 
-**Last session:** 2026-09-23T15:39:00Z
-**Stopped at:** Completed Quick Task 260923-osk (Naprawa braku planu lekcji na koncie Oskara)
+**Last session:** 2026-09-23T15:55:00Z
+**Stopped at:** Completed Quick Task 260923-spr (Oznaczenie sprawdzianu w planie lekcji: chip na lekcji + szczegóły i zakres w modalu)
 **Resume file:** None
 Last activity: 2026-09-23
 
@@ -85,5 +86,5 @@ Last activity: 2026-09-23
 
 Phase: 15 (Moduł zadań (Smart To-Do) i widżet na Pulpicie) — COMPLETE (3/3 plans completed)
 Next Phase: 16 (Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości)
-Status: Phase 15 completed + Quick Tasks 260923-l4t & 260923-osk deployed. Ready for Phase 16.
-Last activity: 2026-09-23 — Completed Quick Task 260923-osk
+Status: Phase 15 completed + Quick Tasks 260923-l4t, 260923-osk & 260923-spr deployed. Ready for Phase 16.
+Last activity: 2026-09-23 — Completed Quick Task 260923-spr
