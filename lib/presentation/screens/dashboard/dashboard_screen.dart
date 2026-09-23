@@ -615,117 +615,130 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
         if (exam != null) ...[
           const SizedBox(height: 20),
+          _buildUpcomingExamCard(context, exam),
+        ],
+      ],
+    );
+  }
 
-          // Nadchodzący Sprawdzian Card
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppColors.outlineVariant.withValues(alpha: 0.3),
+  Widget _buildUpcomingExamCard(BuildContext context, UpcomingEvent exam) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.outlineVariant.withValues(alpha: 0.3),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x04000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.timer_outlined, size: 18, color: AppColors.tertiary),
+                  SizedBox(width: 8),
+                  Text(
+                    "Nadchodzący sprawdzian",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ],
               ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x04000000),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.tertiaryFixed,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
+                child: Text(
+                  exam.daysRemaining == 0
+                      ? "Dzisiaj"
+                      : exam.daysRemaining == 1
+                          ? "Jutro"
+                          : "Za ${exam.daysRemaining} dni",
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.onTertiaryFixed,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(12),
             ),
-            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.timer_outlined, size: 18, color: AppColors.tertiary),
-                        SizedBox(width: 8),
-                        Text(
-                          "Nadchodzący sprawdzian",
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.tertiaryFixed,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                    Expanded(
                       child: Text(
-                        exam.daysRemaining == 0
-                            ? "Dzisiaj"
-                            : exam.daysRemaining == 1
-                                ? "Jutro"
-                                : "Za ${exam.daysRemaining} dni",
+                        "${exam.subject} (${exam.type.toLowerCase()})",
                         style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.onTertiaryFixed,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
                         ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      DateFormat("d MMMM", "pl_PL").format(exam.date),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.onSurfaceVariant,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 4),
+                Text(
+                  "Zakres: ${exam.title}",
+                  style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                ),
+                if (exam.room.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    exam.room,
+                    style: const TextStyle(fontSize: 11, color: AppColors.outline),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              "${exam.subject} (${exam.type.toLowerCase()})",
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.onSurface,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Text(
-                            DateFormat("d MMMM", "pl_PL").format(exam.date),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Zakres: ${exam.title}",
-                        style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                      ),
-                      if (exam.room.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          exam.room,
-                          style: const TextStyle(fontSize: 11, color: AppColors.outline),
-                        ),
-                      ],
-                      const SizedBox(height: 8),
-                      InkWell(
-                        onTap: () {
-                          final dateStr = DateFormat('yyyy-MM-dd').format(exam.date);
-                          context.go('/plan-lekcji?data=$dateStr');
-                        },
-                        child: const Row(
+                ],
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    InkWell(
+                      onTap: () {
+                        final dateStr = DateFormat('yyyy-MM-dd').format(exam.date);
+                        context.go('/plan-lekcji?data=$dateStr');
+                      },
+                      borderRadius: BorderRadius.circular(6),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.calendar_month, size: 14, color: AppColors.primary),
@@ -741,14 +754,166 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    _buildExamStudyTaskButton(context, exam),
+                  ],
                 ),
               ],
             ),
           ),
         ],
-      ],
+      ),
+    );
+  }
+
+  Widget _buildExamStudyTaskButton(BuildContext context, UpcomingEvent exam) {
+    final examDateStr = DateFormat('yyyy-MM-dd').format(exam.date);
+    final examSourceId = 'exam_${exam.subject}_$examDateStr';
+    final tasksAsync = ref.watch(tasksStreamProvider);
+    final existingTask = tasksAsync.value
+        ?.where((t) => t.sourceId == examSourceId)
+        .firstOrNull;
+
+    if (existingTask != null) {
+      final isDone = existingTask.isCompleted;
+      return Material(
+        color: isDone
+            ? AppColors.secondaryContainer
+            : AppColors.secondaryContainer.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: () => TaskFormModal.show(context, existingTask: existingTask),
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isDone ? Icons.check_circle_rounded : Icons.task_alt_rounded,
+                  size: 14,
+                  color: AppColors.onSecondaryContainer,
+                ),
+                const SizedBox(width: 5),
+                Text(
+                  isDone
+                      ? "Oskar wykonał zadanie!"
+                      : "Zadanie dla Oskara dodane",
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.onSecondaryContainer,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Material(
+      color: AppColors.primaryContainer.withValues(alpha: 0.55),
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: () async {
+          final user = ref.read(appUserProvider);
+          final isStudent = user?.isStudent ?? false;
+          final familyId = user?.familyId ?? 'jankiewicz_family';
+          final actorRole = isStudent ? 'student' : 'parent';
+          final actorName = isStudent
+              ? 'Oskar'
+              : ((user?.displayName.trim().isNotEmpty ?? false)
+                  ? user!.displayName.trim()
+                  : 'Tata');
+
+          final examDay = DateTime(exam.date.year, exam.date.month, exam.date.day);
+          final dayBefore = examDay.subtract(const Duration(days: 1));
+          final today = SchoolTask.todayStart;
+          final targetDueDate = dayBefore.isBefore(today) ? today : dayBefore;
+
+          final formattedExamDate = DateFormat('d MMMM yyyy', 'pl_PL').format(exam.date);
+          final descLines = <String>[
+            'Zakres: ${exam.title}',
+            if (exam.room.isNotEmpty) exam.room,
+            'Termin sprawdzianu: $formattedExamDate',
+          ];
+
+          try {
+            final createdTask = await ref.read(tasksRepositoryProvider).addTask(
+                  familyId: familyId,
+                  title: 'Nauczyć się: ${exam.subject} (${exam.type.toLowerCase()})',
+                  description: descLines.join('\n'),
+                  dueDate: targetDueDate,
+                  priority: TaskPriority.high,
+                  assignedTo: TaskAssignee.student,
+                  subject: exam.subject,
+                  createdByRole: actorRole,
+                  createdByName: actorName,
+                  source: TaskSource.exam,
+                  sourceId: examSourceId,
+                  metadata: {
+                    'examDate': examDateStr,
+                    'examType': exam.type,
+                    'examScope': exam.title,
+                  },
+                );
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Dodano zadanie dla Oskara: Nauczyć się (${exam.subject})',
+                  ),
+                  behavior: SnackBarBehavior.floating,
+                  action: SnackBarAction(
+                    label: 'Edytuj',
+                    onPressed: () {
+                      TaskFormModal.show(context, existingTask: createdTask);
+                    },
+                  ),
+                ),
+              );
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Nie udało się dodać zadania: $e'),
+                  backgroundColor: AppColors.error,
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            }
+          }
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.3),
+            ),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_task_rounded, size: 14, color: AppColors.primary),
+              SizedBox(width: 5),
+              Text(
+                "+ Zadanie dla Oskara: Naucz się",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -2704,6 +2869,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   Widget _buildMobileDashboard(BuildContext context) {
     final studentAsync = ref.watch(studentProfileProvider);
     final scheduleAsync = ref.watch(todayScheduleProvider);
+    final upcomingExam = ref.watch(upcomingExamProvider).value;
     final recentGradesAsync = ref.watch(recentGradesProvider);
     final messagesAsync = ref.watch(messagesProvider);
     final unreadMessagesCount = ref.watch(unreadMessagesCountProvider);
@@ -3290,6 +3456,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ],
               ),
             ),
+            if (upcomingExam != null) ...[
+              const SizedBox(height: 16),
+              _buildUpcomingExamCard(context, upcomingExam),
+            ],
             const SizedBox(height: 16),
             _buildMobileTasksCard(context),
             const SizedBox(height: 16),

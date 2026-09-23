@@ -71,11 +71,12 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 260920-trm | Integracja terminarza z planem lekcji, nawigacja do tygodnia sprawdzianu, naprawa zastępstwa z j. polskiego | 2026-09-20 | a0d9d9c | [260920-trm-terminarz-integracja-kartkowka-zastepstwa](./quick/260920-trm-terminarz-integracja-kartkowka-zastepstwa/) |
 | 260921-9sd | Uporządkowanie kalkulacji frekwencji: dual ring gauge i spójne wskaźniki obecności | 2026-09-21 | HEAD | [260921-9sd-uporzadkowanie-kalkulacji-frekwencji-dua](./quick/260921-9sd-uporzadkowanie-kalkulacji-frekwencji-dua/) |
 | 260921-msg | Naprawa licznika nieprzeczytanych wiadomości oraz dodanie kafelków wiadomości na pulpicie mobilnym | 2026-09-21 | HEAD | [260921-msg-licznik-nieprzeczytanych-i-kafelki-wiadomosci-mobile](./quick/260921-msg-licznik-nieprzeczytanych-i-kafelki-wiadomosci-mobile/) |
+| 260923-l4t | Dodanie zadania nauki dla Oskara bezpośrednio z kafelka Nadchodzący sprawdzian na Pulpicie | 2026-09-23 | HEAD | [260923-l4t-dodanie-zadania-nauki-dla-oskara-bezpo-r](./quick/260923-l4t-dodanie-zadania-nauki-dla-oskara-bezpo-r/) |
 
 ## Session
 
-**Last session:** 2026-09-23T14:40:00Z
-**Stopped at:** Completed 15-03-PLAN.md (Wave 3: Dashboard Bento Grid Widget „Zadania na dziś”)
+**Last session:** 2026-09-23T15:19:00Z
+**Stopped at:** Completed Quick Task 260923-l4t (Dodanie zadania nauki dla Oskara z kafelka Nadchodzący sprawdzian)
 **Resume file:** None
 Last activity: 2026-09-23
 
@@ -83,5 +84,5 @@ Last activity: 2026-09-23
 
 Phase: 15 (Moduł zadań (Smart To-Do) i widżet na Pulpicie) — COMPLETE (3/3 plans completed)
 Next Phase: 16 (Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości)
-Status: Phase 15 completed (15-01, 15-02, 15-03). Ready for Phase 16.
-Last activity: 2026-09-23 — Completed 15-03-PLAN.md
+Status: Phase 15 completed + Quick Task 260923-l4t deployed. Ready for Phase 16.
+Last activity: 2026-09-23 — Completed Quick Task 260923-l4t

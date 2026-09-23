@@ -9,12 +9,42 @@ import '../../../providers/tasks_provider.dart';
 /// Modal for creating, viewing, and editing a shared family task (`REQ-TASK-01`, `D-01`, `D-02`, `D-03`, `D-06`).
 class TaskFormModal extends ConsumerStatefulWidget {
   final SchoolTask? existingTask;
+  final String? initialTitle;
+  final String? initialDescription;
+  final String? initialSubject;
+  final TaskAssignee? initialAssignedTo;
+  final TaskPriority? initialPriority;
+  final DateTime? initialDueDate;
+  final TaskSource? initialSource;
+  final String? initialSourceId;
+  final Map<String, dynamic>? initialMetadata;
 
-  const TaskFormModal({super.key, this.existingTask});
+  const TaskFormModal({
+    super.key,
+    this.existingTask,
+    this.initialTitle,
+    this.initialDescription,
+    this.initialSubject,
+    this.initialAssignedTo,
+    this.initialPriority,
+    this.initialDueDate,
+    this.initialSource,
+    this.initialSourceId,
+    this.initialMetadata,
+  });
 
   static Future<void> show(
     BuildContext context, {
     SchoolTask? existingTask,
+    String? initialTitle,
+    String? initialDescription,
+    String? initialSubject,
+    TaskAssignee? initialAssignedTo,
+    TaskPriority? initialPriority,
+    DateTime? initialDueDate,
+    TaskSource? initialSource,
+    String? initialSourceId,
+    Map<String, dynamic>? initialMetadata,
   }) {
     return showDialog<void>(
       context: context,
@@ -24,7 +54,18 @@ class TaskFormModal extends ConsumerStatefulWidget {
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 540),
-          child: TaskFormModal(existingTask: existingTask),
+          child: TaskFormModal(
+            existingTask: existingTask,
+            initialTitle: initialTitle,
+            initialDescription: initialDescription,
+            initialSubject: initialSubject,
+            initialAssignedTo: initialAssignedTo,
+            initialPriority: initialPriority,
+            initialDueDate: initialDueDate,
+            initialSource: initialSource,
+            initialSourceId: initialSourceId,
+            initialMetadata: initialMetadata,
+          ),
         ),
       ),
     );
@@ -64,13 +105,22 @@ class _TaskFormModalState extends ConsumerState<TaskFormModal> {
   void initState() {
     super.initState();
     final existing = widget.existingTask;
-    _titleController = TextEditingController(text: existing?.title ?? '');
-    _descriptionController =
-        TextEditingController(text: existing?.description ?? '');
-    _subjectController = TextEditingController(text: existing?.subject ?? '');
-    _assignedTo = existing?.assignedTo ?? TaskAssignee.student;
-    _priority = existing?.priority ?? TaskPriority.medium;
-    _dueDate = existing?.dueDate ?? SchoolTask.todayStart;
+    _titleController = TextEditingController(
+      text: existing?.title ?? widget.initialTitle ?? '',
+    );
+    _descriptionController = TextEditingController(
+      text: existing?.description ?? widget.initialDescription ?? '',
+    );
+    _subjectController = TextEditingController(
+      text: existing?.subject ?? widget.initialSubject ?? '',
+    );
+    _assignedTo = existing?.assignedTo ??
+        widget.initialAssignedTo ??
+        TaskAssignee.student;
+    _priority =
+        existing?.priority ?? widget.initialPriority ?? TaskPriority.medium;
+    _dueDate =
+        existing?.dueDate ?? widget.initialDueDate ?? SchoolTask.todayStart;
   }
 
   @override
@@ -165,6 +215,9 @@ class _TaskFormModalState extends ConsumerState<TaskFormModal> {
           subject: trimmedSubject.isNotEmpty ? trimmedSubject : null,
           createdByRole: actorRole,
           createdByName: actorName,
+          source: widget.initialSource ?? TaskSource.manual,
+          sourceId: widget.initialSourceId,
+          metadata: widget.initialMetadata,
         );
       }
 
