@@ -30,8 +30,63 @@ enum JustificationRequestStatus {
   }
 }
 
+/// Represents a single Q&A entry in a justification rejection thread (REQ-ROLE-04, D-02).
+class JustificationDialogEntry {
+  final String senderRole; // 'student' | 'parent'
+  final String senderName;
+  final String message;
+  final DateTime timestamp;
+
+  const JustificationDialogEntry({
+    required this.senderRole,
+    required this.senderName,
+    required this.message,
+    required this.timestamp,
+  });
+
+  bool get isStudent => senderRole.toLowerCase() == 'student';
+  bool get isParent => senderRole.toLowerCase() == 'parent';
+
+  factory JustificationDialogEntry.fromJson(Map<String, dynamic> json) {
+    DateTime parseDate(dynamic d) {
+      if (d is DateTime) return d;
+      if (d is String) return DateTime.tryParse(d) ?? DateTime.now();
+      return DateTime.now();
+    }
+
+    return JustificationDialogEntry(
+      senderRole: json['senderRole']?.toString() ?? 'parent',
+      senderName: json['senderName']?.toString() ?? '',
+      message: json['message']?.toString() ?? '',
+      timestamp: parseDate(json['timestamp']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'senderRole': senderRole,
+      'senderName': senderName,
+      'message': message,
+      'timestamp': timestamp.toIso8601String(),
+    };
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is JustificationDialogEntry &&
+          runtimeType == other.runtimeType &&
+          senderRole == other.senderRole &&
+          message == other.message &&
+          timestamp == other.timestamp;
+
+  @override
+  int get hashCode => senderRole.hashCode ^ message.hashCode ^ timestamp.hashCode;
+}
+
 /// Domain model representing an excuse request initiated by a student
-/// and awaiting parent approval via 4-digit PIN (REQ-ROLE-02, D-03, D-04).
+/// and awaiting parent approval via 4-digit PIN (REQ-ROLE-02, D-03, D-04)
+/// or two-way dialogue on rejection (REQ-ROLE-04).
 class JustificationRequest {
   final String id;
   final String studentLogin;
@@ -48,6 +103,7 @@ class JustificationRequest {
   final DateTime? reviewedAt;
   final String? reviewedBy;
   final String? rejectionReason;
+  final List<JustificationDialogEntry> dialogHistory;
 
   const JustificationRequest({
     required this.id,
@@ -65,6 +121,7 @@ class JustificationRequest {
     this.reviewedAt,
     this.reviewedBy,
     this.rejectionReason,
+    this.dialogHistory = const [],
   });
 
   factory JustificationRequest.fromJson(Map<String, dynamic> json, [String? id]) {
@@ -90,6 +147,14 @@ class JustificationRequest {
         ? rawRecordIds.map((e) => e.toString()).toList()
         : <String>[];
 
+    final rawHistory = json['dialogHistory'];
+    final dialogHistory = rawHistory is List
+        ? rawHistory
+            .whereType<Map>()
+            .map((e) => JustificationDialogEntry.fromJson(Map<String, dynamic>.from(e)))
+            .toList()
+        : <JustificationDialogEntry>[];
+
     return JustificationRequest(
       id: id ?? (json['id']?.toString() ?? ''),
       studentLogin: json['studentLogin']?.toString() ?? '',
@@ -106,6 +171,7 @@ class JustificationRequest {
       reviewedAt: parseDate(json['reviewedAt']),
       reviewedBy: json['reviewedBy']?.toString(),
       rejectionReason: json['rejectionReason']?.toString(),
+      dialogHistory: dialogHistory,
     );
   }
 
@@ -126,6 +192,7 @@ class JustificationRequest {
       'reviewedAt': reviewedAt?.toIso8601String(),
       'reviewedBy': reviewedBy,
       'rejectionReason': rejectionReason,
+      'dialogHistory': dialogHistory.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -145,6 +212,7 @@ class JustificationRequest {
     DateTime? reviewedAt,
     String? reviewedBy,
     String? rejectionReason,
+    List<JustificationDialogEntry>? dialogHistory,
   }) {
     return JustificationRequest(
       id: id ?? this.id,
@@ -162,6 +230,7 @@ class JustificationRequest {
       reviewedAt: reviewedAt ?? this.reviewedAt,
       reviewedBy: reviewedBy ?? this.reviewedBy,
       rejectionReason: rejectionReason ?? this.rejectionReason,
+      dialogHistory: dialogHistory ?? this.dialogHistory,
     );
   }
 

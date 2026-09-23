@@ -608,6 +608,27 @@ exports.reviewJustificationRequest = onRequest(
         }
       }
 
+      // If rejected, automatically publish justification card into family chat (D-02)
+      if (action === "reject") {
+        try {
+          const { buildJustificationChatCard } = require("./src/chat_service");
+          const cardPayload = buildJustificationChatCard(
+            { id: snap.id, ...reviewResult.updatedRequest },
+            reviewResult.updatedRequest.rejectionReason,
+            parentLogin || "Rodzic"
+          );
+          const familyId = existingData.familyId || "jankiewicz_family";
+          await admin
+            .firestore()
+            .collection("family_chats")
+            .doc(familyId)
+            .collection("messages")
+            .add(cardPayload);
+        } catch (chatCardErr) {
+          console.warn("Failed to publish justification card to family chat:", chatCardErr.message);
+        }
+      }
+
       await docRef.update(reviewResult.updatedRequest);
 
       return res.status(200).json({
@@ -620,6 +641,169 @@ exports.reviewJustificationRequest = onRequest(
     } catch (error) {
       console.error("reviewJustificationRequest error:", error);
       return res.status(500).json({ error: error.message || "Błąd podczas rozpatrywania wniosku." });
+    }
+  }
+);
+
+/**
+ * Endpoint for students to respond to a rejected justification request (REQ-ROLE-04, D-02).
+ * Re-submits the request for parental approval with extra explanations.
+ */
+exports.respondJustificationRequest = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 30,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const { processStudentResponse } = require("./src/justification_service");
+      const { requestId, responseText, studentLogin, studentName } = req.body || {};
+
+      if (!requestId) {
+        return res.status(400).json({ error: "Brak identyfikatora wniosku (requestId)." });
+      }
+
+      const docRef = admin.firestore().collection("justification_requests").doc(requestId);
+      const snap = await docRef.get();
+
+      if (!snap.exists) {
+        return res.status(404).json({ error: "Wniosek o podanym identyfikatorze nie istnieje." });
+      }
+
+      const existingData = snap.data();
+      const responseResult = processStudentResponse(existingData, {
+        responseText,
+        studentLogin,
+        studentName
+      });
+
+      if (!responseResult.success) {
+        return res.status(responseResult.statusCode).json({ error: responseResult.error });
+      }
+
+      await docRef.update(responseResult.updatedRequest);
+
+      // Post student clarification directly into family chat (D-02)
+      try {
+        const { buildChatMessagePayload, CHAT_MESSAGE_TYPE } = require("./src/chat_service");
+        const familyId = existingData.familyId || "jankiewicz_family";
+        const replyPayload = buildChatMessagePayload({
+          familyId,
+          senderId: studentLogin || "student_oskar",
+          senderName: studentName || "Oskar",
+          senderRole: "student",
+          text: `Wyjaśnienie do prośby o usprawiedliwienie: ${responseText.trim()}`,
+          type: CHAT_MESSAGE_TYPE.TEXT,
+          metadata: {
+            requestId,
+            action: "student_justification_response"
+          }
+        });
+        await admin
+          .firestore()
+          .collection("family_chats")
+          .doc(familyId)
+          .collection("messages")
+          .add(replyPayload);
+      } catch (chatErr) {
+        console.warn("Failed to publish student clarification to family chat:", chatErr.message);
+      }
+
+      return res.status(200).json({
+        success: true,
+        request: {
+          id: snap.id,
+          ...responseResult.updatedRequest
+        }
+      });
+    } catch (error) {
+      console.error("respondJustificationRequest error:", error);
+      return res.status(500).json({ error: error.message || "Błąd podczas odpowiadania na wniosek." });
+    }
+  }
+);
+
+/**
+ * Endpoint to send a real-time message in the family chat (REQ-CHAT-01, D-01).
+ */
+exports.sendFamilyChatMessage = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 30,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const { buildChatMessagePayload } = require("./src/chat_service");
+      const { familyId, senderId, senderName, senderRole, text, type, metadata } = req.body || {};
+
+      const payload = buildChatMessagePayload({
+        familyId,
+        senderId,
+        senderName,
+        senderRole,
+        text,
+        type,
+        metadata
+      });
+
+      const docRef = await admin
+        .firestore()
+        .collection("family_chats")
+        .doc(payload.familyId)
+        .collection("messages")
+        .add(payload);
+
+      return res.status(201).json({
+        success: true,
+        message: {
+          id: docRef.id,
+          ...payload
+        }
+      });
+    } catch (error) {
+      console.error("sendFamilyChatMessage error:", error);
+      return res.status(400).json({ error: error.message || "Błąd wysyłania wiadomości w czacie rodzinnym." });
+    }
+  }
+);
+
+/**
+ * Retrieve messages for a given family chat thread (REQ-CHAT-01).
+ */
+exports.getFamilyChatMessages = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 30,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const familyId = req.query.familyId || req.body?.familyId || "jankiewicz_family";
+      const limitVal = Math.min(100, Math.max(1, parseInt(req.query.limit || req.body?.limit || "50", 10)));
+
+      const snap = await admin
+        .firestore()
+        .collection("family_chats")
+        .doc(familyId)
+        .collection("messages")
+        .orderBy("createdAt", "asc")
+        .limitToLast(limitVal)
+        .get();
+
+      const messages = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+
+      return res.status(200).json({ messages });
+    } catch (error) {
+      console.error("getFamilyChatMessages error:", error);
+      return res.status(500).json({ error: error.message || "Błąd pobierania wiadomości czatu." });
     }
   }
 );

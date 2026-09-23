@@ -127,16 +127,28 @@ function processParentReview(requestDoc, reviewData) {
   }
 
   if (action === "reject") {
+    const reasonText = (rejectionReason && String(rejectionReason).trim()) || "Odrzucone przez rodzica";
+    const parent = (parentLogin && String(parentLogin).trim()) || "parent";
+    const existingHistory = Array.isArray(requestDoc.dialogHistory) ? requestDoc.dialogHistory : [];
+    const dialogEntry = {
+      senderRole: "parent",
+      senderName: parent,
+      message: reasonText,
+      timestamp: new Date().toISOString()
+    };
+
     return {
       success: true,
       statusCode: 200,
       updatedRequest: {
         ...requestDoc,
         status: JUSTIFICATION_STATUS.REJECTED,
-        rejectionReason: (rejectionReason && String(rejectionReason).trim()) || "Odrzucone przez rodzica",
+        rejectionReason: reasonText,
         reviewedAt: new Date().toISOString(),
-        reviewedBy: (parentLogin && String(parentLogin).trim()) || "parent"
-      }
+        reviewedBy: parent,
+        dialogHistory: [...existingHistory, dialogEntry]
+      },
+      dialogEntry
     };
   }
 
@@ -144,6 +156,67 @@ function processParentReview(requestDoc, reviewData) {
     success: false,
     statusCode: 400,
     error: "Nieobsługiwana akcja (dozwolone: 'approve' lub 'reject')."
+  };
+}
+
+/**
+ * Validates and applies a student's response to an excuse rejection (REQ-ROLE-04).
+ * Transitions status back to pending_parent_approval and appends to dialogHistory.
+ */
+function processStudentResponse(requestDoc, responseData) {
+  if (!requestDoc || typeof requestDoc !== "object") {
+    return {
+      success: false,
+      statusCode: 404,
+      error: "Wniosek o usprawiedliwienie nie istnieje."
+    };
+  }
+
+  if (requestDoc.status !== JUSTIFICATION_STATUS.REJECTED) {
+    return {
+      success: false,
+      statusCode: 400,
+      error: `Odpowiedź na wniosek jest możliwa tylko dla odrzuconych wniosków (aktualny status: ${requestDoc.status}).`
+    };
+  }
+
+  const { responseText, studentLogin, studentName } = responseData || {};
+  const trimmed = typeof responseText === "string" ? responseText.trim() : "";
+  if (!trimmed) {
+    return {
+      success: false,
+      statusCode: 400,
+      error: "Treść odpowiedzi ucznia nie może być pusta."
+    };
+  }
+  if (trimmed.length > 500) {
+    return {
+      success: false,
+      statusCode: 400,
+      error: "Treść odpowiedzi nie może przekraczać 500 znaków."
+    };
+  }
+
+  const student = (studentName && String(studentName).trim()) || requestDoc.studentName || "Oskar Jankiewicz";
+  const existingHistory = Array.isArray(requestDoc.dialogHistory) ? requestDoc.dialogHistory : [];
+  const dialogEntry = {
+    senderRole: "student",
+    senderName: student,
+    message: trimmed,
+    timestamp: new Date().toISOString()
+  };
+
+  return {
+    success: true,
+    statusCode: 200,
+    updatedRequest: {
+      ...requestDoc,
+      status: JUSTIFICATION_STATUS.PENDING_PARENT_APPROVAL,
+      reviewedAt: null,
+      reviewedBy: null,
+      dialogHistory: [...existingHistory, dialogEntry]
+    },
+    dialogEntry
   };
 }
 
@@ -173,5 +246,6 @@ module.exports = {
   VALID_DEFAULT_PIN,
   sanitizeStudentRequest,
   processParentReview,
+  processStudentResponse,
   formatLibrusJustificationPayload
 };
