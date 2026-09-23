@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:edusync/domain/models/school_task.dart';
+import 'package:edusync/presentation/providers/tasks_provider.dart';
 
 void main() {
   group('SchoolTask serialization & attribution (D-01, D-02)', () {
@@ -259,6 +260,53 @@ void main() {
       expect(sortedForStudent[2].id, equals('today_student_med'));
       expect(sortedForStudent[3].id, equals('today_parent_high'));
       expect(sortedForStudent[4].id, equals('upcoming_low'));
+    });
+  });
+
+  group('TasksRepository test-safe fallback & D-03 deleteTask guard', () {
+    test('seeds 4 starter tasks without Firebase and blocks student deletion of parent task', () async {
+      final repo = TasksRepository();
+      final initial = await repo.watchTasks('jankiewicz_family').first;
+
+      expect(initial.length, equals(4));
+
+      final parentTask = initial.firstWhere((t) => t.createdByRole == 'parent');
+      final studentTask = initial.firstWhere((t) => t.createdByRole == 'student');
+
+      // Student cannot delete parent-created task (D-03)
+      final deletedByStudent = await repo.deleteTask(
+        'jankiewicz_family',
+        parentTask,
+        isStudent: true,
+      );
+      expect(deletedByStudent, isFalse);
+      expect(repo.currentFallbackTasks.any((t) => t.id == parentTask.id), isTrue);
+
+      // Student CAN toggle completion on parent-created task (D-03, D-08)
+      await repo.toggleTaskCompletion(
+        'jankiewicz_family',
+        parentTask,
+        isCompleted: true,
+        actorRole: 'student',
+        actorName: 'Oskar',
+      );
+      final updatedParentTask = repo.currentFallbackTasks.firstWhere(
+        (t) => t.id == parentTask.id,
+      );
+      expect(updatedParentTask.isCompleted, isTrue);
+      expect(
+        updatedParentTask.attributionLabel,
+        equals('Dodał: Tata • Ukończył: Oskar'),
+      );
+
+      // Student CAN delete their own task
+      final deletedOwn = await repo.deleteTask(
+        'jankiewicz_family',
+        studentTask,
+        isStudent: true,
+      );
+      expect(deletedOwn, isTrue);
+      expect(repo.currentFallbackTasks.any((t) => t.id == studentTask.id), isFalse);
     });
   });
 }
