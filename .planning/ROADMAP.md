@@ -67,11 +67,13 @@ Plans:
 3. Powstaje dedykowany moduł Czatu Rodzinnego (Rodzic ↔ Uczeń) w czasie rzeczywistym w Firestore z obsługą konwersacji tekstowych.
 4. Wnioski o usprawiedliwienie mogą być automatycznie podlinkowane lub osadzone w konwersacji czatu jako interaktywne karty.
 
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 14.1 to break down)
+- [ ] 14.1-01-PLAN.md: Backend & Domain Layer for Rejection Dialogue & Family Chat (Wave 1)
+- [ ] 14.1-02-PLAN.md: Two-Way Excuse Rejection Dialogue UI (Wave 2)
+- [ ] 14.1-03-PLAN.md: Real-Time Family Chat & Navigation Integration (Wave 3)
 
 ### Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie
 
