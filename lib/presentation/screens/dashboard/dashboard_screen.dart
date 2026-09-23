@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:intl/intl.dart";
 import "../../../core/theme/app_colors.dart";
+import "../../../core/utils/calendar_export_service.dart";
 import "../../../domain/models/lesson_slot.dart";
 import "../../../domain/models/grade.dart";
 import "../../../domain/models/message_thread.dart";
@@ -726,7 +727,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ],
                 const SizedBox(height: 10),
                 Wrap(
-                  spacing: 12,
+                  spacing: 10,
                   runSpacing: 8,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
@@ -749,6 +750,66 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 fontSize: 12,
                                 color: AppColors.primary,
                                 fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => CalendarExportService.openGoogleCalendar(
+                        context,
+                        CalendarExamEvent.fromUpcomingEvent(exam),
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLowest,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.surfaceContainerHigh),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.event_available_rounded, size: 13, color: AppColors.primary),
+                            SizedBox(width: 4),
+                            Text(
+                              "+ Kalendarz Google",
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.onSurface,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => CalendarExportService.downloadSingleExamIcs(
+                        context,
+                        CalendarExamEvent.fromUpcomingEvent(exam),
+                      ),
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLowest,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.surfaceContainerHigh),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.file_download_outlined, size: 13, color: AppColors.onSurfaceVariant),
+                            SizedBox(width: 3),
+                            Text(
+                              ".ics",
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: AppColors.onSurfaceVariant,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],

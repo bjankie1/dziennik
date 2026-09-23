@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/calendar_export_service.dart';
+import '../../../../domain/models/lesson_slot.dart';
 import '../../../providers/sync_provider.dart';
 import '../../../providers/school_providers.dart';
 
@@ -46,12 +48,57 @@ class WeekNavigatorBar extends ConsumerWidget {
     return '$startDay – $endDay $capitalized';
   }
 
+  List<CalendarExamEvent> _collectExamEvents(WidgetRef ref) {
+    final byKey = <String, CalendarExamEvent>{};
+
+    // 1. From current week's timetable slots (has exact startTime, endTime, room, teacher)
+    final weekMap = ref.read(weekScheduleProvider).value ?? const <int, List<LessonSlot>>{};
+    for (final entry in weekMap.entries) {
+      final dayIndex = entry.key; // 1 = Monday .. 5 = Friday
+      final lessonDate = currentWeekMonday.add(Duration(days: dayIndex - 1));
+      final dateStr =
+          '${lessonDate.year}-${lessonDate.month.toString().padLeft(2, '0')}-${lessonDate.day.toString().padLeft(2, '0')}';
+
+      for (final slot in entry.value) {
+        final hasExam = slot.eventType != null ||
+            (slot.topic != null && slot.topic!.toLowerCase().contains('sprawdzian')) ||
+            (slot.topic != null && slot.topic!.toLowerCase().contains('kartków'));
+        if (hasExam) {
+          final event = CalendarExamEvent.fromLessonSlot(slot, lessonDate);
+          final key = '${dateStr}_${event.subject.toLowerCase()}';
+          byKey[key] = event;
+        }
+      }
+    }
+
+    // 2. From upcomingExamProvider (next upcoming exam across weeks)
+    final upcomingExam = ref.read(upcomingExamProvider).value;
+    if (upcomingExam != null) {
+      final event = CalendarExamEvent.fromUpcomingEvent(upcomingExam);
+      final dateStr =
+          '${event.date.year}-${event.date.month.toString().padLeft(2, '0')}-${event.date.day.toString().padLeft(2, '0')}';
+      final key = '${dateStr}_${event.subject.toLowerCase()}';
+      byKey.putIfAbsent(key, () => event);
+    }
+
+    final list = byKey.values.toList()
+      ..sort((a, b) {
+        final (aStart, _) = a.resolvedStartAndEnd;
+        final (bStart, _) = b.resolvedStartAndEnd;
+        return aStart.compareTo(bStart);
+      });
+    return list;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isCurrent = _isThisCurrentWeek();
     final isCompact = MediaQuery.of(context).size.width < 1100;
     final isNarrow = MediaQuery.of(context).size.width < 500;
     final syncState = ref.watch(syncProvider);
+    // Watch providers so data is fresh when user clicks iCal export
+    ref.watch(upcomingExamProvider);
+    ref.watch(weekScheduleProvider);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -120,10 +167,30 @@ class WeekNavigatorBar extends ConsumerWidget {
                 ),
               ),
 
-              // Right: Action buttons (Drukuj, iCal)
+              // Right: Action buttons (Eksport iCal / Google, Drukuj, Synchronizuj)
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      final events = _collectExamEvents(ref);
+                      CalendarExportService.showBulkExportDialog(context, events);
+                    },
+                    icon: const Icon(Icons.event_available_rounded, size: 15, color: AppColors.primary),
+                    label: Text(
+                      isCompact ? 'iCal' : 'Eksport iCal / Google',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      backgroundColor: AppColors.primaryFixed.withValues(alpha: 0.35),
+                      side: BorderSide(color: AppColors.primary.withValues(alpha: 0.35)),
+                      padding: EdgeInsets.symmetric(horizontal: isCompact ? 8 : 12, vertical: 8),
+                      minimumSize: const Size(0, 34),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(

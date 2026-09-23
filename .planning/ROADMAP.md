@@ -28,7 +28,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 14.1: Czat rodzinny i dwukierunkowy dialog usprawiedliwień** (INSERTED) — Komunikator rodzinny (Rodzic ↔ Uczeń) w czasie rzeczywistym, bezpośredni przycisk „Odrzuć” z komentarzem rodzica na Pulpicie i we Frekwencji oraz wątek dialogu Q&A i ponownej prośby ucznia. (completed 2026-09-23)
 - [x] **Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie** — Dedykowana podstrona `/zadania` w menu bocznym i nawigacji oraz interaktywny widżet zadań w Bento Grid na Pulpicie z szybkim odhaczaniem. (completed 2026-09-23)
 - [x] **Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości oraz dwukierunkowe linkowanie źródeł** — Trwałe powiązanie zadań ze źródłem (`sourceId` dla sprawdzianów i wiadomości), blokada duplikacji po odświeżeniu strony (F5), bezpośrednie linki do już utworzonych zadań oraz tworzenie zadań z widoku wiadomości (np. opłacenie składki). (completed 2026-09-23)
-- [ ] **Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal** — Przycisk „Dodaj do Kalendarza Google” w kafelkach sprawdzianów i modalu lekcji oraz pobieranie plików kalendarzowych `.ics`.
+- [x] **Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal** — Przycisk „Dodaj do Kalendarza Google” w kafelkach sprawdzianów i modalu lekcji oraz pobieranie plików kalendarzowych `.ics` (w tym zbiorczy eksport wszystkich sprawdzianów). (completed 2026-09-23)
 - [ ] **Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push** — Integracja bota Telegram w Cloud Functions z kodem parowania, natychmiastowe alerty o ocenach/wiadomościach/sprawdzianach oraz powiadomienia Web Push w przeglądarce.
 - [ ] **Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)** — Automatyczny harmonogram Cloud Scheduler w piątki wieczorem generujący i wysyłający raport podsumowujący nadchodzący tydzień przez bota Telegram do rodzica i ucznia.
 
@@ -125,11 +125,12 @@ Plans:
 3. Użytkownik może pobrać zbiorczy plik `.ics` dla wszystkich nadchodzących sprawdzianów w danym miesiącu/semestrze jednym kliknięciem.
 4. Generowanie linków i plików `.ics` działa bezbłędnie na urządzeniach stacjonarnych i mobilnych (obsługa pobierania w przeglądarce).
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 17 to break down)
+- [x] 17-01-PLAN.md: CalendarExportService (Google Calendar URL template + RFC 5545 `.ics` generator with `Europe/Warsaw` & `VALARM`) & Web Interop Helper
+- [x] 17-02-PLAN.md: UI Integration on Dashboard Exam Cards, Lesson Details Modal & Bulk `.ics` Export Dialog in Schedule Screen
 
 ### Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push
 

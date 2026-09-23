@@ -1,27 +1,27 @@
 ---
 gsd_state_version: "1.0"
 milestone: v3.0
-current_phase: 17
-current_phase_name: Eksport sprawdzianów do Kalendarza Google i iCal
-status: completed_phase
-stopped_at: Completed Phase 16 (Source-linked tasks, deduplication across refresh, and smart task creation from messages)
-last_updated: "2026-09-23T16:20:00Z"
+current_phase: 18
+current_phase_name: "Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push"
+status: ready_to_plan
+stopped_at: Completed Phase 17 (Google Calendar & RFC 5545 .ics export on Dashboard, Lesson Details Modal, and Bulk Schedule Export)
+last_updated: "2026-09-23T19:02:00Z"
 last_activity: 2026-09-23
-state_head: b9ea3ee
+state_head: 50e616d
 progress:
   total_phases: 7
-  completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  completed_phases: 5
+  total_plans: 13
+  completed_plans: 13
+  percent: 71
 milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ---
 
 # Project State
 
 **Current Milestone:** Milestone v3.0 (Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia)  
-**Active Phase:** Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal  
-**Status:** Phase 16 verified & completed (4/7 phases completed in v3.0 so far)  
+**Active Phase:** Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push  
+**Status:** Phase 17 verified & completed (5/7 phases completed in v3.0 so far)  
 **Last Updated:** 2026-09-23  
 
 ## Milestone v3.0 Roadmap
@@ -30,7 +30,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - [x] **Phase 14.1**: Czat rodzinny i dwukierunkowy dialog usprawiedliwień (completed 2026-09-23)
 - [x] **Phase 15**: Moduł zadań (Smart To-Do) i widżet na Pulpicie (completed 2026-09-23)
 - [x] **Phase 16**: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości oraz dwukierunkowe linkowanie źródeł (completed 2026-09-23)
-- [ ] **Phase 17**: Eksport sprawdzianów do Kalendarza Google i iCal
+- [x] **Phase 17**: Eksport sprawdzianów do Kalendarza Google i iCal (completed 2026-09-23)
 - [ ] **Phase 18**: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push
 - [ ] **Phase 19**: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/calendar_export_service.dart';
 import '../../../../domain/models/lesson_slot.dart';
 import '../../../../domain/models/attendance_record.dart';
 import '../../../../domain/models/school_task.dart';
@@ -783,130 +784,48 @@ class LessonDetailsModal extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerRight,
-            child: existingTask != null
-                ? Material(
-                    color: existingTask.isCompleted
-                        ? AppColors.secondaryContainer
-                        : AppColors.secondaryContainer.withValues(alpha: 0.8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  Material(
+                    color: AppColors.surfaceContainerLowest,
                     borderRadius: BorderRadius.circular(8),
                     child: InkWell(
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        TaskFormModal.show(context, existingTask: existingTask);
-                      },
+                      onTap: () => CalendarExportService.openGoogleCalendar(
+                        context,
+                        CalendarExamEvent.fromLessonSlot(slot, date),
+                      ),
                       borderRadius: BorderRadius.circular(8),
-                      child: Padding(
+                      child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        child: Row(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              existingTask.isCompleted
-                                  ? Icons.check_circle_rounded
-                                  : Icons.link_rounded,
+                              Icons.event_available_rounded,
                               size: 14,
-                              color: AppColors.onSecondaryContainer,
+                              color: AppColors.primary,
                             ),
-                            const SizedBox(width: 5),
-                            Flexible(
-                              child: Text(
-                                existingTask.isCompleted
-                                    ? '✓ Wykonane: ${existingTask.title} — Otwórz'
-                                    : '✓ Powiązane zadanie: ${existingTask.title} — Otwórz',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.onSecondaryContainer,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  )
-                : Material(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(8),
-                    child: InkWell(
-                      onTap: () async {
-                        final user = ref.read(appUserProvider);
-                        final isStudent = user?.isStudent ?? false;
-                        final familyId = user?.familyId ?? 'jankiewicz_family';
-                        final actorRole = isStudent ? 'student' : 'parent';
-                        final actorName = isStudent
-                            ? 'Oskar'
-                            : ((user?.displayName.trim().isNotEmpty ?? false)
-                                ? user!.displayName.trim()
-                                : 'Tata');
-
-                        final examDay = DateTime(date.year, date.month, date.day);
-                        final dayBefore = examDay.subtract(const Duration(days: 1));
-                        final today = SchoolTask.todayStart;
-                        final targetDueDate = dayBefore.isBefore(today) ? today : dayBefore;
-
-                        final formattedExamDate = DateFormat('d MMMM yyyy', 'pl_PL').format(date);
-                        final descLines = <String>[
-                          'Zakres: $scopeText',
-                          if (teacherName.isNotEmpty) 'Nauczyciel: $teacherName',
-                          'Termin sprawdzianu: $formattedExamDate',
-                        ];
-
-                        final createdTask = await ref.read(tasksRepositoryProvider).addTask(
-                              familyId: familyId,
-                              title: 'Nauczyć się: ${slot.subjectName} (${examTypeLabel.toLowerCase()})',
-                              description: descLines.join('\n'),
-                              dueDate: targetDueDate,
-                              priority: TaskPriority.high,
-                              assignedTo: TaskAssignee.student,
-                              subject: slot.subjectName,
-                              createdByRole: actorRole,
-                              createdByName: actorName,
-                              source: TaskSource.exam,
-                              sourceId: examSourceId,
-                              metadata: {
-                                'examDate': examDateStr,
-                                'examType': examTypeLabel,
-                                'examScope': scopeText,
-                              },
-                            );
-
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Dodano zadanie dla Oskara: Nauczyć się (${slot.subjectName})',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              action: SnackBarAction(
-                                label: 'Edytuj',
-                                onPressed: () {
-                                  TaskFormModal.show(context, existingTask: createdTask);
-                                },
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.add_task_rounded, size: 14, color: Colors.white),
-                            SizedBox(width: 6),
+                            SizedBox(width: 5),
                             Text(
-                              '+ Zadanie dla Oskara: Naucz się',
+                              '+ Kalendarz Google',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: AppColors.primary,
                               ),
                             ),
                           ],
@@ -914,6 +833,177 @@ class LessonDetailsModal extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  Material(
+                    color: AppColors.surfaceContainerLowest,
+                    borderRadius: BorderRadius.circular(8),
+                    child: InkWell(
+                      onTap: () => CalendarExportService.downloadSingleExamIcs(
+                        context,
+                        CalendarExamEvent.fromLessonSlot(slot, date),
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.file_download_outlined,
+                              size: 14,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Pobierz .ics',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              existingTask != null
+                  ? Material(
+                      color: existingTask.isCompleted
+                          ? AppColors.secondaryContainer
+                          : AppColors.secondaryContainer.withValues(alpha: 0.8),
+                      borderRadius: BorderRadius.circular(8),
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          TaskFormModal.show(context, existingTask: existingTask);
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                existingTask.isCompleted
+                                    ? Icons.check_circle_rounded
+                                    : Icons.link_rounded,
+                                size: 14,
+                                color: AppColors.onSecondaryContainer,
+                              ),
+                              const SizedBox(width: 5),
+                              Flexible(
+                                child: Text(
+                                  existingTask.isCompleted
+                                      ? '✓ Wykonane: ${existingTask.title} — Otwórz'
+                                      : '✓ Powiązane zadanie: ${existingTask.title} — Otwórz',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.onSecondaryContainer,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                  : Material(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(8),
+                      child: InkWell(
+                        onTap: () async {
+                          final user = ref.read(appUserProvider);
+                          final isStudent = user?.isStudent ?? false;
+                          final familyId = user?.familyId ?? 'jankiewicz_family';
+                          final actorRole = isStudent ? 'student' : 'parent';
+                          final actorName = isStudent
+                              ? 'Oskar'
+                              : ((user?.displayName.trim().isNotEmpty ?? false)
+                                  ? user!.displayName.trim()
+                                  : 'Tata');
+
+                          final examDay = DateTime(date.year, date.month, date.day);
+                          final dayBefore = examDay.subtract(const Duration(days: 1));
+                          final today = SchoolTask.todayStart;
+                          final targetDueDate = dayBefore.isBefore(today) ? today : dayBefore;
+
+                          final formattedExamDate = DateFormat('d MMMM yyyy', 'pl_PL').format(date);
+                          final descLines = <String>[
+                            'Zakres: $scopeText',
+                            if (teacherName.isNotEmpty) 'Nauczyciel: $teacherName',
+                            'Termin sprawdzianu: $formattedExamDate',
+                          ];
+
+                          final createdTask = await ref.read(tasksRepositoryProvider).addTask(
+                                familyId: familyId,
+                                title: 'Nauczyć się: ${slot.subjectName} (${examTypeLabel.toLowerCase()})',
+                                description: descLines.join('\n'),
+                                dueDate: targetDueDate,
+                                priority: TaskPriority.high,
+                                assignedTo: TaskAssignee.student,
+                                subject: slot.subjectName,
+                                createdByRole: actorRole,
+                                createdByName: actorName,
+                                source: TaskSource.exam,
+                                sourceId: examSourceId,
+                                metadata: {
+                                  'examDate': examDateStr,
+                                  'examType': examTypeLabel,
+                                  'examScope': scopeText,
+                                },
+                              );
+
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Dodano zadanie dla Oskara: Nauczyć się (${slot.subjectName})',
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                                action: SnackBarAction(
+                                  label: 'Edytuj',
+                                  onPressed: () {
+                                    TaskFormModal.show(context, existingTask: createdTask);
+                                  },
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(8),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add_task_rounded, size: 14, color: Colors.white),
+                              SizedBox(width: 6),
+                              Text(
+                                '+ Zadanie dla Oskara: Naucz się',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+            ],
           ),
         ],
       ),
