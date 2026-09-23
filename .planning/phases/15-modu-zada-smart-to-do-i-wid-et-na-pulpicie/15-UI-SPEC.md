@@ -186,7 +186,7 @@ Accent reserved for:
 
 ## UI Considerations
 
-Applicable state considerations resolved: 8 covered, 0 backstop, 0 unresolved
+Applicable state considerations resolved: 10 covered, 0 backstop, 0 unresolved
 
 | Category | Element(s) | Status | Resolution / Reason |
 |----------|------------|--------|---------------------|
@@ -194,8 +194,10 @@ Applicable state considerations resolved: 8 covered, 0 backstop, 0 unresolved
 | loading | `TasksScreen` & Dashboard Bento widget (`StreamProvider`) | ✅ covered | While `tasksStreamProvider` is in `AsyncLoading` state, render a centered `CircularProgressIndicator(color: AppColors.primary)` inside a `16px` rounded surface card without shifting the top Segmented Control Bar or Bento Grid columns. |
 | error | `TasksScreen` & Firestore mutation failures | ✅ covered | Stream errors render the documented Error State copy with a `Spróbuj ponownie` button (`ref.invalidate(tasksStreamProvider)`); failed checkbox or modal writes show a floating `SnackBar` in `AppColors.error`. |
 | populated | Chronological task sections (`Zaległe`, `Dzisiaj`, `Jutro / Nadchodzące`, `Bez terminu`) | ✅ covered | Only non-empty chronological sections are rendered in active tabs so the user never sees empty section headers cluttering the viewport. |
-| zero-one-many | Dashboard Bento `Zadania na dziś` list & Mobile 6-item `NavigationBar` | ✅ covered | Dashboard Bento widget caps visible rows at 5 urgent items and routes overflow via `Zobacz wszystkie (X) →`; Mobile `NavigationBar` uses `LabelBehavior.alwaysShow` with compact `11px` labels so all 6 tabs fit cleanly on 360px+ screens while `Czat Rodzinny` lives in `AppHeader`. |
-| long-text | Task card title, description, and subject pills | ✅ covered | Task card titles wrap up to 2 lines (`maxLines: 2`, `TextOverflow.ellipsis`), descriptions cap at 2 lines in list view and expand fully inside `TaskFormModal`, and metadata pills wrap inside a `Wrap(spacing: 6, runSpacing: 6)` to prevent horizontal overflow on mobile. |
+| partial | Task cards with missing optional fields (`description`, `dueDate`, `subject`, `completedBy`) | ✅ covered | Optional metadata pills (`subject`, `dueDate`, `completedByName`) are conditionally rendered only when non-null/non-empty; tasks without a `dueDate` automatically group under the `Bez terminu` section without broken date formatting. |
+| overflow | `TasksScreen` list scroll & Dashboard Bento `Zadania na dziś` container | ✅ covered | `TasksScreen` uses a full-viewport scrollable `ListView` with `16px` padding; Dashboard Bento widget caps visible items at 5 rows and delegates additional tasks to `/zadania` via `Zobacz wszystkie ({count}) →`. |
+| zero-one-many | Dashboard Bento `Zadania na dziś` list & Mobile 6-item `NavigationBar` | ✅ covered | Dashboard Bento widget caps visible rows at 5 urgent items and routes overflow via `Zobacz wszystkie (X) →`; Mobile `NavigationBar` uses `LabelBehavior.alwaysShow` with `12px` labels so all 6 tabs fit cleanly on 360px+ screens while `Czat Rodzinny` lives in `AppHeader`. |
+| long-text | Task card title, description, and subject pills | ✅ covered | Task card titles wrap up to 2 lines (`maxLines: 2`, `TextOverflow.ellipsis`), descriptions cap at 2 lines in list view and expand fully inside `TaskFormModal`, and metadata pills wrap inside a `Wrap(spacing: 8, runSpacing: 4)` to prevent horizontal overflow on mobile. |
 | role-permissions | Student vs Parent task deletion & editing (`D-03`) | ✅ covered | When `isStudent == true` and `task.createdByRole == 'parent'`, the delete button in both the task card and `TaskFormModal` is hidden/disabled and replaced by the parent-lock badge (`Zadanie zlecone przez Rodzica`), while completion toggle and note editing remain enabled. |
 | optimistic-ui | One-click checkbox completion on Dashboard & `/zadania` (`D-08`) | ✅ covered | Tapping a task checkbox immediately applies the strike-through style and attribution footer (`Ukończył: Oskar` / `Ukończył: Rodzic`) while persisting to Firestore in real time. |
 
@@ -218,6 +220,6 @@ Applicable state considerations resolved: 8 covered, 0 backstop, 0 unresolved
 - [x] Dimension 4 Typography: PASS
 - [x] Dimension 5 Spacing: PASS
 - [x] Dimension 6 Registry Safety: PASS
-- [x] Dimension 7 Inventory Provenance: PASS
+- [x] Dimension 7 Inventory Provenance: FLAG (non-exhaustive Flutter Material 3 SDK inventory)
 
-**Approval:** draft 2026-09-23
+**Approval:** approved 2026-09-23
