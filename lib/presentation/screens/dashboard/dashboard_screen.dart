@@ -980,7 +980,164 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  // --- Bento Card: Zadania na dziś (Desktop Column 2 Top, D-07, D-08) ---
+  // --- Bento Card: Zadania na dziś (Mobile Dashboard below Daily Schedule, D-07, D-08) ---
+  Widget _buildMobileTasksCard(BuildContext context) {
+    final urgentTasks = ref.watch(urgentTasksProvider);
+    final totalActiveCount = ref.watch(totalActiveTasksCountProvider);
+    final overdueCount = urgentTasks.where((t) => t.isOverdue).length;
+    final user = ref.watch(appUserProvider);
+    final isStudent = user?.isStudent ?? false;
+    final familyId = user?.familyId ?? 'jankiewicz_family';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: overdueCount > 0
+              ? AppColors.error.withValues(alpha: 0.35)
+              : AppColors.outlineVariant.withValues(alpha: 0.3),
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x04000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryFixed,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.checklist_rtl_rounded,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Flexible(
+                      child: Text(
+                        "Zadania na dziś",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.onSurface,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: overdueCount > 0
+                            ? AppColors.error
+                            : AppColors.primaryFixed,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        "${urgentTasks.length}",
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: overdueCount > 0
+                              ? AppColors.onError
+                              : AppColors.onPrimaryFixedVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: IconButton.filledTonal(
+                      padding: EdgeInsets.zero,
+                      iconSize: 18,
+                      tooltip: 'Nowe zadanie',
+                      onPressed: () => TaskFormModal.show(context),
+                      icon: const Icon(Icons.add),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  TextButton(
+                    onPressed: () => context.go('/zadania'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: Text(
+                      "Zobacz wszystkie ($totalActiveCount) →",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (urgentTasks.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                "Wszystkie zadania na dziś wykonane! 🎉 Chwila oddechu albo zaplanuj kolejne kroki.",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            )
+          else
+            Column(
+              children: urgentTasks
+                  .map(
+                    (task) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: _buildUrgentTaskRow(
+                        context,
+                        task,
+                        familyId: familyId,
+                        isStudent: isStudent,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+        ],
+      ),
+    );
+  }
   Widget _buildDesktopTasksCard(BuildContext context) {
     final urgentTasks = ref.watch(urgentTasksProvider);
     final totalActiveCount = ref.watch(totalActiveTasksCountProvider);
@@ -2593,6 +2750,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         },
         color: AppColors.primary,
         child: ListView(
+          cacheExtent: 2000.0,
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           children: [
             // Top Academic Status Micro-Bar
@@ -3132,6 +3290,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+            _buildMobileTasksCard(context),
+            const SizedBox(height: 16),
             // Messages & Communications (Mobile)
             Container(
               decoration: BoxDecoration(
