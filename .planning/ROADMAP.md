@@ -93,7 +93,7 @@ Plans:
 
 - [x] 15-01-PLAN.md: Domain Model (`SchoolTask`), Firestore Security Rules & Real-Time `TasksRepository` (Wave 1)
 - [x] 15-02-PLAN.md: `/zadania` Screen (`TasksScreen` + `TaskFormModal`) & 7-Branch Navigation Shell (Wave 2)
-- [ ] 15-03-PLAN.md: Dashboard Bento Grid Widget „Zadania na dziś” in Desktop Column 2 & Mobile (Wave 3)
+- [x] 15-03-PLAN.md: Dashboard Bento Grid Widget „Zadania na dziś” in Desktop Column 2 & Mobile (Wave 3)
 
 ### Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości
 

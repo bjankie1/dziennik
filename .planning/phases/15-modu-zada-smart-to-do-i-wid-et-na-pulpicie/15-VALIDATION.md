@@ -1,9 +1,9 @@
 ---
 phase: "15"
 slug: "modu-zada-smart-to-do-i-wid-et-na-pulpicie"
-status: draft
+status: complete
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: "2026-09-23"
 ---
 
@@ -38,11 +38,11 @@ created: "2026-09-23"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 15-01-01 | 01 | 1 | REQ-TASK-01 | T-15-01 / T-15-02 | `SchoolTask` model, `canBeDeletedBy(isStudent: true)` D-03 parent-task lock, and `firestore.rules` auth guard | unit + static | `flutter analyze && flutter test test/domain/models/school_task_test.dart` | ❌ W0 | ⬜ pending |
-| 15-01-02 | 01 | 1 | REQ-TASK-01 | T-15-02 | `TasksRepository` (`family_tasks/{familyId}/tasks`) with lazy `_db` test safety, `tasksStreamProvider`, and `urgentTasksProvider` | unit + static | `flutter analyze && flutter test test/domain/models/school_task_test.dart` | ❌ W0 | ⬜ pending |
-| 15-02-01 | 02 | 2 | REQ-TASK-01 | T-15-03 | `TasksScreen` (`/zadania`) with Segmented Control Bar, Quick Add bar, chronological sections, and `TaskFormModal` with D-03 lock | static | `flutter analyze` | ✅ | ⬜ pending |
-| 15-02-02 | 02 | 2 | REQ-TASK-01 | — | Routing `/zadania` (Branch 5) & `/czat` (Branch 6) in `app_router.dart`, `AppSidebar` 7 items, Mobile 6-tab `NavigationBar` + `AppHeader` chat badge | widget + static | `flutter analyze && flutter test test/navigation_shell_test.dart` | ✅ | ⬜ pending |
-| 15-03-01 | 03 | 3 | REQ-TASK-02 | — | Dashboard Bento Grid „Zadania na dziś” card in Desktop Column 2 (`_buildDesktopMessagesColumn`) and Mobile Dashboard (`_buildMobileDashboard`) with 1-click completion | widget + static | `flutter analyze && flutter test test/dashboard_screen_test.dart` | ✅ | ⬜ pending |
+| 15-01-01 | 01 | 1 | REQ-TASK-01 | T-15-01 / T-15-02 | `SchoolTask` model, `canBeDeletedBy(isStudent: true)` D-03 parent-task lock, and `firestore.rules` auth guard | unit + static | `flutter analyze && flutter test test/domain/models/school_task_test.dart` | ✅ | ✅ green |
+| 15-01-02 | 01 | 1 | REQ-TASK-01 | T-15-02 | `TasksRepository` (`family_tasks/{familyId}/tasks`) with lazy `_db` test safety, `tasksStreamProvider`, and `urgentTasksProvider` | unit + static | `flutter analyze && flutter test test/domain/models/school_task_test.dart` | ✅ | ✅ green |
+| 15-02-01 | 02 | 2 | REQ-TASK-01 | T-15-03 | `TasksScreen` (`/zadania`) with Segmented Control Bar, Quick Add bar, chronological sections, and `TaskFormModal` with D-03 lock | static | `flutter analyze` | ✅ | ✅ green |
+| 15-02-02 | 02 | 2 | REQ-TASK-01 | — | Routing `/zadania` (Branch 5) & `/czat` (Branch 6) in `app_router.dart`, `AppSidebar` 7 items, Mobile 6-tab `NavigationBar` + `AppHeader` chat badge | widget + static | `flutter analyze && flutter test test/navigation_shell_test.dart` | ✅ | ✅ green |
+| 15-03-01 | 03 | 3 | REQ-TASK-02 | — | Dashboard Bento Grid „Zadania na dziś” card in Desktop Column 2 (`_buildDesktopMessagesColumn`) and Mobile Dashboard (`_buildMobileDashboard`) with 1-click completion | widget + static | `flutter analyze && flutter test test/dashboard_screen_test.dart` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -50,7 +50,7 @@ created: "2026-09-23"
 
 ## Wave 0 Requirements
 
-- [ ] `test/domain/models/school_task_test.dart` — unit tests for `SchoolTask` serialization, chronological classification (`isOverdue`, `isDueToday`, `isUpcoming`), urgent dashboard sorting, and `D-03` parent-assigned deletion lock (`canBeDeletedBy`).
+- [x] `test/domain/models/school_task_test.dart` — unit tests for `SchoolTask` serialization, chronological classification (`isOverdue`, `isDueToday`, `isUpcoming`), urgent dashboard sorting, and `D-03` parent-assigned deletion lock (`canBeDeletedBy`).
 
 ---
 
