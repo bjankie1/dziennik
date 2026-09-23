@@ -3,8 +3,15 @@ const { LibrusClient, deriveLibrusModule } = require("./librus_client");
 
 function resolveCacheDocumentId({ role, librusLogin, primaryLogin }) {
   const isStudent = role === "student";
-  if (isStudent && primaryLogin && primaryLogin.trim().length > 0) {
-    return primaryLogin.trim();
+  if (isStudent) {
+    if (primaryLogin && primaryLogin.trim().length > 0) {
+      return primaryLogin.trim();
+    }
+    const trimmed = (librusLogin || "").trim();
+    if (/^\d+u$/i.test(trimmed)) {
+      return trimmed.replace(/u$/i, "");
+    }
+    return process.env.LIBRUS_PRIMARY_LOGIN || process.env.LIBRUS_LOGIN || "11010033";
   }
   return (librusLogin || "").trim();
 }
@@ -26,15 +33,19 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
 
   // If role is student, never dispatch scraping requests; serve directly from primary shared cache (D-05, REQ-ROLE-03)
   if (role === "student") {
-    const targetDocId = resolveCacheDocumentId({ role, librusLogin: login, primaryLogin }) || process.env.LIBRUS_LOGIN || "7654321r";
+    const defaultPrimary = process.env.LIBRUS_PRIMARY_LOGIN || process.env.LIBRUS_LOGIN || "11010033";
+    const targetDocId = resolveCacheDocumentId({ role, librusLogin: login, primaryLogin }) || defaultPrimary;
     console.log(`[SyncService] Student account detected (${login}). Reading shared cache from students/${targetDocId}.`);
-    const cachedDoc = await db.collection("students").doc(targetDocId).get();
+    let cachedDoc = await db.collection("students").doc(targetDocId).get();
+    if (!cachedDoc.exists && targetDocId !== defaultPrimary) {
+      cachedDoc = await db.collection("students").doc(defaultPrimary).get();
+    }
     if (cachedDoc.exists) {
       return {
         success: true,
         fromCache: true,
         isSharedCache: true,
-        primaryLogin: targetDocId,
+        primaryLogin: cachedDoc.id,
         ...cachedDoc.data()
       };
     }

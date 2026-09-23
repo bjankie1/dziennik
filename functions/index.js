@@ -63,19 +63,36 @@ exports.getStudentData = onRequest(
   },
   async (req, res) => {
     try {
-      let login = req.query.login || process.env.LIBRUS_LOGIN;
+      const defaultPrimary = process.env.LIBRUS_PRIMARY_LOGIN || process.env.LIBRUS_LOGIN || "11010033";
+      let login = req.query.login || defaultPrimary;
       const role = req.query.role || "parent";
       const primaryLogin = req.query.primaryLogin;
 
-      // If user is student, resolve target document from primaryLogin (D-05, REQ-ROLE-03)
-      if (role === "student" && primaryLogin) {
-        login = primaryLogin;
+      // If user is student, resolve target document from primaryLogin / defaultPrimary (D-05, REQ-ROLE-03)
+      if (role === "student") {
+        if (primaryLogin && primaryLogin.trim() && primaryLogin.trim() !== "7654321r") {
+          login = primaryLogin.trim();
+        } else if (login && /^\d+u$/i.test(login.trim())) {
+          login = login.trim().replace(/u$/i, "");
+        } else {
+          login = defaultPrimary;
+        }
       }
 
       if (!login) {
-        return res.status(400).json({ error: "Brak parametru login" });
+        login = defaultPrimary;
       }
-      const doc = await admin.firestore().collection("students").doc(login).get();
+
+      let doc = await admin.firestore().collection("students").doc(login).get();
+      if (!doc.exists && login !== defaultPrimary) {
+        doc = await admin.firestore().collection("students").doc(defaultPrimary).get();
+      }
+      if (!doc.exists) {
+        const snap = await admin.firestore().collection("students").limit(1).get();
+        if (!snap.empty) {
+          doc = snap.docs[0];
+        }
+      }
       if (!doc.exists) {
         // If not yet synced, run sync once for parent only
         const pass = process.env.LIBRUS_PASSWORD;
@@ -122,7 +139,8 @@ exports.saveConnection = onRequest(
         return res.status(200).json({ success: true, unbind: true });
       }
 
-      const login = req.query.login || req.body?.login || process.env.LIBRUS_LOGIN || "";
+      const defaultPrimary = process.env.LIBRUS_PRIMARY_LOGIN || process.env.LIBRUS_LOGIN || "11010033";
+      const login = req.query.login || req.body?.login || defaultPrimary;
       const email = req.query.email || req.body?.email || "";
       const rawRole = req.query.role || req.body?.role || "parent";
       const role = String(rawRole).trim().toLowerCase() === "student" ? "student" : "parent";
@@ -131,15 +149,15 @@ exports.saveConnection = onRequest(
       const rawFamilyId = req.query.familyId || req.body?.familyId || "jankiewicz_family";
 
       let studentLogin = rawStudentLogin || null;
-      let primaryLogin = rawPrimaryLogin || null;
+      let primaryLogin = (rawPrimaryLogin && rawPrimaryLogin !== "7654321r") ? rawPrimaryLogin : null;
 
       if (role === "student") {
         studentLogin = login || studentLogin || null;
         if (!primaryLogin) {
-          primaryLogin = process.env.LIBRUS_PRIMARY_LOGIN || process.env.LIBRUS_LOGIN || "7654321r";
+          primaryLogin = (/^\d+u$/i.test(login) ? login.replace(/u$/i, "") : null) || defaultPrimary;
         }
       } else {
-        primaryLogin = login || primaryLogin || null;
+        primaryLogin = (/^\d+$/.test(login) ? login : null) || primaryLogin || defaultPrimary;
       }
 
       await admin.firestore().collection("users").doc(userId).set({

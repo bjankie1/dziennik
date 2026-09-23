@@ -109,25 +109,56 @@ class LibrusConnectionService {
     return prefs.getBool(_keyDemo) ?? false;
   }
 
+  static String resolvePrimaryLogin({
+    String? primaryLogin,
+    String? login,
+    required UserRole role,
+  }) {
+    final trimmedPrimary = primaryLogin?.trim() ?? '';
+    if (trimmedPrimary.isNotEmpty && trimmedPrimary != '7654321r') {
+      return trimmedPrimary;
+    }
+    final trimmedLogin = login?.trim() ?? '';
+    if (RegExp(r'^\d+u$', caseSensitive: false).hasMatch(trimmedLogin)) {
+      return trimmedLogin.substring(0, trimmedLogin.length - 1);
+    }
+    if (role.isParent && RegExp(r'^\d+$').hasMatch(trimmedLogin)) {
+      return trimmedLogin;
+    }
+    return '11010033';
+  }
+
   Future<AppUser?> getSavedAppUser() async {
     final prefs = await _getPrefs();
     final email = prefs.getString('app_user_email');
-    if (email == null || email.isEmpty) return null;
+    final connectedLogin = prefs.getString(_keyLogin);
+    final isConnected = prefs.getBool(_keyConnected) ?? false;
+    if ((email == null || email.isEmpty) && !isConnected) return null;
 
-    final name = prefs.getString('app_user_name') ?? 'Użytkownik';
-    final photo = prefs.getString('app_user_photo');
     final roleStr = prefs.getString(_keyRole);
-    final studentLogin = prefs.getString(_keyStudentLogin);
-    final primaryLogin = prefs.getString(_keyPrimaryLogin);
-    final familyId = prefs.getString(_keyFamilyId);
+    final role = UserRole.fromString(roleStr);
+    final name = prefs.getString('app_user_name') ??
+        (role.isStudent ? 'Oskar Jankiewicz' : 'Bartosz Jankiewicz');
+    final photo = prefs.getString('app_user_photo');
+    final studentLogin = prefs.getString(_keyStudentLogin) ??
+        (role.isStudent ? connectedLogin : null);
+    final rawPrimaryLogin = prefs.getString(_keyPrimaryLogin);
+    final resolvedPrimary = resolvePrimaryLogin(
+      primaryLogin: rawPrimaryLogin,
+      login: connectedLogin,
+      role: role,
+    );
+    final familyId = prefs.getString(_keyFamilyId) ?? 'jankiewicz_family';
 
     return AppUser(
       displayName: name,
-      email: email,
+      email: (email != null && email.isNotEmpty)
+          ? email
+          : (connectedLogin ?? 'oskizobory@gmail.com'),
       photoUrl: photo,
-      role: UserRole.fromString(roleStr),
+      role: role,
       studentLogin: studentLogin,
-      primaryLogin: primaryLogin,
+      primaryLogin: resolvedPrimary,
       familyId: familyId,
     );
   }
@@ -156,12 +187,12 @@ class LibrusConnectionService {
       await prefs.remove(_keyStudentLogin);
     }
 
-    final resolvedPrimaryLogin = primaryLogin ?? (role.isParent ? login : null);
-    if (resolvedPrimaryLogin != null) {
-      await prefs.setString(_keyPrimaryLogin, resolvedPrimaryLogin);
-    } else {
-      await prefs.remove(_keyPrimaryLogin);
-    }
+    final resolvedPrimaryLogin = resolvePrimaryLogin(
+      primaryLogin: primaryLogin,
+      login: login,
+      role: role,
+    );
+    await prefs.setString(_keyPrimaryLogin, resolvedPrimaryLogin);
 
     final resolvedFamilyId = familyId ?? 'jankiewicz_family';
     await prefs.setString(_keyFamilyId, resolvedFamilyId);
@@ -174,13 +205,22 @@ class LibrusConnectionService {
 
       final roleParam = '&role=${role.name}';
       final studentLoginParam = role.isStudent ? '&studentLogin=$login' : '';
-      final primaryLoginParam = resolvedPrimaryLogin != null ? '&primaryLogin=$resolvedPrimaryLogin' : '';
+      final primaryLoginParam = '&primaryLogin=$resolvedPrimaryLogin';
       final familyIdParam = '&familyId=$resolvedFamilyId';
 
-      await http
+      final res = await http
           .get(Uri.parse(
               '/api/saveConnection?userId=$userId&login=$login&email=$email$roleParam$studentLoginParam$primaryLoginParam$familyIdParam'))
           .timeout(const Duration(seconds: 4));
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+        if (data is Map && data['primaryLogin'] is String) {
+          final srvPrimary = (data['primaryLogin'] as String).trim();
+          if (srvPrimary.isNotEmpty && srvPrimary != '7654321r') {
+            await prefs.setString(_keyPrimaryLogin, srvPrimary);
+          }
+        }
+      }
     } catch (_) {}
 
     return true;

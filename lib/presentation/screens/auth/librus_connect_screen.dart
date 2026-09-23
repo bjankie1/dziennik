@@ -4,6 +4,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/user_role.dart';
 import '../../providers/auth_providers.dart';
 
+import '../../../data/services/librus_connection_service.dart';
+import '../../providers/school_providers.dart';
+
 class LibrusConnectScreen extends ConsumerStatefulWidget {
   const LibrusConnectScreen({super.key});
 
@@ -43,16 +46,43 @@ class _LibrusConnectScreenState extends ConsumerState<LibrusConnectScreen> {
     });
 
     try {
+      final resolvedPrimary = LibrusConnectionService.resolvePrimaryLogin(
+        login: login,
+        role: _selectedRole,
+      );
       final success = await ref
           .read(librusConnectionStateProvider.notifier)
           .connectLibrus(
             login,
             password,
             role: _selectedRole,
+            primaryLogin: resolvedPrimary,
           );
 
       if (success) {
-        ref.read(appUserProvider.notifier).updateRole(_selectedRole);
+        final current = ref.read(appUserProvider);
+        if (current != null) {
+          ref.read(appUserProvider.notifier).setUser(
+                current.copyWith(
+                  displayName: _selectedRole.isStudent &&
+                          current.displayName == 'Bartosz Jankiewicz'
+                      ? 'Oskar Jankiewicz'
+                      : current.displayName,
+                  role: _selectedRole,
+                  studentLogin: _selectedRole.isStudent ? login : null,
+                  primaryLogin: resolvedPrimary,
+                  familyId: current.familyId ?? 'jankiewicz_family',
+                ),
+              );
+        }
+        ref.invalidate(studentProfileProvider);
+        ref.invalidate(todayScheduleProvider);
+        ref.invalidate(weekScheduleProvider);
+        ref.invalidate(upcomingExamProvider);
+        ref.invalidate(subjectsProvider);
+        ref.invalidate(recentGradesProvider);
+        ref.invalidate(attendanceProvider);
+        ref.invalidate(messagesProvider);
       } else {
         setState(() {
           _errorMessage =

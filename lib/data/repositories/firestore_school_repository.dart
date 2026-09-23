@@ -15,6 +15,7 @@ import '../../domain/models/attendance_record.dart';
 import '../../domain/models/message_thread.dart';
 import '../../domain/models/teacher_contact.dart';
 import '../../domain/models/justification_request.dart';
+import '../../domain/models/user_role.dart';
 
 class FirestoreSchoolRepository implements SchoolRepository {
   final FirebaseFirestore _firestore;
@@ -23,6 +24,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   Map<String, dynamic>? _memoryCache;
   DateTime? _lastCacheTime;
+  String? _cachedTargetLogin;
 
   static final Map<String, bool> _localReadOverrides = {};
   static bool _readOverridesLoaded = false;
@@ -82,10 +84,12 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   Future<String?> _getTargetStudentDocLogin() async {
     final appUser = await _connectionService.getSavedAppUser();
-    if (appUser?.isStudent == true && appUser?.primaryLogin != null && appUser!.primaryLogin!.isNotEmpty) {
-      return appUser.primaryLogin;
-    }
-    return _connectionService.getConnectedLogin();
+    final connectedLogin = await _connectionService.getConnectedLogin();
+    return LibrusConnectionService.resolvePrimaryLogin(
+      primaryLogin: appUser?.primaryLogin,
+      login: connectedLogin,
+      role: appUser?.role ?? UserRole.parent,
+    );
   }
 
   Future<Map<String, dynamic>?> _getStudentData() async {
@@ -96,20 +100,30 @@ class FirestoreSchoolRepository implements SchoolRepository {
     final isStudent = appUser?.isStudent ?? false;
     final connectedLogin = await _connectionService.getConnectedLogin();
 
+    final resolvedPrimaryLogin = LibrusConnectionService.resolvePrimaryLogin(
+      primaryLogin: appUser?.primaryLogin,
+      login: connectedLogin,
+      role: appUser?.role ?? UserRole.parent,
+    );
+
     // Single Source of Truth (D-05, REQ-ROLE-03):
-    // For student accounts, academic data is retrieved from primaryLogin (fallback to connectedLogin).
-    final targetLogin = (isStudent && appUser?.primaryLogin != null && appUser!.primaryLogin!.isNotEmpty)
-        ? appUser.primaryLogin!
-        : (connectedLogin ?? '');
+    // For student accounts (or email/non-numeric logins like oskizobory@gmail.com),
+    // academic data is always retrieved from resolvedPrimaryLogin (11010033).
+    final targetLogin = isStudent
+        ? resolvedPrimaryLogin
+        : (RegExp(r'^\d+$').hasMatch(connectedLogin ?? '')
+            ? connectedLogin!
+            : resolvedPrimaryLogin);
 
     final roleParam = isStudent ? '&role=student' : '&role=parent';
-    final primaryParam = (appUser?.primaryLogin != null) ? '&primaryLogin=${appUser!.primaryLogin}' : '';
-    final queryStr = targetLogin.isNotEmpty
-        ? '?login=$targetLogin$roleParam$primaryParam'
-        : '';
+    final primaryParam = '&primaryLogin=${Uri.encodeComponent(resolvedPrimaryLogin)}';
+    final queryStr = '?login=${Uri.encodeComponent(targetLogin)}$roleParam$primaryParam';
 
-    // Check memory cache (valid for 2 minutes)
-    if (_memoryCache != null && _lastCacheTime != null) {
+    // Check memory cache (valid for 2 minutes, and only if it has timetable and matches targetLogin)
+    if (_memoryCache != null &&
+        _lastCacheTime != null &&
+        _cachedTargetLogin == targetLogin &&
+        _memoryCache!['timetable'] != null) {
       if (DateTime.now().difference(_lastCacheTime!).inMinutes < 2) {
         return _memoryCache;
       }
@@ -121,9 +135,12 @@ class FirestoreSchoolRepository implements SchoolRepository {
           .timeout(const Duration(seconds: 4));
       if (res.statusCode == 200) {
         final decoded = json.decode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
-        _memoryCache = decoded;
-        _lastCacheTime = DateTime.now();
-        return decoded;
+        if (decoded['timetable'] != null) {
+          _memoryCache = decoded;
+          _lastCacheTime = DateTime.now();
+          _cachedTargetLogin = targetLogin;
+          return decoded;
+        }
       }
     } catch (_) {}
 
@@ -133,24 +150,46 @@ class FirestoreSchoolRepository implements SchoolRepository {
           .timeout(const Duration(seconds: 5));
       if (res.statusCode == 200) {
         final decoded = json.decode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
-        _memoryCache = decoded;
-        _lastCacheTime = DateTime.now();
-        return decoded;
+        if (decoded['timetable'] != null) {
+          _memoryCache = decoded;
+          _lastCacheTime = DateTime.now();
+          _cachedTargetLogin = targetLogin;
+          return decoded;
+        }
       }
     } catch (_) {}
 
-    // Method 3: Cloud Firestore SDK (Single Source of Truth)
-    if (targetLogin.isNotEmpty) {
+    // Method 3: Cloud Firestore SDK (Single Source of Truth with candidate fallbacks)
+    final candidateIds = <String>{
+      targetLogin,
+      resolvedPrimaryLogin,
+      '11010033',
+      if (connectedLogin != null && connectedLogin.isNotEmpty) connectedLogin,
+    }.where((id) => id.isNotEmpty).toList();
+
+    for (final docId in candidateIds) {
       try {
-        final doc = await _firestore.collection('students').doc(targetLogin).get();
+        final doc = await _firestore.collection('students').doc(docId).get();
         if (doc.exists && doc.data() != null) {
           final data = doc.data()!;
           _memoryCache = data;
           _lastCacheTime = DateTime.now();
+          _cachedTargetLogin = targetLogin;
           return data;
         }
       } catch (_) {}
     }
+
+    try {
+      final snap = await _firestore.collection('students').limit(1).get();
+      if (snap.docs.isNotEmpty) {
+        final data = snap.docs.first.data();
+        _memoryCache = data;
+        _lastCacheTime = DateTime.now();
+        _cachedTargetLogin = targetLogin;
+        return data;
+      }
+    } catch (_) {}
 
     // Method 4: Return cached if available
     if (_memoryCache != null) return _memoryCache;
