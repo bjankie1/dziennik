@@ -233,6 +233,7 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
     state = const AsyncValue.loading();
     final repo = ref.read(schoolRepositoryProvider);
     await repo.submitJustification(recordIds, reason, date: date);
+    ref.invalidate(justificationRequestsProvider);
     state = AsyncValue.data(await repo.getAttendanceRecords());
   }
 
@@ -240,6 +241,7 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
     state = const AsyncValue.loading();
     final repo = ref.read(schoolRepositoryProvider);
     await repo.cancelJustification(recordIds);
+    ref.invalidate(justificationRequestsProvider);
     state = AsyncValue.data(await repo.getAttendanceRecords());
   }
 
@@ -281,7 +283,44 @@ final attendanceProvider =
 
 final justificationRequestsProvider = FutureProvider<List<JustificationRequest>>((ref) async {
   final repo = ref.watch(schoolRepositoryProvider);
-  return repo.getJustificationRequests();
+  final attendanceAsync = ref.watch(attendanceProvider);
+  final requests = await repo.getJustificationRequests();
+
+  final records = attendanceAsync.value;
+  if (records == null) return requests;
+
+  final unexcusedRecords = records
+      .where((r) =>
+          r.type == AttendanceType.absent &&
+          (r.justificationStatus == JustificationStatus.none ||
+              r.justificationStatus == JustificationStatus.requested))
+      .toList();
+
+  return requests.map((req) {
+    if (req.status == JustificationRequestStatus.pendingParentApproval) {
+      final stillHasUnexcused = unexcusedRecords.any((r) {
+        if (req.recordIds.contains(r.id)) return true;
+        if (req.date != null &&
+            r.date.year == req.date!.year &&
+            r.date.month == req.date!.month &&
+            r.date.day == req.date!.day) {
+          if (req.lessonNumbers.isEmpty ||
+              req.lessonNumbers.contains(r.lessonNumber)) {
+            return true;
+          }
+        }
+        return false;
+      });
+      if (!stillHasUnexcused) {
+        return req.copyWith(
+          status: JustificationRequestStatus.approved,
+          reviewedBy: 'parent',
+          reviewedAt: DateTime.now(),
+        );
+      }
+    }
+    return req;
+  }).toList();
 });
 
 final messagesProvider = FutureProvider<List<MessageThread>>((ref) async {

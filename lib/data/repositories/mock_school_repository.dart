@@ -191,6 +191,26 @@ class MockSchoolRepository implements SchoolRepository {
       }
       return rec;
     }).toList();
+
+    for (int i = 0; i < _justificationRequests.length; i++) {
+      final req = _justificationRequests[i];
+      if (req.status != JustificationRequestStatus.pendingParentApproval) {
+        continue;
+      }
+      final overlapsIds = req.recordIds.any((id) => recordIds.contains(id));
+      final matchesDate = date != null &&
+          req.date != null &&
+          req.date!.year == date.year &&
+          req.date!.month == date.month &&
+          req.date!.day == date.day;
+      if (overlapsIds || matchesDate) {
+        _justificationRequests[i] = req.copyWith(
+          status: JustificationRequestStatus.approved,
+          reviewedAt: DateTime.now(),
+          reviewedBy: 'parent',
+        );
+      }
+    }
   }
 
   @override

@@ -1259,6 +1259,40 @@ class FirestoreSchoolRepository implements SchoolRepository {
           debugPrint('[FirestoreSchoolRepository] Błąd e-Usprawiedliwienia (${res.statusCode}): ${res.body}');
         }
       }
+
+      // Auto-correlate independent parent justifications with pending student requests in Firestore
+      try {
+        final justifiedDates = hoursByDate.keys.toSet();
+        if (dateFromStr != null) justifiedDates.add(dateFromStr);
+        final justifiedIds = recordIds.toSet();
+
+        final reqSnap = await _firestore
+            .collection('justification_requests')
+            .where('status', isEqualTo: 'pendingParentApproval')
+            .get();
+
+        for (final doc in reqSnap.docs) {
+          final data = doc.data();
+          final reqIds = (data['recordIds'] as List<dynamic>? ?? const [])
+              .map((e) => e.toString())
+              .toSet();
+          final reqDate = (data['date'] ?? '').toString().split('T').first;
+
+          final overlapsIds = reqIds.intersection(justifiedIds).isNotEmpty;
+          final matchesDate =
+              reqDate.isNotEmpty && justifiedDates.contains(reqDate);
+
+          if (overlapsIds || matchesDate) {
+            await doc.reference.set({
+              'status': 'approved',
+              'reviewedBy': 'parent',
+              'reviewedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
+        }
+      } catch (corrErr) {
+        debugPrint('[FirestoreSchoolRepository] Auto-correlation warning: $corrErr');
+      }
     } catch (e) {
       debugPrint('[FirestoreSchoolRepository] submitJustification error: $e');
     }
@@ -1334,6 +1368,9 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   @override
   Future<List<JustificationRequest>> getJustificationRequests() async {
+    final isDemo = await _connectionService.isDemoMode();
+    List<JustificationRequest> rawRequests = [];
+
     try {
       final snap = await _firestore
           .collection('justification_requests')
@@ -1341,15 +1378,82 @@ class FirestoreSchoolRepository implements SchoolRepository {
           .get();
 
       if (snap.docs.isNotEmpty) {
-        return snap.docs
+        rawRequests = snap.docs
             .map((d) => JustificationRequest.fromJson(d.data(), d.id))
             .toList();
+      } else if (isDemo) {
+        rawRequests = await _mockFallback.getJustificationRequests();
+      } else {
+        // Connected to real Librus account and Firestore has 0 requests: never return fake req_init_01!
+        return const <JustificationRequest>[];
       }
     } catch (e) {
       debugPrint('[FirestoreSchoolRepository] getJustificationRequests firestore query error: $e');
+      if (isDemo) {
+        rawRequests = await _mockFallback.getJustificationRequests();
+      } else {
+        return const <JustificationRequest>[];
+      }
     }
 
-    return _mockFallback.getJustificationRequests();
+    // Reconcile pending requests against current attendance records so requests whose lessons
+    // were already justified independently (or when 0 unexcused absences remain) are marked approved
+    try {
+      final attendanceRecords = await getAttendanceRecords();
+      final unexcusedRecords = attendanceRecords
+          .where((r) =>
+              r.type == AttendanceType.absent &&
+              (r.justificationStatus == JustificationStatus.none ||
+                  r.justificationStatus == JustificationStatus.requested))
+          .toList();
+
+      final reconciled = <JustificationRequest>[];
+      for (final req in rawRequests) {
+        if (!isDemo && req.id == 'req_init_01') {
+          continue;
+        }
+        if (req.status == JustificationRequestStatus.pendingParentApproval) {
+          final stillHasUnexcused = unexcusedRecords.any((r) {
+            if (req.recordIds.contains(r.id)) return true;
+            if (req.date != null &&
+                r.date.year == req.date!.year &&
+                r.date.month == req.date!.month &&
+                r.date.day == req.date!.day) {
+              if (req.lessonNumbers.isEmpty ||
+                  req.lessonNumbers.contains(r.lessonNumber)) {
+                return true;
+              }
+            }
+            return false;
+          });
+
+          if (!stillHasUnexcused) {
+            // All target lessons (or all absences) have already been sent for justification
+            final approvedReq = req.copyWith(
+              status: JustificationRequestStatus.approved,
+              reviewedBy: 'parent',
+              reviewedAt: DateTime.now(),
+            );
+            reconciled.add(approvedReq);
+            if (req.id != 'req_init_01') {
+              _firestore
+                  .collection('justification_requests')
+                  .doc(req.id)
+                  .set({
+                'status': 'approved',
+                'reviewedBy': 'parent',
+                'reviewedAt': FieldValue.serverTimestamp(),
+              }, SetOptions(merge: true)).ignore();
+            }
+            continue;
+          }
+        }
+        reconciled.add(req);
+      }
+      return reconciled;
+    } catch (_) {
+      return rawRequests;
+    }
   }
 
   @override
