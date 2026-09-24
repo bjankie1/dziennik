@@ -4,16 +4,16 @@ milestone: v3.0
 current_phase: 18
 current_phase_name: "Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push"
 status: ready_to_plan
-stopped_at: Completed Phase 17 (Google Calendar & RFC 5545 .ics export on Dashboard, Lesson Details Modal, and Bulk Schedule Export)
-last_updated: "2026-09-23T19:02:00Z"
-last_activity: 2026-09-23
-state_head: 50e616d
+stopped_at: Completed Phase 17.1 (Refactored 3833-line DashboardScreen into modular widgets & extracted shared UI component library in lib/presentation/widgets/common/)
+last_updated: "2026-09-24T07:21:00Z"
+last_activity: 2026-09-24
+state_head: b191bfe
 progress:
-  total_phases: 7
-  completed_phases: 5
-  total_plans: 13
-  completed_plans: 13
-  percent: 71
+  total_phases: 8
+  completed_phases: 6
+  total_plans: 16
+  completed_plans: 16
+  percent: 75
 milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ---
 
@@ -21,8 +21,8 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 **Current Milestone:** Milestone v3.0 (Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia)  
 **Active Phase:** Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push  
-**Status:** Phase 17 verified & completed (5/7 phases completed in v3.0 so far)  
-**Last Updated:** 2026-09-23  
+**Status:** Phase 17.1 verified & completed (6/8 phases completed in v3.0 so far)  
+**Last Updated:** 2026-09-24  
 
 ## Milestone v3.0 Roadmap
 
@@ -31,6 +31,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - [x] **Phase 15**: Moduł zadań (Smart To-Do) i widżet na Pulpicie (completed 2026-09-23)
 - [x] **Phase 16**: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości oraz dwukierunkowe linkowanie źródeł (completed 2026-09-23)
 - [x] **Phase 17**: Eksport sprawdzianów do Kalendarza Google i iCal (completed 2026-09-23)
+- [x] **Phase 17.1**: Refactoring architektury widoków i biblioteka współdzielonych komponentów UI (completed 2026-09-24)
 - [ ] **Phase 18**: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push
 - [ ] **Phase 19**: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
 

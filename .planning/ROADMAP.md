@@ -29,6 +29,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 15: Moduł zadań (Smart To-Do) i widżet na Pulpicie** — Dedykowana podstrona `/zadania` w menu bocznym i nawigacji oraz interaktywny widżet zadań w Bento Grid na Pulpicie z szybkim odhaczaniem. (completed 2026-09-23)
 - [x] **Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości oraz dwukierunkowe linkowanie źródeł** — Trwałe powiązanie zadań ze źródłem (`sourceId` dla sprawdzianów i wiadomości), blokada duplikacji po odświeżeniu strony (F5), bezpośrednie linki do już utworzonych zadań oraz tworzenie zadań z widoku wiadomości (np. opłacenie składki). (completed 2026-09-23)
 - [x] **Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal** — Przycisk „Dodaj do Kalendarza Google” w kafelkach sprawdzianów i modalu lekcji oraz pobieranie plików kalendarzowych `.ics` (w tym zbiorczy eksport wszystkich sprawdzianów). (completed 2026-09-23)
+- [x] **Phase 17.1: Refactoring architektury widoków i biblioteka współdzielonych komponentów UI (INSERTED)** — Dekompozycja monolitycznych ekranów (`dashboard_screen.dart` 3833 LOC → 381 LOC) na modułowe sub-widgety `ConsumerWidget` oraz ekstrakcja powtarzających się wzorców UI (`BentoCard`, `GradeBadgePill`, `LinkedTaskActionBar`, `ExamCalendarActionsRow`, `FilterChipPill`, `JustificationApprovalBanner`) do `lib/presentation/widgets/common/`. (completed 2026-09-24)
 - [ ] **Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push** — Integracja bota Telegram w Cloud Functions z kodem parowania, natychmiastowe alerty o ocenach/wiadomościach/sprawdzianach oraz powiadomienia Web Push w przeglądarce.
 - [ ] **Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)** — Automatyczny harmonogram Cloud Scheduler w piątki wieczorem generujący i wysyłający raport podsumowujący nadchodzący tydzień przez bota Telegram do rodzica i ucznia.
 
@@ -131,6 +132,31 @@ Plans:
 
 - [x] 17-01-PLAN.md: CalendarExportService (Google Calendar URL template + RFC 5545 `.ics` generator with `Europe/Warsaw` & `VALARM`) & Web Interop Helper
 - [x] 17-02-PLAN.md: UI Integration on Dashboard Exam Cards, Lesson Details Modal & Bulk `.ics` Export Dialog in Schedule Screen
+
+### Phase 17.1: Refactoring architektury widoków i biblioteka współdzielonych komponentów UI (INSERTED)
+
+**Goal**: Eliminacja długu technicznego i duplikacji kodu poprzez rozbicie monolitycznych widoków (`dashboard_screen.dart` – 3 832 linii, `attendance_screen.dart` – 1 548 linii, `grades_screen.dart` – 1 162 linie) na niezależne, reużywalne klasy `ConsumerWidget` / `StatelessWidget` oraz wydzielenie wspólnej biblioteki komponentów (`lib/presentation/widgets/common/`).  
+**Requirements**: REQ-ARCH-01, REQ-ARCH-02  
+**Depends on**: Phase 17  
+**Success Criteria**:
+
+1. Żaden plik ekranu w `lib/presentation/screens/` nie przekracza ~500–600 linii kodu; `dashboard_screen.dart` (obecnie 3 832 LOC) zostaje rozbity na autonomiczne widgety sekcji (`lib/presentation/screens/dashboard/widgets/`), z których każdy subskrybuje wyłącznie własny wycinek stanu Riverpod (`ref.watch`).
+2. Powtarzające się wizualnie komponenty mają jedną, kanoniczną reprezentację w `lib/presentation/widgets/common/`:
+   - `BentoCard` (wspólny kontener kart z cieniem, obramowaniem i nagłówkiem sekcji),
+   - `LinkedTaskActionBar` (wspólny pasek „+ Zadanie dla Oskara” / „✓ Powiązane zadanie” używany na Pulpicie, w modalu lekcji i w wiadomościach),
+   - `ExamCalendarActionsRow` (wspólny rząd przycisków `+ Kalendarz Google` oraz `.ics`),
+   - `GradeBadgePill` (zunifikowana pigułka oceny z wagą i kolorystyką MEN 1–6),
+   - `FilterChipPill` (wspólny przełącznik filtrów/zakładek),
+   - `JustificationApprovalBanner` (wspólny komponent i dialogi PIN / odrzucenia prośby ucznia dla Pulpitu i Frekwencji).
+3. Kompilacja `flutter analyze` przechodzi z 0 błędów/ostrzeżeń, a wszystkie funkcje na produkcji działają identycznie przy mniejszym narzucie przebudowy drzewa widgetów (Element Tree).
+
+**Plans:** 3 plans
+
+Plans:
+
+- [ ] 17.1-01-PLAN.md: Shared UI Component Library (`lib/presentation/widgets/common/`: `BentoCard`, `GradeBadgePill`, `FilterChipPill`, `LinkedTaskActionBar`, `ExamCalendarActionsRow`, `JustificationApprovalBanner`)
+- [ ] 17.1-02-PLAN.md: Decomposition of `DashboardScreen` (3832 LOC → modular `lib/presentation/screens/dashboard/widgets/` with isolated Riverpod rebuild boundaries)
+- [ ] 17.1-03-PLAN.md: Refactoring of `AttendanceScreen`, `LessonDetailsModal`, and `MessageThreadScreen` to consume shared widgets
 
 ### Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push
 
