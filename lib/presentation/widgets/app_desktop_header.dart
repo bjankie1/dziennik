@@ -6,7 +6,9 @@ import "../../domain/models/student_profile.dart";
 import "../../domain/models/user_role.dart";
 import "../providers/auth_providers.dart";
 import "../providers/family_chat_provider.dart";
+import "../providers/notification_settings_provider.dart";
 import "modals/librus_query_log_modal.dart";
+import "modals/notification_settings_modal.dart";
 
 class AppDesktopHeader extends ConsumerWidget {
   final StudentProfile? student;
@@ -27,6 +29,10 @@ class AppDesktopHeader extends ConsumerWidget {
     final appUser = ref.watch(appUserProvider);
     final role = appUser?.role ?? UserRole.parent;
     final chatUnreadCount = ref.watch(familyChatUnreadCountProvider);
+    final notifSettings = ref.watch(notificationChannelSettingsProvider).value;
+    final isChannelActive =
+        (notifSettings?.telegramEnabled == true && notifSettings?.isTelegramPaired == true) ||
+            (notifSettings?.webPushEnabled == true);
 
     return Container(
       height: 64,
@@ -148,16 +154,20 @@ class AppDesktopHeader extends ConsumerWidget {
 
           const SizedBox(width: 4),
 
-          // Notification Bell
+          // Notification Bell (Telegram Bot & Web Push Center)
           IconButton(
-            tooltip: "Powiadomienia",
-            onPressed: onNotificationsTap,
+            tooltip: "Powiadomienia (Telegram Bot & Web Push)",
+            onPressed: () => NotificationSettingsModal.show(context),
             icon: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(
-                  Icons.notifications_none_rounded,
-                  color: AppColors.onSurfaceVariant,
+                Icon(
+                  isChannelActive
+                      ? Icons.notifications_active_outlined
+                      : Icons.notifications_none_rounded,
+                  color: isChannelActive
+                      ? AppColors.primary
+                      : AppColors.onSurfaceVariant,
                   size: 22,
                 ),
                 if (unreadCount > 0)
@@ -182,6 +192,20 @@ class AppDesktopHeader extends ConsumerWidget {
                           fontWeight: FontWeight.bold,
                         ),
                         textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                else if (isChannelActive)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF16A34A),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
                       ),
                     ),
                   ),

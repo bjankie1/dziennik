@@ -37,22 +37,91 @@
   <title>EduSync • Lepsza Szkoła</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Force unregister old Service Workers and clear caches on updates -->
+  <!-- Manage Service Workers: clear legacy flutter cache SW and register /sw-notifications.js (Phase 18) -->
   <script>
+    window.edusyncSwRegistration = null;
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for (var i = 0; i < registrations.length; i++) {
-          registrations[i].unregister();
+          var scriptUrl = (registrations[i].active && registrations[i].active.scriptURL) || '';
+          if (scriptUrl.indexOf('sw-notifications.js') === -1) {
+            registrations[i].unregister();
+          }
         }
       });
-    }
-    if ('caches' in window) {
-      caches.keys().then(function(names) {
-        for (var i = 0; i < names.length; i++) {
-          caches.delete(names[i]);
-        }
+      navigator.serviceWorker.register('/sw-notifications.js').then(function(reg) {
+        window.edusyncSwRegistration = reg;
+      }).catch(function(err) {
+        console.warn('SW registration warning:', err);
       });
     }
+
+    window.edusyncWebPush = {
+      getPermission: function() {
+        if (!('Notification' in window)) return 'unsupported';
+        return Notification.permission || 'default';
+      },
+      isSwReady: function() {
+        return !!window.edusyncSwRegistration || ('serviceWorker' in navigator);
+      },
+      requestPermission: async function() {
+        if (!('Notification' in window)) return 'unsupported';
+        try {
+          if ('serviceWorker' in navigator && !window.edusyncSwRegistration) {
+            window.edusyncSwRegistration = await navigator.serviceWorker.register('/sw-notifications.js');
+          }
+          var perm = await Notification.requestPermission();
+          return perm || 'default';
+        } catch (e) {
+          return Notification.permission || 'default';
+        }
+      },
+      showNotification: function(title, body, tag, url) {
+        if (!('Notification' in window) || Notification.permission !== 'granted') {
+          return false;
+        }
+        var targetUrl = url || '/pulpit';
+        var options = {
+          body: body || '',
+          icon: '/icons/Icon-192.png',
+          badge: '/favicon.png',
+          tag: tag || ('edusync-' + Date.now()),
+          renotify: true,
+          data: { url: targetUrl }
+        };
+        try {
+          if (window.edusyncSwRegistration && window.edusyncSwRegistration.showNotification) {
+            window.edusyncSwRegistration.showNotification(title, options);
+            return true;
+          }
+          if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+              type: 'SHOW_NOTIFICATION',
+              title: title,
+              body: body,
+              tag: options.tag,
+              url: targetUrl
+            });
+            return true;
+          }
+        } catch (swErr) {}
+
+        try {
+          var n = new Notification(title, options);
+          n.onclick = function() {
+            window.focus();
+            if (targetUrl) {
+              window.location.href = targetUrl;
+            }
+            n.close();
+          };
+          return true;
+        } catch (err) {
+          return false;
+        }
+      }
+    };
   </script>
 
   <!-- Firebase JS SDK (v12.19.0) Modular scripts for FlutterFire Web -->

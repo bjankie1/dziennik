@@ -866,4 +866,87 @@ exports.getJustificationRequests = onRequest(
   }
 );
 
+const {
+  verifyAndPairCodeFromUpdates,
+  sendTelegramMessage,
+} = require("./src/telegram_service");
+
+/**
+ * Verify a 6-digit Telegram pairing code via Bot API getUpdates and save paired chatId (Phase 18: REQ-NOTIF-01).
+ */
+exports.verifyTelegramPairing = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 30,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const botToken = req.body?.botToken || req.query.botToken || process.env.TELEGRAM_BOT_TOKEN;
+      const pairingCode = req.body?.pairingCode || req.query.pairingCode;
+      const familyId = req.body?.familyId || req.query.familyId || "11010033";
+      const roleKey = req.body?.roleKey || req.query.roleKey || "parent";
+
+      const result = await verifyAndPairCodeFromUpdates(admin.firestore(), {
+        botToken,
+        pairingCode,
+        familyId,
+        roleKey,
+      });
+
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error("verifyTelegramPairing error:", error);
+      return res.status(500).json({
+        paired: false,
+        error: error.message || "Błąd weryfikacji kodu parowania Telegram."
+      });
+    }
+  }
+);
+
+/**
+ * Send a test notification via Telegram Bot (Phase 18: REQ-NOTIF-02).
+ */
+exports.sendTestTelegramNotification = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 30,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const botToken = req.body?.botToken || req.query.botToken || process.env.TELEGRAM_BOT_TOKEN;
+      const chatId = req.body?.chatId || req.query.chatId;
+      const roleLabel = req.body?.roleLabel || "Rodzic";
+      const studentName = req.body?.studentName || "Oskar";
+
+      const htmlText =
+        `🔔 <b>Test powiadomienia • EduSync (Lepsza Szkoła)</b>\n\n` +
+        `Kanał Telegram dla konta <b>${roleLabel}</b> (uczeń: <b>${studentName}</b>) działa prawidłowo!\n\n` +
+        `📌 Przykład powiadomienia:\n` +
+        `🎓 <b>Nowa ocena: 5 (Język angielski)</b>\n` +
+        `📝 Sprawdzian • Waga: 3 • Nauczyciel: M. Nowak\n\n` +
+        `🔗 <a href="https://lepsza-szkola.web.app/pulpit">Otwórz Pulpit EduSync</a>`;
+
+      const apiRes = await sendTelegramMessage({
+        botToken,
+        chatId,
+        htmlText,
+      });
+
+      return res.status(200).json({ success: true, result: apiRes });
+    } catch (error) {
+      console.error("sendTestTelegramNotification error:", error);
+      return res.status(500).json({
+        success: false,
+        error: error.message || "Nie udało się wysłać testowej wiadomości Telegram."
+      });
+    }
+  }
+);
+
+
 

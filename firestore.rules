@@ -54,6 +54,14 @@ service cloud.firestore {
       }
     }
 
+    // 8. Ustawienia powiadomień (Telegram Bot & Web Push) oraz kody parowania (Phase 18)
+    match /notification_settings/{settingId} {
+      allow read, write: if true;
+    }
+    match /telegram_pairing_codes/{codeId} {
+      allow read, write: if true;
+    }
+
     // Domyślna blokada pozostałych kolekcji
     match /{document=**} {
       allow read, write: if false;

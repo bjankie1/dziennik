@@ -1,5 +1,6 @@
 const admin = require("firebase-admin");
 const { LibrusClient, deriveLibrusModule } = require("./librus_client");
+const { dispatchTelegramNotificationsForStudent } = require("./telegram_service");
 
 function resolveCacheDocumentId({ role, librusLogin, primaryLogin }) {
   const isStudent = role === "student";
@@ -242,6 +243,24 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
         });
       }
     });
+
+    // Detect new exams (Phase 18: REQ-NOTIF-02)
+    const prevExamKeys = new Set(
+      (prevData.exams || []).map(e => `${e.date || ""}_${e.subject || ""}_${e.category || ""}`)
+    );
+    (freshData.exams || []).forEach(e => {
+      const examKey = `${e.date || ""}_${e.subject || ""}_${e.category || ""}`;
+      if (!prevExamKeys.has(examKey)) {
+        newNotifications.push({
+          id: `exam_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          type: "exam",
+          title: `Nowy sprawdzian: ${e.subject || "Przedmiot"} (${e.date || ""})`,
+          body: `${e.category || "Sprawdzian"}${e.description ? " • " + e.description : ""}`,
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          isRead: false
+        });
+      }
+    });
   } else {
     // First-time sync: create a welcome notification
     newNotifications.push({
@@ -263,6 +282,21 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
   if (newNotifications.length > 0) {
     await notifBatch.commit();
     console.log(`Saved ${newNotifications.length} new notification(s).`);
+
+    // Dispatch new notifications to paired Telegram Bot chats (Phase 18)
+    try {
+      const tgResult = await dispatchTelegramNotificationsForStudent(
+        db,
+        login,
+        freshData.student?.name || "Oskar",
+        newNotifications
+      );
+      if (tgResult.sentCount > 0) {
+        console.log(`[SyncService] Dispatched ${tgResult.sentCount} Telegram notification(s).`);
+      }
+    } catch (tgErr) {
+      console.warn("[SyncService] Telegram dispatch warning:", tgErr.message);
+    }
   }
 
   // Save student snapshot

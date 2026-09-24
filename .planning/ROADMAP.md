@@ -154,9 +154,9 @@ Plans:
 
 Plans:
 
-- [ ] 17.1-01-PLAN.md: Shared UI Component Library (`lib/presentation/widgets/common/`: `BentoCard`, `GradeBadgePill`, `FilterChipPill`, `LinkedTaskActionBar`, `ExamCalendarActionsRow`, `JustificationApprovalBanner`)
-- [ ] 17.1-02-PLAN.md: Decomposition of `DashboardScreen` (3832 LOC → modular `lib/presentation/screens/dashboard/widgets/` with isolated Riverpod rebuild boundaries)
-- [ ] 17.1-03-PLAN.md: Refactoring of `AttendanceScreen`, `LessonDetailsModal`, and `MessageThreadScreen` to consume shared widgets
+- [x] 17.1-01-PLAN.md: Shared UI Component Library (`lib/presentation/widgets/common/`: `BentoCard`, `GradeBadgePill`, `FilterChipPill`, `LinkedTaskActionBar`, `ExamCalendarActionsRow`, `JustificationApprovalBanner`)
+- [x] 17.1-02-PLAN.md: Decomposition of `DashboardScreen` (3832 LOC → modular `lib/presentation/screens/dashboard/widgets/` with isolated Riverpod rebuild boundaries)
+- [x] 17.1-03-PLAN.md: Refactoring of `AttendanceScreen`, `LessonDetailsModal`, and `MessageThreadScreen` to consume shared widgets
 
 ### Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push
 
@@ -170,11 +170,12 @@ Plans:
 3. Aplikacja webowa rejestruje Service Worker i obsługuje subskrypcję Web Push API (VAPID / FCM), wyświetlając natywne powiadomienia w przeglądarce po uzyskaniu zgody użytkownika.
 4. W ustawieniach użytkownik może niezależnie włączać i wyłączać kanały powiadomień (Telegram / Web Push) oraz kategorie zdarzeń.
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 18 to break down)
+- [x] 18-01-PLAN.md: Telegram Bot Cloud Functions (`telegram_service.js`, 6-digit pairing code verification, exam diff detection & HTML notification dispatch in `sync_service.js`)
+- [x] 18-02-PLAN.md: Web Push Service Worker (`/sw-notifications.js`), JS Interop & `NotificationSettingsModal` UI with per-role channel & category toggles
 
 ### Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
 

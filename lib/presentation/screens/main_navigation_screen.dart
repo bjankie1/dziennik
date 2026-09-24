@@ -17,7 +17,9 @@ import 'messages/messages_screen.dart';
 import 'tasks/tasks_screen.dart';
 import 'chat/family_chat_screen.dart';
 import '../providers/family_chat_provider.dart';
+import '../providers/notification_settings_provider.dart';
 import '../providers/tasks_provider.dart';
+import '../widgets/modals/notification_settings_modal.dart';
 
 import 'package:go_router/go_router.dart';
 
@@ -67,6 +69,35 @@ class MainNavigationScreen extends ConsumerWidget {
     final chatUnreadCount = ref.watch(familyChatUnreadCountProvider);
     final tasksBadgeCount = ref.watch(activeTasksBadgeCountProvider);
 
+    // Real-time listener for new school notifications (Grades, Messages, Exams) -> Web Push
+    ref.listen(schoolNotificationsStreamProvider, (previous, next) {
+      if (previous?.value == null || next.value == null) return;
+      final prevIds = previous!.value!.map((e) => e.id).toSet();
+      final newItems =
+          next.value!.where((e) => !prevIds.contains(e.id)).toList();
+      if (newItems.isEmpty) return;
+
+      final settings = ref.read(notificationChannelSettingsProvider).value;
+      if (settings == null || !settings.webPushEnabled) return;
+      final service = ref.read(notificationChannelsServiceProvider);
+
+      for (final item in newItems) {
+        if (!settings.isCategoryEnabled(item.type)) continue;
+        final route = switch (item.type) {
+          'grade' => '/oceny',
+          'message' || 'announcement' => '/wiadomosci',
+          'exam' => '/plan-lekcji',
+          _ => '/pulpit',
+        };
+        service.triggerWebPush(
+          title: item.title,
+          body: item.body,
+          tag: item.id,
+          url: route,
+        );
+      }
+    });
+
     ref.listen(familyChatMessagesProvider, (previous, next) {
       if (previous?.value == null || next.value == null) return;
       final prevList = previous!.value!;
@@ -77,6 +108,31 @@ class MainNavigationScreen extends ConsumerWidget {
         final isStudent = user?.isStudent ?? false;
         final isFromOther = isStudent ? newMsg.isParentSender : newMsg.isStudentSender;
         final currentRoute = GoRouterState.of(context).matchedLocation;
+        if (isFromOther) {
+          final settings = ref.read(notificationChannelSettingsProvider).value;
+          final service = ref.read(notificationChannelsServiceProvider);
+          if (settings != null && settings.notifyFamilyChat) {
+            if (settings.webPushEnabled) {
+              service.triggerWebPush(
+                title: 'Czat rodzinny • ${newMsg.senderName}',
+                body: newMsg.text,
+                tag: 'chat_${newMsg.id}',
+                url: '/czat',
+              );
+            }
+            if (settings.telegramEnabled && settings.isTelegramPaired) {
+              service.sendTelegramDirectMessage(
+                botToken: settings.telegramBotToken,
+                chatId: settings.telegramChatId!,
+                htmlText:
+                    '💬 <b>Nowa wiadomość na czacie rodzinnym</b>\n'
+                    'Od: <b>${newMsg.senderName}</b>\n'
+                    '📝 ${newMsg.text}\n\n'
+                    '🔗 <a href="https://lepsza-szkola.web.app/czat">Otwórz Czat Rodzinny</a>',
+              );
+            }
+          }
+        }
         if (isFromOther && currentRoute != '/czat') {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -174,7 +230,7 @@ class MainNavigationScreen extends ConsumerWidget {
               currentSectionTitle: activeIndex < _screenTitles.length
                   ? _screenTitles[activeIndex]
                   : _screenTitles[0],
-              onNotificationsTap: () => _onDestinationSelected(context, ref, 4),
+              onNotificationsTap: () => NotificationSettingsModal.show(context),
               onProfileTap: () {
                 _showProfileSheet(context, ref);
               },
@@ -362,6 +418,21 @@ class MainNavigationScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(
+                  Icons.notifications_active_outlined,
+                  color: AppColors.primary,
+                ),
+                title: const Text('Powiadomienia (Telegram Bot & Web Push)'),
+                subtitle: const Text(
+                  'Kod parowania Telegram, alerty ocen i powiadomienia w przeglądarce',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  NotificationSettingsModal.show(context);
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.sync, color: AppColors.primary),
                 title: const Text('Status synchronizacji z Librusem'),
