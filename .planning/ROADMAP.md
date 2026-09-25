@@ -189,8 +189,9 @@ Plans:
 3. Raport jest automatycznie wysyłany przez bota Telegram do wszystkich sparowanych kont (rodzic oraz uczeń).
 4. W przypadku braku sprawdzianów w danym tygodniu raport zawiera pozytywny komunikat podsumowujący (spokojny tydzień) wraz z ramowym planem zajęć.
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
 
-- [ ] TBD (run /gsd-plan-phase 19 to break down)
+- [ ] 19-01-PLAN.md: Backend Weekly Briefing Engine (`functions/src/weekly_briefing_service.js`) & Friday 18:00 Cloud Scheduler (`scheduledWeeklyBriefing` + `sendWeeklyBriefingNow`)
+- [ ] 19-02-PLAN.md: Client Weekly Briefing Generator (`weekly_briefing_service.dart`), `WeeklyBriefingModal` preview & 1-click Telegram dispatch in `NotificationSettingsModal` and `WeekNavigatorBar`

@@ -1,0 +1,29 @@
+{
+  "model_profile": "quality",
+  "mode": "interactive",
+  "depth": "comprehensive",
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true,
+    "code_review": true,
+    "code_review_depth": "standard",
+    "code_review_auto_fix": true,
+    "ui_phase": true,
+    "ui_review": true,
+    "drift_guard": true,
+    "_auto_chain_active": false
+  },
+  "deploy": {
+    "auto_firebase": true,
+    "hosting_url": "https://lepsza-szkola.web.app",
+    "verify_before_deploy": [
+      "flutter analyze",
+      "flutter build web --release"
+    ]
+  },
+  "git": {
+    "commit_docs": true,
+    "atomic_commits": true
+  }
+}
