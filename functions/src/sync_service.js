@@ -203,7 +203,7 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
       (s.grades || []).forEach(g => {
         if (!prevGradeIds.has(g.id)) {
           newNotifications.push({
-            id: `grade_${g.id}_${Date.now()}`,
+            id: `grade_${String(g.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`,
             type: "grade",
             title: `Nowa ocena: ${g.value} (${s.name})`,
             body: `${g.category} • Waga: ${g.weight} • ${g.teacher}`,
@@ -219,7 +219,7 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
     (freshData.announcements || []).forEach(a => {
       if (!prevAnnIds.has(a.id)) {
         newNotifications.push({
-          id: `ann_${a.id}_${Date.now()}`,
+          id: `ann_${String(a.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`,
           type: "announcement",
           title: `Nowe ogłoszenie: ${a.title}`,
           body: `${a.author} (${a.date})`,
@@ -234,7 +234,7 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
     (freshData.messages || []).forEach(m => {
       if (!prevMsgIds.has(m.id)) {
         newNotifications.push({
-          id: `msg_${m.id}_${Date.now()}`,
+          id: `msg_${String(m.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`,
           type: "message",
           title: `Nowa wiadomość: ${m.subject}`,
           body: `${m.sender} • ${m.date}`,
@@ -251,8 +251,9 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
     (freshData.exams || []).forEach(e => {
       const examKey = `${e.date || ""}_${e.subject || ""}_${e.category || ""}`;
       if (!prevExamKeys.has(examKey)) {
+        const safeExamSlug = examKey.toLowerCase().replace(/[^a-z0-9]+/g, "_");
         newNotifications.push({
-          id: `exam_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          id: `exam_${safeExamSlug}`,
           type: "exam",
           title: `Nowy sprawdzian: ${e.subject || "Przedmiot"} (${e.date || ""})`,
           body: `${e.category || "Sprawdzian"}${e.description ? " • " + e.description : ""}`,

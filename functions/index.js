@@ -867,6 +867,7 @@ exports.getJustificationRequests = onRequest(
 );
 
 const {
+  escapeHtml,
   verifyAndPairCodeFromUpdates,
   sendTelegramMessage,
 } = require("./src/telegram_service");
@@ -920,8 +921,8 @@ exports.sendTestTelegramNotification = onRequest(
     try {
       const botToken = req.body?.botToken || req.query.botToken || process.env.TELEGRAM_BOT_TOKEN;
       const chatId = req.body?.chatId || req.query.chatId;
-      const roleLabel = req.body?.roleLabel || "Rodzic";
-      const studentName = req.body?.studentName || "Oskar";
+      const roleLabel = escapeHtml(req.body?.roleLabel || "Rodzic");
+      const studentName = escapeHtml(req.body?.studentName || "Oskar");
 
       const htmlText =
         `🔔 <b>Test powiadomienia • EduSync (Lepsza Szkoła)</b>\n\n` +

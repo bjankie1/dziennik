@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/services/notification_channels_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/models/attendance_record.dart';
 import '../../domain/models/user_role.dart';
@@ -72,17 +73,32 @@ class MainNavigationScreen extends ConsumerWidget {
     // Real-time listener for new school notifications (Grades, Messages, Exams) -> Web Push
     ref.listen(schoolNotificationsStreamProvider, (previous, next) {
       if (previous?.value == null || next.value == null) return;
-      final prevIds = previous!.value!.map((e) => e.id).toSet();
-      final newItems =
-          next.value!.where((e) => !prevIds.contains(e.id)).toList();
+      final prevList = previous!.value!;
+      final nextList = next.value!;
+      if (prevList.isEmpty && nextList.length > 1) {
+        // Initial Firestore snapshot hydration: seed deduplication set without flooding alerts
+        final service = ref.read(notificationChannelsServiceProvider);
+        for (final existing in nextList) {
+          service.markEventDispatched('notif_${existing.id}');
+        }
+        return;
+      }
+
+      final prevIds = prevList.map((e) => e.id).toSet();
+      final newItems = nextList.where((e) => !prevIds.contains(e.id)).toList();
       if (newItems.isEmpty) return;
 
       final settings = ref.read(notificationChannelSettingsProvider).value;
       if (settings == null || !settings.webPushEnabled) return;
       final service = ref.read(notificationChannelsServiceProvider);
+      final now = DateTime.now();
 
       for (final item in newItems) {
+        if (item.isRead) continue;
+        if (now.difference(item.timestamp).inMinutes.abs() > 5) continue;
+        if (!service.markEventDispatched('notif_${item.id}')) continue;
         if (!settings.isCategoryEnabled(item.type)) continue;
+
         final route = switch (item.type) {
           'grade' => '/oceny',
           'message' || 'announcement' => '/wiadomosci',
@@ -104,13 +120,21 @@ class MainNavigationScreen extends ConsumerWidget {
       final nextList = next.value!;
       if (nextList.length > prevList.length) {
         final newMsg = nextList.last;
+        final isFresh =
+            DateTime.now().difference(newMsg.createdAt).inMinutes.abs() <= 3;
+        if (!isFresh && prevList.isEmpty) return;
+
         final user = ref.read(appUserProvider);
         final isStudent = user?.isStudent ?? false;
-        final isFromOther = isStudent ? newMsg.isParentSender : newMsg.isStudentSender;
+        final isFromOther =
+            isStudent ? newMsg.isParentSender : newMsg.isStudentSender;
         final currentRoute = GoRouterState.of(context).matchedLocation;
-        if (isFromOther) {
+        final service = ref.read(notificationChannelsServiceProvider);
+
+        if (isFromOther &&
+            isFresh &&
+            service.markEventDispatched('chat_${newMsg.id}')) {
           final settings = ref.read(notificationChannelSettingsProvider).value;
-          final service = ref.read(notificationChannelsServiceProvider);
           if (settings != null && settings.notifyFamilyChat) {
             if (settings.webPushEnabled) {
               service.triggerWebPush(
@@ -121,19 +145,25 @@ class MainNavigationScreen extends ConsumerWidget {
               );
             }
             if (settings.telegramEnabled && settings.isTelegramPaired) {
+              final safeSender = NotificationChannelsService.escapeTelegramHtml(
+                newMsg.senderName,
+              );
+              final safeText = NotificationChannelsService.escapeTelegramHtml(
+                newMsg.text,
+              );
               service.sendTelegramDirectMessage(
                 botToken: settings.telegramBotToken,
                 chatId: settings.telegramChatId!,
                 htmlText:
                     '💬 <b>Nowa wiadomość na czacie rodzinnym</b>\n'
-                    'Od: <b>${newMsg.senderName}</b>\n'
-                    '📝 ${newMsg.text}\n\n'
+                    'Od: <b>$safeSender</b>\n'
+                    '📝 $safeText\n\n'
                     '🔗 <a href="https://lepsza-szkola.web.app/czat">Otwórz Czat Rodzinny</a>',
               );
             }
           }
         }
-        if (isFromOther && currentRoute != '/czat') {
+        if (isFromOther && isFresh && currentRoute != '/czat') {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

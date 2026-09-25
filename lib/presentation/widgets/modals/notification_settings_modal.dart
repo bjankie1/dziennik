@@ -80,6 +80,14 @@ class _NotificationSettingsModalState
     _controllersInitialized = true;
   }
 
+  String _formatPairingCode(String? code) {
+    final trimmed = (code ?? '').trim();
+    if (trimmed.length == 6) {
+      return '${trimmed.substring(0, 3)} ${trimmed.substring(3)}';
+    }
+    return trimmed;
+  }
+
   void _setFeedback(String msg, {bool isError = false}) {
     if (!mounted) return;
     setState(() {
@@ -481,7 +489,7 @@ class _NotificationSettingsModalState
                                 ),
                                 const SizedBox(height: 4),
                                 SelectableText(
-                                  '${settings.pairingCode!.substring(0, 3)} ${settings.pairingCode!.substring(3)}',
+                                  _formatPairingCode(settings.pairingCode),
                                   style: const TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.w800,
@@ -1051,110 +1059,152 @@ class _NotificationSettingsModalState
       );
     }
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(20),
-      itemCount: items.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        final (icon, color, route) = switch (item.type) {
-          'grade' => (Icons.school_rounded, const Color(0xFF2563EB), '/oceny'),
-          'message' ||
-          'announcement' =>
-            (Icons.mail_rounded, const Color(0xFF0284C7), '/wiadomosci'),
-          'exam' => (
-              Icons.event_available_rounded,
-              const Color(0xFFD97706),
-              '/plan-lekcji'
-            ),
-          'family_chat' => (
-              Icons.forum_rounded,
-              const Color(0xFF7C3AED),
-              '/czat'
-            ),
-          _ => (
-              Icons.notifications_rounded,
-              AppColors.primary,
-              '/pulpit'
-            ),
-        };
+    final unreadCount = items.where((i) => !i.isRead).length;
 
-        return Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.35),
+    return Column(
+      children: [
+        if (unreadCount > 0)
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () async {
+                await service.markAllNotificationsAsRead(settings.familyId);
+                _setFeedback('Oznaczono wszystkie alerty jako przeczytane.');
+              },
+              icon: const Icon(Icons.done_all_rounded, size: 16),
+              label: Text(
+                'Oznacz wszystkie jako przeczytane ($unreadCount)',
+                style: const TextStyle(fontSize: 12),
+              ),
             ),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.all(20),
+            itemCount: items.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              final (icon, color, route) = switch (item.type) {
+                'grade' => (
+                    Icons.school_rounded,
+                    const Color(0xFF2563EB),
+                    '/oceny'
+                  ),
+                'message' || 'announcement' => (
+                    Icons.mail_rounded,
+                    const Color(0xFF0284C7),
+                    '/wiadomosci'
+                  ),
+                'exam' => (
+                    Icons.event_available_rounded,
+                    const Color(0xFFD97706),
+                    '/plan-lekcji'
+                  ),
+                'family_chat' => (
+                    Icons.forum_rounded,
+                    const Color(0xFF7C3AED),
+                    '/czat'
+                  ),
+                _ => (
+                    Icons.notifications_rounded,
+                    AppColors.primary,
+                    '/pulpit'
+                  ),
+              };
+
+              return Container(
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
+                  color: item.isRead
+                      ? AppColors.surfaceContainerLow
+                      : AppColors.primaryFixed.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: item.isRead
+                        ? AppColors.outlineVariant.withValues(alpha: 0.35)
+                        : AppColors.primary.withValues(alpha: 0.35),
+                  ),
                 ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(
-                      item.title,
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.onSurface,
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, color: color, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.title,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: item.isRead
+                                  ? FontWeight.w600
+                                  : FontWeight.w700,
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                          if (item.body.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              item.body,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 4),
+                          Text(
+                            DateFormat('dd.MM.yyyy HH:mm')
+                                .format(item.timestamp),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.outline,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    if (item.body.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        item.body,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 4),
-                    Text(
-                      DateFormat('dd.MM.yyyy HH:mm').format(item.timestamp),
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.outline,
-                      ),
+                    IconButton(
+                      tooltip: 'Wyślij jako Web Push',
+                      onPressed: () {
+                        service.triggerWebPush(
+                          title: item.title,
+                          body: item.body,
+                          tag: item.id,
+                          url: route,
+                        );
+                      },
+                      icon: const Icon(Icons.open_in_browser_rounded, size: 18),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        service.markNotificationAsRead(
+                          settings.familyId,
+                          item.id,
+                        );
+                        Navigator.of(context).pop();
+                        context.go(route);
+                      },
+                      child:
+                          const Text('Otwórz', style: TextStyle(fontSize: 12)),
                     ),
                   ],
                 ),
-              ),
-              IconButton(
-                tooltip: 'Wyślij jako Web Push',
-                onPressed: () {
-                  service.triggerWebPush(
-                    title: item.title,
-                    body: item.body,
-                    tag: item.id,
-                    url: route,
-                  );
-                },
-                icon: const Icon(Icons.open_in_browser_rounded, size: 18),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  context.go(route);
-                },
-                child: const Text('Otwórz', style: TextStyle(fontSize: 12)),
-              ),
-            ],
+              );
+            },
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 

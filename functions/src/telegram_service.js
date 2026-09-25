@@ -186,14 +186,36 @@ async function verifyAndPairCodeFromUpdates(db, { botToken, pairingCode, familyI
     return { paired: false, error: "Nieprawidłowy 6-cyfrowy kod parowania." };
   }
 
+  const settingsRef = db
+    .collection("students")
+    .doc(String(familyId))
+    .collection("notification_settings")
+    .doc(String(roleKey));
+
+  const settingsDoc = await settingsRef.get();
+  if (settingsDoc.exists) {
+    const data = settingsDoc.data() || {};
+    const expiresAt = data.pairingCodeExpiresAt?.toDate
+      ? data.pairingCodeExpiresAt.toDate()
+      : null;
+    if (expiresAt && expiresAt < new Date()) {
+      return {
+        paired: false,
+        error: "Kod parowania wygasł (ważność 15 minut). Wygeneruj nowy kod w ustawieniach.",
+      };
+    }
+  }
+
   const url = `https://api.telegram.org/bot${token}/getUpdates?limit=50`;
   const resp = await axios.get(url, { timeout: 10000 });
   const updates = resp.data?.result || [];
+  const nowUnix = Math.floor(Date.now() / 1000);
 
   let matchedChat = null;
   for (let i = updates.length - 1; i >= 0; i--) {
     const msg = updates[i].message || updates[i].edited_message;
     if (!msg || !msg.text || !msg.chat) continue;
+    if (msg.date && nowUnix - msg.date > 20 * 60) continue;
     const text = msg.text.trim();
     if (text === `/start ${code}` || text === code || text.includes(code)) {
       matchedChat = {
@@ -213,11 +235,6 @@ async function verifyAndPairCodeFromUpdates(db, { botToken, pairingCode, familyI
   }
 
   const roleLabel = roleKey === "student" ? "Uczeń (Oskar)" : "Rodzic";
-  const settingsRef = db
-    .collection("students")
-    .doc(String(familyId))
-    .collection("notification_settings")
-    .doc(String(roleKey));
 
   await settingsRef.set(
     {
@@ -254,6 +271,7 @@ async function verifyAndPairCodeFromUpdates(db, { botToken, pairingCode, familyI
 }
 
 module.exports = {
+  escapeHtml,
   formatNotificationForTelegram,
   sendTelegramMessage,
   dispatchTelegramNotificationsForStudent,

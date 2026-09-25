@@ -11,9 +11,24 @@ class NotificationChannelsService {
       'https://europe-west3-lepsza-szkola.cloudfunctions.net';
 
   final FirebaseFirestore _firestore;
+  final Set<String> _dispatchedEventIds = <String>{};
 
   NotificationChannelsService({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
+
+  /// Escapes `<`, `>`, and `&` for safe Telegram `parse_mode: 'HTML'` messages.
+  static String escapeTelegramHtml(String input) {
+    return input
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+  }
+
+  /// Returns `true` the first time [eventId] is seen in the current session, preventing duplicate Web Push / Telegram alerts.
+  bool markEventDispatched(String eventId) {
+    if (eventId.isEmpty) return false;
+    return _dispatchedEventIds.add(eventId);
+  }
 
   DocumentReference<Map<String, dynamic>> _settingsRef(
     String familyId,
@@ -24,6 +39,39 @@ class NotificationChannelsService {
         .doc(familyId)
         .collection('notification_settings')
         .doc(roleKey);
+  }
+
+  /// Marks a single school notification as read in Firestore.
+  Future<void> markNotificationAsRead(
+    String familyId,
+    String notificationId,
+  ) async {
+    try {
+      await _firestore
+          .collection('students')
+          .doc(familyId)
+          .collection('notifications')
+          .doc(notificationId)
+          .set({'isRead': true}, SetOptions(merge: true));
+    } catch (_) {}
+  }
+
+  /// Marks all unread notifications for [familyId] as read.
+  Future<void> markAllNotificationsAsRead(String familyId) async {
+    try {
+      final snap = await _firestore
+          .collection('students')
+          .doc(familyId)
+          .collection('notifications')
+          .where('isRead', isEqualTo: false)
+          .get();
+      if (snap.docs.isEmpty) return;
+      final batch = _firestore.batch();
+      for (final doc in snap.docs) {
+        batch.update(doc.reference, {'isRead': true});
+      }
+      await batch.commit();
+    } catch (_) {}
   }
 
   /// Generates a 6-digit one-time pairing code valid for 15 minutes and stores it in Firestore (`REQ-NOTIF-01`).
@@ -109,6 +157,21 @@ class NotificationChannelsService {
     final trimmedCode = pairingCode.trim();
     final trimmedToken = (botToken ?? '').trim();
 
+    // Validate 15-minute expiration in Firestore before polling
+    try {
+      final settingsSnap = await _settingsRef(familyId, roleKey).get();
+      final exp = settingsSnap.data()?['pairingCodeExpiresAt'];
+      if (exp is Timestamp && exp.toDate().isBefore(DateTime.now())) {
+        return (
+          paired: false,
+          chatId: null,
+          username: null,
+          error:
+              'Kod parowania wygasł (ważność 15 minut). Kliknij „Nowy kod”, aby wygenerować nowy.',
+        );
+      }
+    } catch (_) {}
+
     // 1. Direct Telegram Bot API check if token is provided
     if (trimmedToken.isNotEmpty) {
       try {
@@ -119,11 +182,16 @@ class NotificationChannelsService {
         if (response.statusCode == 200) {
           final decoded = jsonDecode(response.body) as Map<String, dynamic>;
           final results = (decoded['result'] as List<dynamic>?) ?? [];
+          final nowUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
           for (int i = results.length - 1; i >= 0; i--) {
             final item = results[i] as Map<String, dynamic>;
             final msg = (item['message'] ?? item['edited_message'])
                 as Map<String, dynamic>?;
             if (msg == null) continue;
+            final msgDate = msg['date'];
+            if (msgDate is int && (nowUnix - msgDate) > 20 * 60) continue;
+
             final text = (msg['text'] ?? '').toString().trim();
             final chat = msg['chat'] as Map<String, dynamic>?;
             if (chat == null) continue;
@@ -152,8 +220,9 @@ class NotificationChannelsService {
                 SetOptions(merge: true),
               );
 
-              final roleLabel =
-                  roleKey == 'student' ? 'Uczeń (Oskar)' : 'Rodzic';
+              final roleLabel = escapeTelegramHtml(
+                roleKey == 'student' ? 'Uczeń (Oskar)' : 'Rodzic',
+              );
               await sendTelegramDirectMessage(
                 botToken: trimmedToken,
                 chatId: chatId,
@@ -276,8 +345,10 @@ class NotificationChannelsService {
     required String studentName,
   }) async {
     if (!settings.isTelegramPaired) return false;
-    final roleLabel =
-        settings.roleKey == 'student' ? 'Uczeń ($studentName)' : 'Rodzic';
+    final safeStudent = escapeTelegramHtml(studentName);
+    final roleLabel = escapeTelegramHtml(
+      settings.roleKey == 'student' ? 'Uczeń ($safeStudent)' : 'Rodzic',
+    );
 
     final htmlText =
         '🔔 <b>Test powiadomienia • EduSync (Lepsza Szkoła)</b>\n\n'
