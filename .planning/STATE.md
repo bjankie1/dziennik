@@ -9,11 +9,11 @@ last_updated: "2026-09-24T12:15:00Z"
 last_activity: 2026-09-24
 state_head: 0ee4634
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 7
-  total_plans: 18
+  total_plans: 20
   completed_plans: 18
-  percent: 88
+  percent: 78
 milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ---
 
@@ -21,8 +21,8 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 **Current Milestone:** Milestone v3.0 (Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia)  
 **Active Phase:** Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)  
-**Status:** Phase 18 verified & completed (7/8 phases completed in v3.0 — 88%)  
-**Last Updated:** 2026-09-24  
+**Status:** Phase 18 verified & completed; Phase 19 planned; Phase 20 (Asystent AI dziennika szkolnego) added (7/9 phases completed in v3.0 — 78%)  
+**Last Updated:** 2026-09-26  
 
 ## Milestone v3.0 Roadmap
 
@@ -32,8 +32,9 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - [x] **Phase 16**: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości oraz dwukierunkowe linkowanie źródeł (completed 2026-09-23)
 - [x] **Phase 17**: Eksport sprawdzianów do Kalendarza Google i iCal (completed 2026-09-23)
 - [x] **Phase 17.1**: Refactoring architektury widoków i biblioteka współdzielonych komponentów UI (completed 2026-09-24)
-- [x] **Phase 18**: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push (completed 2026-09-24)
+- [x] **Phase 18**: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push (completed 2026-09-25)
 - [ ] **Phase 19**: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
+- [ ] **Phase 20**: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A)
 
 ## Completed in Previous Milestones
 
@@ -61,6 +62,8 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ### Roadmap Evolution
 
 - Phase 14.1 inserted: Czat rodzinny i dwukierunkowy dialog usprawiedliwień (URGENT)
+- Phase 17.1 inserted: Refactoring architektury widoków i biblioteka współdzielonych komponentów UI (URGENT)
+- Phase 20 added: Asystent AI dziennika szkolnego — Konwersacja z agentem na temat tego co znajduje się w dzienniku czyli oceny, plan lekcji, sprawdziany, wiadomości, nieobecności (np. „Kiedy jest następny sprawdzian”, „Kiedy jest wycieczka Oskara do Warszawy”, „Kiedy jest zebranie z rodzicami”)
 
 ### Quick Tasks Completed
 

@@ -30,8 +30,9 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 16: Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości oraz dwukierunkowe linkowanie źródeł** — Trwałe powiązanie zadań ze źródłem (`sourceId` dla sprawdzianów i wiadomości), blokada duplikacji po odświeżeniu strony (F5), bezpośrednie linki do już utworzonych zadań oraz tworzenie zadań z widoku wiadomości (np. opłacenie składki). (completed 2026-09-23)
 - [x] **Phase 17: Eksport sprawdzianów do Kalendarza Google i iCal** — Przycisk „Dodaj do Kalendarza Google” w kafelkach sprawdzianów i modalu lekcji oraz pobieranie plików kalendarzowych `.ics` (w tym zbiorczy eksport wszystkich sprawdzianów). (completed 2026-09-23)
 - [x] **Phase 17.1: Refactoring architektury widoków i biblioteka współdzielonych komponentów UI (INSERTED)** — Dekompozycja monolitycznych ekranów (`dashboard_screen.dart` 3833 LOC → 381 LOC) na modułowe sub-widgety `ConsumerWidget` oraz ekstrakcja powtarzających się wzorców UI (`BentoCard`, `GradeBadgePill`, `LinkedTaskActionBar`, `ExamCalendarActionsRow`, `FilterChipPill`, `JustificationApprovalBanner`) do `lib/presentation/widgets/common/`. (completed 2026-09-24)
-- [ ] **Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push** — Integracja bota Telegram w Cloud Functions z kodem parowania, natychmiastowe alerty o ocenach/wiadomościach/sprawdzianach oraz powiadomienia Web Push w przeglądarce.
+- [x] **Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push** — Integracja bota Telegram w Cloud Functions z kodem parowania, natychmiastowe alerty o ocenach/wiadomościach/sprawdzianach oraz powiadomienia Web Push w przeglądarce. (completed 2026-09-25)
 - [ ] **Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)** — Automatyczny harmonogram Cloud Scheduler w piątki wieczorem generujący i wysyłający raport podsumowujący nadchodzący tydzień przez bota Telegram do rodzica i ucznia.
+- [ ] **Phase 20: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A)** — Konwersacja z agentem AI na temat danych w dzienniku (oceny, plan lekcji, sprawdziany, wiadomości, ogłoszenia, nieobecności, zadania) z przeszukiwaniem pełnej treści wiadomości (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”).
 
 ---
 
@@ -195,3 +196,18 @@ Plans:
 
 - [ ] 19-01-PLAN.md: Backend Weekly Briefing Engine (`functions/src/weekly_briefing_service.js`) & Friday 18:00 Cloud Scheduler (`scheduledWeeklyBriefing` + `sendWeeklyBriefingNow`)
 - [ ] 19-02-PLAN.md: Client Weekly Briefing Generator (`weekly_briefing_service.dart`), `WeeklyBriefingModal` preview & 1-click Telegram dispatch in `NotificationSettingsModal` and `WeekNavigatorBar`
+
+### Phase 20: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A)
+
+**Goal**: Konwersacja z agentem na temat tego co znajduje się w dzienniku czyli oceny, plan lekcji, sprawdziany, wiadomości, nieobecności. Przykładowy prompt: „Kiedy jest następny sprawdzian”, „Kiedy jest wycieczka Oskara do Warszawy” lub „Kiedy jest zebranie z rodzicami”.  
+**Requirements**: REQ-AI-01, REQ-AI-02  
+**Depends on**: Phase 19  
+**Success Criteria**:
+
+1. Użytkownik (rodzic lub uczeń) ma dostęp do konwersacyjnego czatu z Asystentem AI dziennika (w aplikacji webowej/mobilnej oraz opcjonalnie przez sparowanego bota Telegram), z gotowymi chipami szybkich pytań (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”, „Jakie mam nieusprawiedliwione nieobecności?”).
+2. Agent AI buduje ustrukturyzowany kontekst (RAG / Context Grounding) z aktualnych danych w Firestore: ocen cząstkowych i średnich, planu lekcji, terminarza sprawdzianów, nieobecności, zadań To-Do oraz **pełnych treści wiadomości i ogłoszeń Librus** (gdzie znajdują się informacje o wycieczkach, zebraniach z rodzicami i składkach).
+3. Odpowiedzi agenta cytują konkretne źródła z dziennika (np. datę i nadawcę wiadomości o wycieczce lub zebraniu, dokładną datę i zakres sprawdzianu) oraz zawierają klikalne odnośniki (deep linki) do powiązanej wiadomości (`/wiadomosci/:id`), planu lekcji (`/plan-lekcji?data=...`) lub ocen (`/oceny`).
+4. Jeśli w pobranych nagłówkach wiadomości brakuje pełnej treści (`body`) dla potencjalnie pasujących tematów, system automatycznie dociąga brakujące treści wiadomości przed udzieleniem odpowiedzi i nigdy nie zmyśla faktów spoza dziennika.
+
+**Plans:** TBD
+

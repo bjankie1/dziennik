@@ -86,19 +86,23 @@
 ### Smart To-Do & Task Management
 - [x] **REQ-TASK-01**: Dedykowana podstrona `/zadania` w menu bocznym i nawigacji z wykazem zadań, terminami i filtrami.
 - [x] **REQ-TASK-02**: Karta Bento Grid na Pulpicie (desktop oraz mobile) prezentująca najpilniejsze zadania z natychmiastowym odhaczaniem.
-- [ ] **REQ-TASK-03**: Automatyczne i półautomatyczne generowanie zadań przygotowania do sprawdzianu/kartkówki z planu lekcji i terminarza.
-- [ ] **REQ-TASK-04**: Heurystyczne wykrywanie zadań podczas czytania wiadomości Librusa (kwoty, wpłaty, terminy, zgody) z przyciskiem szybkiego utworzenia zadania.
+- [x] **REQ-TASK-03**: Automatyczne i półautomatyczne generowanie zadań przygotowania do sprawdzianu/kartkówki z planu lekcji i terminarza.
+- [x] **REQ-TASK-04**: Heurystyczne wykrywanie zadań podczas czytania wiadomości Librusa (kwoty, wpłaty, terminy, zgody) z przyciskiem szybkiego utworzenia zadania.
 
 ### Calendar Export
-- [ ] **REQ-CAL-01**: Przycisk „Dodaj do Kalendarza Google” w kafelkach sprawdzianów i modalu lekcji (bezpośredni link webowy z wypełnioną datą, godziną i zakresem).
-- [ ] **REQ-CAL-02**: Pobieranie uniwersalnego pliku kalendarzowego `.ics` dla sprawdzianu lub zestawu terminów.
+- [x] **REQ-CAL-01**: Przycisk „Dodaj do Kalendarza Google” w kafelkach sprawdzianów i modalu lekcji (bezpośredni link webowy z wypełnioną datą, godziną i zakresem).
+- [x] **REQ-CAL-02**: Pobieranie uniwersalnego pliku kalendarzowego `.ics` dla sprawdzianu lub zestawu terminów.
 
 ### Notifications & Weekly Briefing
-- [ ] **REQ-NOTIF-01**: Integracja Telegram Bot w Cloud Functions z łączeniem konta poprzez jednorazowy kod.
-- [ ] **REQ-NOTIF-02**: Natychmiastowe powiadomienia Telegram o nowych ocenach, wiadomościach i sprawdzianach.
-- [ ] **REQ-NOTIF-03**: Obsługa powiadomień Web Push w przeglądarce (Service Worker / FCM).
+- [x] **REQ-NOTIF-01**: Integracja Telegram Bot w Cloud Functions z łączeniem konta poprzez jednorazowy kod.
+- [x] **REQ-NOTIF-02**: Natychmiastowe powiadomienia Telegram o nowych ocenach, wiadomościach i sprawdzianach.
+- [x] **REQ-NOTIF-03**: Obsługa powiadomień Web Push w przeglądarce (Service Worker / FCM).
 - [ ] **REQ-REPORT-01**: Automatyczny harmonogram Cloud Scheduler w piątki wieczorem generujący zestawienie sprawdzianów i planu na nadchodzący tydzień.
 - [ ] **REQ-REPORT-02**: Wysyłka piątkowego raportu tygodniowego przez bota Telegram do rodzica i ucznia.
+
+### Conversational School Assistant (AI Agent)
+- [ ] **REQ-AI-01**: Konwersacyjny czat z Asystentem AI dziennika szkolnego w aplikacji (i opcjonalnie przez Telegram), odpowiadający w języku polskim na pytania o sprawdziany, plan lekcji, oceny, nieobecności, wiadomości i ogłoszenia (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”).
+- [ ] **REQ-AI-02**: Kontekstowe uziemienie odpowiedzi (RAG / Context Grounding) w rzeczywistych danych Firestore (w tym pełnych treściach wiadomości `body` i ogłoszeń) z cytowaniem źródeł i bezpośrednimi odnośnikami (deep linkami) do wiadomości, lekcji lub ocen.
 
 ## Traceability
 
@@ -111,12 +115,15 @@
 | REQ-CHAT-01 | Phase 14.1 | Complete |
 | REQ-TASK-01 | Phase 15 | Complete |
 | REQ-TASK-02 | Phase 15 | Complete |
-| REQ-TASK-03 | Phase 16 | Pending |
-| REQ-TASK-04 | Phase 16 | Pending |
-| REQ-CAL-01 | Phase 17 | Pending |
-| REQ-CAL-02 | Phase 17 | Pending |
-| REQ-NOTIF-01 | Phase 18 | Pending |
-| REQ-NOTIF-02 | Phase 18 | Pending |
-| REQ-NOTIF-03 | Phase 18 | Pending |
+| REQ-TASK-03 | Phase 16 | Complete |
+| REQ-TASK-04 | Phase 16 | Complete |
+| REQ-CAL-01 | Phase 17 | Complete |
+| REQ-CAL-02 | Phase 17 | Complete |
+| REQ-NOTIF-01 | Phase 18 | Complete |
+| REQ-NOTIF-02 | Phase 18 | Complete |
+| REQ-NOTIF-03 | Phase 18 | Complete |
 | REQ-REPORT-01 | Phase 19 | Pending |
 | REQ-REPORT-02 | Phase 19 | Pending |
+| REQ-AI-01 | Phase 20 | Pending |
+| REQ-AI-02 | Phase 20 | Pending |
+
