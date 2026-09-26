@@ -209,5 +209,10 @@ Plans:
 3. Odpowiedzi agenta cytują konkretne źródła z dziennika (np. datę i nadawcę wiadomości o wycieczce lub zebraniu, dokładną datę i zakres sprawdzianu) oraz zawierają klikalne odnośniki (deep linki) do powiązanej wiadomości (`/wiadomosci/:id`), planu lekcji (`/plan-lekcji?data=...`) lub ocen (`/oceny`).
 4. Jeśli w pobranych nagłówkach wiadomości brakuje pełnej treści (`body`) dla potencjalnie pasujących tematów, system automatycznie dociąga brakujące treści wiadomości przed udzieleniem odpowiedzi i nigdy nie zmyśla faktów spoza dziennika.
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+
+- [ ] 20-01-PLAN.md: Backend Full Message Body Indexing (`sync_service.js` + `librus_client.js`) + Flutter AI Domain Models, `SchoolAiContextBuilder` & `SchoolAiAssistantService` (`firebase_ai: ^4.0.0`, Gemini 3.8 Flash / 3.1 Pro)
+- [ ] 20-02-PLAN.md: Riverpod AI Providers (`ai_assistant_provider.dart`), Per-Role Firestore History, Floating Chat Widget (`FloatingChatFab` + `FloatingChatPanel`) & Dual-Mode `FamilyChatScreen` Integration
 
