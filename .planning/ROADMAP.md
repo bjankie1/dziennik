@@ -32,7 +32,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 17.1: Refactoring architektury widoków i biblioteka współdzielonych komponentów UI (INSERTED)** — Dekompozycja monolitycznych ekranów (`dashboard_screen.dart` 3833 LOC → 381 LOC) na modułowe sub-widgety `ConsumerWidget` oraz ekstrakcja powtarzających się wzorców UI (`BentoCard`, `GradeBadgePill`, `LinkedTaskActionBar`, `ExamCalendarActionsRow`, `FilterChipPill`, `JustificationApprovalBanner`) do `lib/presentation/widgets/common/`. (completed 2026-09-24)
 - [x] **Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push** — Integracja bota Telegram w Cloud Functions z kodem parowania, natychmiastowe alerty o ocenach/wiadomościach/sprawdzianach oraz powiadomienia Web Push w przeglądarce. (completed 2026-09-25)
 - [ ] **Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)** — Automatyczny harmonogram Cloud Scheduler w piątki wieczorem generujący i wysyłający raport podsumowujący nadchodzący tydzień przez bota Telegram do rodzica i ucznia.
-- [ ] **Phase 20: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A)** — Konwersacja z agentem AI na temat danych w dzienniku (oceny, plan lekcji, sprawdziany, wiadomości, ogłoszenia, nieobecności, zadania) z przeszukiwaniem pełnej treści wiadomości (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”).
+- [x] **Phase 20: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A)** — Konwersacja z agentem AI na temat danych w dzienniku (oceny, plan lekcji, sprawdziany, wiadomości, ogłoszenia, nieobecności, zadania) z przeszukiwaniem pełnej treści wiadomości (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”). (completed 2026-09-26)
 
 ---
 
@@ -214,5 +214,5 @@ Plans:
 Plans:
 
 - [x] 20-01-PLAN.md: Backend Full Message Body Indexing (`sync_service.js` + `librus_client.js`) + Flutter AI Domain Models, `SchoolAiContextBuilder` & `SchoolAiAssistantService` (`firebase_ai: ^4.0.0`, Gemini 3.8 Flash / 3.1 Pro)
-- [ ] 20-02-PLAN.md: Riverpod AI Providers (`ai_assistant_provider.dart`), Per-Role Firestore History, Floating Chat Widget (`FloatingChatFab` + `FloatingChatPanel`) & Dual-Mode `FamilyChatScreen` Integration
+- [x] 20-02-PLAN.md: Riverpod AI Providers (`ai_assistant_provider.dart`), Per-Role Firestore History, Floating Chat Widget (`FloatingChatFab` + `FloatingChatPanel`) & Dual-Mode `FamilyChatScreen` Integration
 

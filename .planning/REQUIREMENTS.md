@@ -101,8 +101,8 @@
 - [ ] **REQ-REPORT-02**: Wysyłka piątkowego raportu tygodniowego przez bota Telegram do rodzica i ucznia.
 
 ### Conversational School Assistant (AI Agent)
-- [ ] **REQ-AI-01**: Konwersacyjny czat z Asystentem AI dziennika szkolnego w aplikacji (i opcjonalnie przez Telegram), odpowiadający w języku polskim na pytania o sprawdziany, plan lekcji, oceny, nieobecności, wiadomości i ogłoszenia (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”).
-- [ ] **REQ-AI-02**: Kontekstowe uziemienie odpowiedzi (RAG / Context Grounding) w rzeczywistych danych Firestore (w tym pełnych treściach wiadomości `body` i ogłoszeń) z cytowaniem źródeł i bezpośrednimi odnośnikami (deep linkami) do wiadomości, lekcji lub ocen.
+- [x] **REQ-AI-01**: Konwersacyjny czat z Asystentem AI dziennika szkolnego w aplikacji (i opcjonalnie przez Telegram), odpowiadający w języku polskim na pytania o sprawdziany, plan lekcji, oceny, nieobecności, wiadomości i ogłoszenia (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”).
+- [x] **REQ-AI-02**: Kontekstowe uziemienie odpowiedzi (RAG / Context Grounding) w rzeczywistych danych Firestore (w tym pełnych treściach wiadomości `body` i ogłoszeń) z cytowaniem źródeł i bezpośrednimi odnośnikami (deep linkami) do wiadomości, lekcji lub ocen.
 
 ## Traceability
 
@@ -124,6 +124,6 @@
 | REQ-NOTIF-03 | Phase 18 | Complete |
 | REQ-REPORT-01 | Phase 19 | Pending |
 | REQ-REPORT-02 | Phase 19 | Pending |
-| REQ-AI-01 | Phase 20 | Pending |
-| REQ-AI-02 | Phase 20 | Pending |
+| REQ-AI-01 | Phase 20 | Complete |
+| REQ-AI-02 | Phase 20 | Complete |
 
