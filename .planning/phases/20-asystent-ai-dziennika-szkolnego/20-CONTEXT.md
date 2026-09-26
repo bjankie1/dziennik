@@ -17,8 +17,9 @@ Wdrożenie konwersacyjnego Asystenta AI dziennika szkolnego zintegrowanego z pł
 - **D-01:** Czat działa jako **pływający przycisk (Floating Chat Button / Panel)** dostępny w aplikacji, który po otwarciu pozwala wybrać adresata wiadomości za pomocą przełącznika (Segmented Control / Tabs w nagłówku okienka czatu): **„Oskar / Rodzic (Czat rodzinny)”** albo **„Asystent AI ✨”**.
 - **D-02:** **Nie dodajemy żadnej nowej, osobnej zakładki** w głównym menu bocznym (`AppSidebar`) ani dolnym pasku nawigacji dla Asystenta AI — Asystent jest częścią modułu czatu (zarówno w pływającym okienku czatu, jak i na istniejącym ekranie `/czat`).
 
-### Silnik AI (Gemini) i zakres kanałów
-- **D-03:** Silnik konwersacyjny oparty o **Google Gemini (`gemini-2.5-flash`)** wywoływany przez backend Firebase Cloud Functions (`askSchoolAssistant`) lub Firebase AI SDK z ustrukturyzowanym kontekstem (RAG / Context Grounding) z danych ucznia w Firestore.
+### Silnik AI (Firebase AI Logic + Gemini 3) i zakres kanałów
+- **D-03:** Silnik konwersacyjny oparty o **Firebase AI Logic (`firebase_ai` SDK w trybie `FirebaseAI.googleAI(auth: FirebaseAuth.instance)`)** korzystający z darmowego **Gemini Developer API Free Tier** na projekcie Firebase `lepsza-szkola` (uruchamiany przez `npx firebase-tools init ailogic`, bez konieczności ręcznego zarządzania kluczami API).
+- **D-03b:** Domyślnym modelem językowym jest najnowszy stabilny **Gemini 3.8 Flash (`gemini-3.8-flash` / `gemini-flash-latest`)**, a w nagłówku czatu AI dostępny jest przełącznik pozwalający przełączyć się na **Gemini 3.1 Pro (`gemini-3.1-pro-preview`)** dla bardziej złożonych pytań analitycznych.
 - **D-04:** Asystent AI działa **wyłącznie w czacie w aplikacji webowej/mobilnej**. Kanał Telegram pozostaje przeznaczony wyłącznie do jednostronnych powiadomień (Faza 18) oraz Piątkowego Briefingu (Faza 19).
 
 ### Indeksowanie pełnej treści wiadomości Librus (`body`)
@@ -32,8 +33,8 @@ Wdrożenie konwersacyjnego Asystenta AI dziennika szkolnego zintegrowanego z pł
 - **D-07:** Historia rozmowy z Asystentem AI jest **osobna dla każdego użytkownika** (`parent` ma własny wątek z AI, a `student` / Oskar ma swój własny wątek z AI w `students/{studentId}/ai_chats/{role}_messages`) z przyciskiem **„Wyczyść czat”** oraz zestawem gotowych chipów startowych (*„Kiedy jest następny sprawdzian?”*, *„Kiedy jest wycieczka Oskara do Warszawy?”*, *„Kiedy jest zebranie z rodzicami?”*, *„Jakie są nieusprawiedliwione nieobecności?”*).
 
 ### the agent's Discretion
-- Format strukturyzacji promptu systemowego (System Prompt) dla Gemini 2.5 Flash oraz JSON Schema dla zwracanych źródeł (`sources[]`) i wykrytych wydarzeń kalendarzowych (`suggestedEvent` / `suggestedTask`).
-- Sposób bezpiecznego przekazania lub skonfigurowania klucza `GEMINI_API_KEY` (zmienna środowiskowa Cloud Functions + opcjonalne pole w ustawieniach dla łatwego wklejenia klucza z Google AI Studio).
+- Format strukturyzacji promptu systemowego (System Prompt) dla Gemini 3.8 Flash / Gemini 3.1 Pro oraz JSON Schema (`responseMimeType: 'application/json'`) dla zwracanych źródeł (`sources[]`) i wykrytych wydarzeń kalendarzowych (`suggestedEvent` / `suggestedTask`).
+- Automatyczny fallback z `gemini-3.8-flash` do `gemini-flash-latest` w przypadku przejściowej niedostępności konkretnego endpointu modelu.
 
 </decisions>
 

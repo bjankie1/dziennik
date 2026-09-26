@@ -22,14 +22,19 @@
 
 ---
 
-## Silnik AI (Gemini) oraz zadawanie pytań przez Telegram
+## Silnik AI (Firebase AI Logic + Gemini 3) oraz zadawanie pytań przez Telegram
 
 | Option | Description | Selected |
 |--------|-------------|----------|
-| W aplikacji + w bocie Telegram | Gemini 2.5 Flash działa w czacie w aplikacji oraz odpowiada na pytania wysyłane do bota na Telegramie | |
+| W aplikacji + w bocie Telegram | Działa w czacie w aplikacji oraz odpowiada na pytania wysyłane do bota na Telegramie | |
 | Tylko w pływającym czacie w aplikacji | Telegram służy wyłącznie do jednostronnych powiadomień i piątkowego raportu | ✓ |
 
-**User's choice:** Tylko w pływającym czacie w aplikacji webowej/mobilnej (Telegram służy wyłącznie do jednostronnych powiadomień i piątkowego raportu).
+| Option (Wybór modelu i autoryzacji) | Description | Selected |
+|--------|-------------|----------|
+| **Firebase AI Logic (`FirebaseAI.googleAI` Free Tier) + `gemini-3.8-flash` (`gemini-flash-latest`) + przełącznik na `gemini-3.1-pro-preview`** | Darmowy Free Tier Gemini Developer API bez ręcznych kluczy API, z najnowszym modelem Gemini 3.8 Flash i opcją przełączenia na Gemini 3.1 Pro | ✓ |
+| Tylko jeden model bez przełącznika | Stały model bez wyboru w UI | |
+
+**User's choice:** Firebase AI Logic (`FirebaseAI.googleAI` na darmowym Free Tierze) z najnowszym modelem **Gemini 3.8 Flash (`gemini-3.8-flash` / `gemini-flash-latest`)** oraz opcją przełączenia na **Gemini 3.1 Pro (`gemini-3.1-pro-preview`)**; wywoływany wyłącznie z pływającego czatu w aplikacji.
 
 ---
 
