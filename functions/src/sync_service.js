@@ -190,6 +190,15 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
   const prevDoc = await studentRef.get();
   const prevData = prevDoc.exists ? prevDoc.data() : null;
 
+  // Phase 20 (D-05): Preserve previously cached full message bodies & incrementally fetch up to 4 unindexed message bodies per sync cycle
+  if (Array.isArray(freshData.messages)) {
+    freshData.messages = await mergeAndIndexMessages({
+      freshMessages: freshData.messages,
+      prevMessages: prevData?.messages || [],
+      client
+    });
+  }
+
   const newNotifications = [];
 
   if (prevData && prevData.subjects) {
@@ -319,8 +328,102 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
   };
 }
 
+const defaultSleep = (minMs, maxMs) => new Promise(resolve => {
+  const ms = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+  setTimeout(resolve, ms);
+});
+
+/**
+ * Phase 20 (D-05): Preserves already-fetched full message bodies across sync cycles
+ * and incrementally fetches full bodies for up to `maxIncrementalFetch` unindexed
+ * messages per sync cycle (within the top `maxIndexDepth` messages).
+ */
+async function mergeAndIndexMessages({
+  freshMessages = [],
+  prevMessages = [],
+  client = null,
+  maxIncrementalFetch = 4,
+  maxIndexDepth = 40,
+  jitterMinMs = 1200,
+  jitterMaxMs = 2200,
+  sleepFn = defaultSleep
+}) {
+  if (!Array.isArray(freshMessages) || freshMessages.length === 0) {
+    return [];
+  }
+
+  const prevById = new Map();
+  if (Array.isArray(prevMessages)) {
+    for (const pm of prevMessages) {
+      if (pm && pm.id != null) {
+        prevById.set(String(pm.id), pm);
+      }
+    }
+  }
+
+  const merged = freshMessages.map(m => ({ ...m }));
+
+  // Step 1: Preserve already-loaded full message bodies from previous Firestore snapshot
+  for (const m of merged) {
+    if (m.bodyLoaded === true) continue;
+    const prev = prevById.get(String(m.id));
+    if (!prev) continue;
+
+    const hasCachedFullBody =
+      prev.bodyLoaded === true ||
+      (typeof prev.body === "string" &&
+        prev.body.trim().length > 0 &&
+        prev.body.trim() !== (prev.subject || "").trim());
+
+    if (hasCachedFullBody) {
+      m.body = prev.body;
+      m.preview =
+        prev.preview && prev.preview !== prev.subject
+          ? prev.preview
+          : prev.body.replace(/\s+/g, " ").substring(0, 90);
+      m.bodyLoaded = true;
+    } else {
+      m.bodyLoaded = false;
+    }
+  }
+
+  // Step 2: Incrementally fetch full bodies for up to `maxIncrementalFetch` unindexed messages within top `maxIndexDepth`
+  if (client && typeof client.fetchMessageDetails === "function" && maxIncrementalFetch > 0) {
+    let fetchedCount = 0;
+    const limit = Math.min(merged.length, maxIndexDepth);
+
+    for (let i = 0; i < limit; i++) {
+      if (fetchedCount >= maxIncrementalFetch) break;
+      const m = merged[i];
+      if (m.bodyLoaded === true || !m.librusUrl) continue;
+
+      try {
+        if (jitterMaxMs > 0 && typeof sleepFn === "function") {
+          await sleepFn(jitterMinMs, jitterMaxMs);
+        }
+        const details = await client.fetchMessageDetails(m.id, m.librusUrl);
+        if (details && typeof details.body === "string" && details.body.trim().length > 0) {
+          m.body = details.body.trim();
+          m.preview = m.body.replace(/\s+/g, " ").substring(0, 90);
+        }
+        m.bodyLoaded = true;
+        fetchedCount++;
+      } catch (err) {
+        console.warn(`[SyncService] Incremental message detail fetch failed for ${m.id}:`, err.message);
+      }
+    }
+
+    if (fetchedCount > 0) {
+      console.log(`[SyncService] Incrementally indexed full bodies for ${fetchedCount} message(s) for AI Assistant.`);
+    }
+  }
+
+  return merged;
+}
+
 module.exports = {
   syncStudentData,
   resolveCacheDocumentId,
-  shouldDispatchLibrusScrape
+  shouldDispatchLibrusScrape,
+  mergeAndIndexMessages
 };

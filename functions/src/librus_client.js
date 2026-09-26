@@ -664,6 +664,7 @@ class LibrusClient {
           isRead,
           preview: subject,
           body: subject,
+          bodyLoaded: false,
           librusUrl: link ? `https://synergia.librus.pl${link}` : ""
         });
       }
@@ -695,6 +696,7 @@ class LibrusClient {
             m.body = bodyText;
             m.preview = bodyText.replace(/\s+/g, " ").substring(0, 90);
           }
+          m.bodyLoaded = true;
         } catch (e) {
           console.warn(`Could not fetch body for message ${m.id}:`, e.message);
         }
@@ -714,6 +716,7 @@ class LibrusClient {
     return {
       id: msgId,
       body: bodyText || "",
+      bodyLoaded: true,
       librusUrl: targetUrl
     };
   }

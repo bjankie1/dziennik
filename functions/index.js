@@ -462,6 +462,7 @@ exports.getMessageDetails = onRequest(
             for (const m of msgs) {
               if (String(m.id) === String(msgId)) {
                 m.body = details.body;
+                m.bodyLoaded = true;
                 if (details.body) {
                   m.preview = details.body.replace(/\s+/g, " ").substring(0, 90);
                 }
