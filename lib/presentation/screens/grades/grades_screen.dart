@@ -140,9 +140,12 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
 
     final selectedSubject = ref.watch(selectedGradesSubjectProvider);
     final desktopTerm = ref.watch(gradesTermProvider);
+    final stats = ref.watch(gradesDistributionStatsProvider);
 
     final student = studentAsync.value;
-    final overallAvg = student?.overallAverage ?? 4.82;
+    final overallAvg = stats.overallAverage > 0
+        ? stats.overallAverage
+        : (student?.overallAverage ?? 0.0);
     final className = student?.className ?? 'Klasa';
     final schoolName = student?.schoolName ?? 'Liceum';
 
@@ -592,7 +595,10 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
     final isSelected = _selectedTerm == term;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _selectedTerm = term),
+        onTap: () {
+          setState(() => _selectedTerm = term);
+          ref.read(gradesTermProvider.notifier).setTerm(term);
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
@@ -623,6 +629,11 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
   }
 
   Widget _buildSummaryStatsCard(String className, double overallAvg) {
+    final stats = ref.watch(gradesDistributionStatsProvider);
+    final delta = stats.lastGradeDelta;
+    final isPositiveDelta = (delta ?? 0) >= 0;
+    final lastGrade = stats.lastGrade;
+
     final isEligible = overallAvg >= 4.75;
     final diff = overallAvg - 4.75;
     final diffText = isEligible
@@ -678,7 +689,7 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                     textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
-                        overallAvg.toStringAsFixed(2),
+                        overallAvg > 0 ? overallAvg.toStringAsFixed(2) : '—',
                         style: const TextStyle(
                           fontSize: 34,
                           fontWeight: FontWeight.w900,
@@ -686,21 +697,31 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                           letterSpacing: -1,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      const Row(
-                        children: [
-                          Icon(Icons.arrow_upward, size: 14, color: Color(0xFF16A34A)),
-                          SizedBox(width: 2),
-                          Text(
-                            '+0.14',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF16A34A),
+                      if (delta != null) ...[
+                        const SizedBox(width: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              isPositiveDelta ? Icons.arrow_upward : Icons.arrow_downward,
+                              size: 14,
+                              color: isPositiveDelta
+                                  ? const Color(0xFF16A34A)
+                                  : const Color(0xFFDC2626),
                             ),
-                          ),
-                        ],
-                      ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${isPositiveDelta ? '+' : ''}${delta.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: isPositiveDelta
+                                    ? const Color(0xFF16A34A)
+                                    : const Color(0xFFDC2626),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ],
@@ -711,30 +732,32 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDCFCE7),
+                      color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.star_rounded, size: 14, color: Color(0xFF15803D)),
+                        const Icon(Icons.school_rounded, size: 14, color: Color(0xFF334155)),
                         const SizedBox(width: 4),
                         Text(
-                          'Top 5% w $className',
+                          'Klasa $className',
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF15803D),
+                            color: Color(0xFF334155),
                           ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    'Pozycja: 2 / 28',
-                    style: TextStyle(
+                  Text(
+                    lastGrade != null
+                        ? 'Ostatnia: ${lastGrade.rawValue} (${lastGrade.subjectName})'
+                        : 'Ocen: ${stats.totalGrades}',
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF64748B),

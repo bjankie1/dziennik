@@ -393,6 +393,11 @@ class GradesDistributionStats {
   final int dangerCount;
   final double positivePercentage;
   final double overallAverage;
+  final double? lastGradeDelta;
+  final double? semesterDelta;
+  final Grade? lastGrade;
+  final int subjectsWithGradesCount;
+  final List<({DateTime date, double average, Grade grade})> trajectory;
 
   const GradesDistributionStats({
     required this.counts,
@@ -401,6 +406,11 @@ class GradesDistributionStats {
     required this.dangerCount,
     required this.positivePercentage,
     required this.overallAverage,
+    this.lastGradeDelta,
+    this.semesterDelta,
+    this.lastGrade,
+    this.subjectsWithGradesCount = 0,
+    this.trajectory = const [],
   });
 
   factory GradesDistributionStats.empty() {
@@ -411,6 +421,11 @@ class GradesDistributionStats {
       dangerCount: 0,
       positivePercentage: 100.0,
       overallAverage: 0.0,
+      lastGradeDelta: null,
+      semesterDelta: null,
+      lastGrade: null,
+      subjectsWithGradesCount: 0,
+      trajectory: [],
     );
   }
 }
@@ -425,20 +440,31 @@ final gradesDistributionStatsProvider = Provider<GradesDistributionStats>((ref) 
       int total = 0;
       double weightedSum = 0;
       int totalWeight = 0;
+      int subjectsWithGrades = 0;
+      final List<({Grade grade, int index})> indexedCountedGrades = [];
+      final List<({Grade grade, int index})> indexedAllGrades = [];
+      int runningIndex = 0;
 
       for (final subject in subjects) {
         final grades = term == 3
             ? subject.grades
             : subject.grades.where((g) => g.term == term).toList();
 
+        if (grades.isNotEmpty) {
+          subjectsWithGrades++;
+        }
+
         for (final g in grades) {
           final bucket = g.numericValue.round().clamp(1, 6);
           counts[bucket] = (counts[bucket] ?? 0) + 1;
           total++;
+          runningIndex++;
+          indexedAllGrades.add((grade: g, index: runningIndex));
 
           if (g.isCountedToAverage) {
             weightedSum += g.numericValue * g.weight;
             totalWeight += g.weight;
+            indexedCountedGrades.add((grade: g, index: runningIndex));
           }
         }
       }
@@ -452,6 +478,49 @@ final gradesDistributionStatsProvider = Provider<GradesDistributionStats>((ref) 
       final double positivePct = total > 0 ? (positiveCount / total) * 100 : 100.0;
       final double avg = totalWeight > 0 ? (weightedSum / totalWeight) : 0.0;
 
+      indexedCountedGrades.sort((a, b) {
+        final cmp = a.grade.date.compareTo(b.grade.date);
+        return cmp != 0 ? cmp : a.index.compareTo(b.index);
+      });
+      indexedAllGrades.sort((a, b) {
+        final cmp = a.grade.date.compareTo(b.grade.date);
+        return cmp != 0 ? cmp : a.index.compareTo(b.index);
+      });
+
+      final List<({DateTime date, double average, Grade grade})> fullTrajectory = [];
+      double cumWeightedSum = 0;
+      int cumWeight = 0;
+      for (final item in indexedCountedGrades) {
+        cumWeightedSum += item.grade.numericValue * item.grade.weight;
+        cumWeight += item.grade.weight;
+        if (cumWeight > 0) {
+          fullTrajectory.add((
+            date: item.grade.date,
+            average: cumWeightedSum / cumWeight,
+            grade: item.grade,
+          ));
+        }
+      }
+
+      double? delta;
+      double? semDelta;
+      Grade? latestGrade;
+      if (indexedCountedGrades.isNotEmpty) {
+        latestGrade = indexedCountedGrades.last.grade;
+        final prevWeight = totalWeight - latestGrade.weight;
+        if (indexedCountedGrades.length >= 2 && prevWeight > 0) {
+          final prevWeightedSum =
+              weightedSum - (latestGrade.numericValue * latestGrade.weight);
+          final prevAvg = prevWeightedSum / prevWeight;
+          delta = avg - prevAvg;
+        }
+        if (fullTrajectory.length >= 2) {
+          semDelta = fullTrajectory.last.average - fullTrajectory.first.average;
+        }
+      } else if (indexedAllGrades.isNotEmpty) {
+        latestGrade = indexedAllGrades.last.grade;
+      }
+
       return GradesDistributionStats(
         counts: counts,
         totalGrades: total,
@@ -459,16 +528,14 @@ final gradesDistributionStatsProvider = Provider<GradesDistributionStats>((ref) 
         dangerCount: threatCount + (counts[2] ?? 0),
         positivePercentage: positivePct,
         overallAverage: avg,
+        lastGradeDelta: delta,
+        semesterDelta: semDelta,
+        lastGrade: latestGrade,
+        subjectsWithGradesCount: subjectsWithGrades,
+        trajectory: fullTrajectory,
       );
     },
-    loading: () => const GradesDistributionStats(
-      counts: {1: 0, 2: 0, 3: 3, 4: 9, 5: 18, 6: 8},
-      totalGrades: 38,
-      hasThreats: false,
-      dangerCount: 0,
-      positivePercentage: 100.0,
-      overallAverage: 4.82,
-    ),
+    loading: () => GradesDistributionStats.empty(),
     error: (_, stack) => GradesDistributionStats.empty(),
   );
 });

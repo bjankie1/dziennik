@@ -11,7 +11,7 @@ class GradeDistributionCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(gradesDistributionStatsProvider);
     final counts = stats.counts;
-    final total = stats.totalGrades > 0 ? stats.totalGrades : 38;
+    final total = stats.totalGrades;
 
     // Determine max count for scaling (ensure at least 1)
     int maxCount = 1;
@@ -19,8 +19,8 @@ class GradeDistributionCard extends ConsumerWidget {
       maxCount = max(maxCount, counts[i] ?? 0);
     }
 
-    final double pct5 = total > 0 ? ((counts[5] ?? 0) / total * 100) : 47.4;
-    final double pct6 = total > 0 ? ((counts[6] ?? 0) / total * 100) : 21.1;
+    final double pct5 = total > 0 ? ((counts[5] ?? 0) / total * 100) : 0.0;
+    final double pct6 = total > 0 ? ((counts[6] ?? 0) / total * 100) : 0.0;
 
     return Container(
       decoration: BoxDecoration(

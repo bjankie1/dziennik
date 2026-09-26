@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -7,27 +8,87 @@ import 'trajectory_chart_painter.dart';
 class AverageTrajectoryCard extends ConsumerWidget {
   const AverageTrajectoryCard({super.key});
 
+  static const _shortMonths = [
+    'Sty',
+    'Lut',
+    'Mar',
+    'Kwi',
+    'Maj',
+    'Cze',
+    'Lip',
+    'Sie',
+    'Wrz',
+    'Paź',
+    'Lis',
+    'Gru',
+  ];
+
+  String _formatShortDate(DateTime dt) {
+    final m = (dt.month >= 1 && dt.month <= 12) ? _shortMonths[dt.month - 1] : '';
+    return '${dt.day.toString().padLeft(2, '0')} $m';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final studentAsync = ref.watch(studentProfileProvider);
     final stats = ref.watch(gradesDistributionStatsProvider);
 
-    final studentName = studentAsync.value?.name.split(' ').first ?? 'Maja';
-    final className = studentAsync.value?.className ?? '3B';
-    final currentAvg = stats.overallAverage > 0 ? stats.overallAverage : 4.82;
-    final currentAvgStr = currentAvg.toStringAsFixed(2);
+    final studentName = studentAsync.value?.name.split(' ').first ?? 'Uczeń';
+    final currentAvg = stats.overallAverage;
+    final currentAvgStr = currentAvg > 0 ? currentAvg.toStringAsFixed(2) : '—';
 
-    final points = [
-      const TrajectoryPoint(label: '01 Wrz (4.60)', value: 4.60),
-      const TrajectoryPoint(label: '15 Wrz (4.68)', value: 4.68),
-      const TrajectoryPoint(label: '01 Paź (4.74)', value: 4.74),
-      const TrajectoryPoint(label: '15 Paź (4.78)', value: 4.78),
-      TrajectoryPoint(
-        label: 'Dzisiaj ($currentAvgStr)',
-        value: currentAvg,
+    final rawTrajectory = stats.trajectory;
+    final List<TrajectoryPoint> points = [];
+    if (rawTrajectory.isEmpty) {
+      points.add(TrajectoryPoint(
+        label: 'Brak ocen',
+        value: currentAvg > 0 ? currentAvg : 3.0,
         isLatest: true,
-      ),
-    ];
+      ));
+    } else if (rawTrajectory.length <= 5) {
+      for (int i = 0; i < rawTrajectory.length; i++) {
+        final item = rawTrajectory[i];
+        final isLast = i == rawTrajectory.length - 1;
+        points.add(TrajectoryPoint(
+          label: '${_formatShortDate(item.date)} (${item.average.toStringAsFixed(2)})',
+          value: item.average,
+          isLatest: isLast,
+        ));
+      }
+    } else {
+      final int n = rawTrajectory.length;
+      final indices = <int>{
+        0,
+        (n * 0.25).floor(),
+        (n * 0.50).floor(),
+        (n * 0.75).floor(),
+        n - 1,
+      }.toList()
+        ..sort();
+      for (int i = 0; i < indices.length; i++) {
+        final idx = indices[i];
+        final item = rawTrajectory[idx];
+        final isLast = idx == n - 1;
+        points.add(TrajectoryPoint(
+          label: '${_formatShortDate(item.date)} (${item.average.toStringAsFixed(2)})',
+          value: item.average,
+          isLatest: isLast,
+        ));
+      }
+    }
+
+    double minVal = 6.0;
+    double maxVal = 1.0;
+    for (final p in points) {
+      minVal = min(minVal, p.value);
+      maxVal = max(maxVal, p.value);
+    }
+    final minY = (minVal - 0.4).clamp(1.0, 5.5);
+    final maxY = (maxVal + 0.4).clamp(minY + 0.6, 6.0);
+    const referenceThreshold = 4.75;
+
+    final semDelta = stats.semesterDelta;
+    final isPositiveSem = (semDelta ?? 0) >= 0;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -93,7 +154,7 @@ class AverageTrajectoryCard extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(width: 14),
-                  // Class average dashed legend
+                  // Scholarship threshold dashed legend
                   Row(
                     children: [
                       Container(
@@ -102,9 +163,9 @@ class AverageTrajectoryCard extends ConsumerWidget {
                         color: AppColors.outlineVariant,
                       ),
                       const SizedBox(width: 5),
-                      Text(
-                        'Średnia klasy $className (4.18)',
-                        style: const TextStyle(
+                      const Text(
+                        'Próg wyróżnienia (4.75)',
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppColors.onSurfaceVariant,
                         ),
@@ -124,9 +185,9 @@ class AverageTrajectoryCard extends ConsumerWidget {
             child: CustomPaint(
               painter: TrajectoryChartPainter(
                 points: points,
-                classAverage: 4.18,
-                minY: 3.8,
-                maxY: 5.1,
+                classAverage: referenceThreshold,
+                minY: minY,
+                maxY: maxY,
                 primaryColor: AppColors.primaryContainer,
                 classAvgColor: AppColors.outlineVariant,
                 gridColor: AppColors.surfaceContainerHigh.withValues(alpha: 0.7),
@@ -158,21 +219,35 @@ class AverageTrajectoryCard extends ConsumerWidget {
               color: AppColors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.trending_up_rounded,
+                  semDelta == null
+                      ? Icons.timeline_rounded
+                      : (isPositiveSem
+                          ? Icons.trending_up_rounded
+                          : Icons.trending_down_rounded),
                   size: 14,
-                  color: Color(0xFF15803D),
+                  color: semDelta == null
+                      ? AppColors.onSurfaceVariant
+                      : (isPositiveSem
+                          ? const Color(0xFF15803D)
+                          : const Color(0xFFB91C1C)),
                 ),
-                SizedBox(width: 6),
+                const SizedBox(width: 6),
                 Text(
-                  '+0.22 pkt od początku semestru • Stały trend wzrostowy',
+                  semDelta != null
+                      ? '${isPositiveSem ? '+' : ''}${semDelta.toStringAsFixed(2)} pkt od pierwszej oceny w semestrze (${rawTrajectory.first.average.toStringAsFixed(2)} → $currentAvgStr)'
+                      : 'Zbyt mało ocen w semestrze, aby wyznaczyć trend',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF15803D),
+                    color: semDelta == null
+                        ? AppColors.onSurfaceVariant
+                        : (isPositiveSem
+                            ? const Color(0xFF15803D)
+                            : const Color(0xFFB91C1C)),
                   ),
                 ),
               ],

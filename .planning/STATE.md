@@ -79,17 +79,18 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 260923-osk | Naprawa braku planu lekcji na koncie Oskara (rozwiązywanie primaryLogin 11010033 dla roli ucznia) | 2026-09-23 | 15ce87d | [260923-osk-naprawa-braku-planu-lekcji-na-koncie-oskara](./quick/260923-osk-naprawa-braku-planu-lekcji-na-koncie-oskara/) |
 | 260923-spr | Oznaczenie sprawdzianu w planie lekcji (chip na lekcji + szczegóły i zakres w modalu) | 2026-09-23 | HEAD | [260923-spr-sprawdzian-w-planie-lekcji-chip-i-szczegoly](./quick/260923-spr-sprawdzian-w-planie-lekcji-chip-i-szczegoly/) |
 | 260924-cor | Automatyczna korelacja próśb o usprawiedliwienie od Oskara z niezależnie wysłanymi wnioskami rodzica + usunięcie wycieku mockowego req_init_01 | 2026-09-24 | HEAD | [260924-cor-korelacja-prosb-o-usprawiedliwienie](./quick/260924-cor-korelacja-prosb-o-usprawiedliwienie/) |
+| 260926-avg | Prawdziwa zmiana średniej po ostatniej ocenie (lastGradeDelta) i usunięcie zmyślonej lokaty w klasie (Top 5% / 1. lokata na 28) | 2026-09-26 | HEAD | [260926-avg-prawdziwa-zmiana-sredniej-i-usuniecie-f](./quick/260926-avg-prawdziwa-zmiana-sredniej-i-usuniecie-f/) |
 
 ## Session
 
-**Last session:** 2026-09-23T15:55:00Z
-**Stopped at:** Completed Quick Task 260923-spr (Oznaczenie sprawdzianu w planie lekcji: chip na lekcji + szczegóły i zakres w modalu)
+**Last session:** 2026-09-26T22:40:00+02:00
+**Stopped at:** Completed Quick Task 260926-avg (Prawdziwa zmiana średniej po ostatniej ocenie i usunięcie zmyślonej lokaty w klasie)
 **Resume file:** None
-Last activity: 2026-09-23
+Last activity: 2026-09-26
 
 ## Current Position
 
-Phase: 15 (Moduł zadań (Smart To-Do) i widżet na Pulpicie) — COMPLETE (3/3 plans completed)
-Next Phase: 16 (Inteligentne podpowiedzi zadań ze sprawdzianów i wiadomości)
-Status: Phase 15 completed + Quick Tasks 260923-l4t, 260923-osk & 260923-spr deployed. Ready for Phase 16.
-Last activity: 2026-09-23 — Completed Quick Task 260923-spr
+Phase: 20 (Asystent AI dziennika szkolnego) — COMPLETE (2/2 plans completed)
+Next Phase: 19 (Raporty tygodniowe)
+Status: Phase 20 + Quick Task 260926-avg completed & deployed.
+Last activity: 2026-09-26 — Completed Quick Task 260926-avg

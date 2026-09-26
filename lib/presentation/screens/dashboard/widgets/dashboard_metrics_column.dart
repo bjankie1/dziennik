@@ -42,6 +42,12 @@ class DashboardMetricsColumn extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final attendancePct = student?.attendancePercentage ?? 98.6;
+    final stats = ref.watch(gradesDistributionStatsProvider);
+    final avgValue = stats.overallAverage > 0
+        ? stats.overallAverage
+        : (student?.overallAverage ?? 0.0);
+    final delta = stats.lastGradeDelta;
+    final isPositiveDelta = (delta ?? 0) >= 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -116,8 +122,10 @@ class DashboardMetricsColumn extends ConsumerWidget {
                             color: AppColors.primary.withValues(alpha: 0.15),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
-                            Icons.trending_up,
+                          child: Icon(
+                            delta != null && !isPositiveDelta
+                                ? Icons.trending_down
+                                : Icons.trending_up,
                             size: 16,
                             color: AppColors.primary,
                           ),
@@ -140,33 +148,38 @@ class DashboardMetricsColumn extends ConsumerWidget {
                               textBaseline: TextBaseline.alphabetic,
                               children: [
                                 Text(
-                                  (student?.overallAverage ?? 5.0)
-                                      .toStringAsFixed(2),
+                                  avgValue > 0 ? avgValue.toStringAsFixed(2) : '—',
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w800,
                                     color: AppColors.primary,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.secondary,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Text(
-                                    'Top 5%',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
+                                if (delta != null) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isPositiveDelta
+                                          ? const Color(0xFFDCFCE7)
+                                          : const Color(0xFFFEE2E2),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      '${isPositiveDelta ? '+' : ''}${delta.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        color: isPositiveDelta
+                                            ? const Color(0xFF15803D)
+                                            : const Color(0xFFB91C1C),
+                                      ),
                                     ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
                           ],
@@ -174,9 +187,11 @@ class DashboardMetricsColumn extends ConsumerWidget {
                       ],
                     ),
                     Text(
-                      student != null && student!.overallAverage >= 4.75
+                      avgValue >= 4.75
                           ? 'Wyróżnienie 🏅'
-                          : 'Bardzo dobry wynik',
+                          : (stats.totalGrades > 0
+                              ? 'Ocen: ${stats.totalGrades}'
+                              : ''),
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,

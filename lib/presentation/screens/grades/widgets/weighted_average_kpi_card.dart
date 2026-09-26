@@ -12,13 +12,14 @@ class WeightedAverageKpiCard extends ConsumerWidget {
     final term = ref.watch(gradesTermProvider);
     final termLabel = term == 1 ? 'S1' : (term == 2 ? 'S2' : 'ROCZNA');
     final student = ref.watch(studentProfileProvider).value;
-    final className = student?.className ?? '3B';
-    final rank = student?.classRank ?? 2;
-    final total = student?.totalStudentsInClass ?? 28;
+    final className = student?.className ?? 'Klasa';
 
     final avgStr = stats.overallAverage > 0
         ? stats.overallAverage.toStringAsFixed(2)
-        : '4.82';
+        : '—';
+    final delta = stats.lastGradeDelta;
+    final isPositiveDelta = (delta ?? 0) >= 0;
+    final lastGrade = stats.lastGrade;
 
     return Container(
       decoration: BoxDecoration(
@@ -80,7 +81,7 @@ class WeightedAverageKpiCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // Middle: Big Average + Trend Pill
+                // Middle: Big Average + Real Trend Pill (from last grade impact)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
                   textBaseline: TextBaseline.alphabetic,
@@ -95,38 +96,53 @@ class WeightedAverageKpiCard extends ConsumerWidget {
                         color: AppColors.onSurface,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.trending_up_rounded,
-                            size: 16,
-                            color: Color(0xFF15803D),
+                    if (delta != null) ...[
+                      const SizedBox(width: 10),
+                      Tooltip(
+                        message: lastGrade != null
+                            ? 'Zmiana średniej po ostatniej ocenie: ${lastGrade.rawValue} (waga ${lastGrade.weight}) z przedmiotu ${lastGrade.subjectName}'
+                            : 'Zmiana średniej po ostatniej ocenie',
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isPositiveDelta
+                                ? const Color(0xFFDCFCE7)
+                                : const Color(0xFFFEE2E2),
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                          SizedBox(width: 3),
-                          Text(
-                            '+0.14',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF15803D),
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isPositiveDelta
+                                    ? Icons.trending_up_rounded
+                                    : Icons.trending_down_rounded,
+                                size: 16,
+                                color: isPositiveDelta
+                                    ? const Color(0xFF15803D)
+                                    : const Color(0xFFB91C1C),
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                '${isPositiveDelta ? '+' : ''}${delta.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: isPositiveDelta
+                                      ? const Color(0xFF15803D)
+                                      : const Color(0xFFB91C1C),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Wyliczona na podstawie ${stats.totalGrades > 0 ? stats.totalGrades : 38} ocen cząstkowych',
+                  'Wyliczona na podstawie ${stats.totalGrades} ocen cząstkowych (${stats.subjectsWithGradesCount} przedm.)',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.onSurfaceVariant,
@@ -134,7 +150,7 @@ class WeightedAverageKpiCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: 14),
 
-                // Footer: Class Rank (D-09)
+                // Footer: Real Latest Grade Context (Librus does not expose class rank)
                 Container(
                   padding: const EdgeInsets.only(top: 12),
                   decoration: BoxDecoration(
@@ -144,19 +160,27 @@ class WeightedAverageKpiCard extends ConsumerWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.stars_rounded,
+                      Icon(
+                        lastGrade != null && lastGrade.numericValue < 2.0
+                            ? Icons.warning_amber_rounded
+                            : Icons.history_edu_rounded,
                         size: 16,
-                        color: AppColors.secondary,
+                        color: lastGrade != null && lastGrade.numericValue < 2.0
+                            ? const Color(0xFFB91C1C)
+                            : AppColors.secondary,
                       ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'Top 5% w klasie $className ($rank. lokata na $total uczniów)',
-                          style: const TextStyle(
+                          lastGrade != null
+                              ? 'Ostatnia ocena: ${lastGrade.rawValue} (waga ${lastGrade.weight}) • ${lastGrade.subjectName}'
+                              : 'Klasa $className • Brak ocen w wybranym okresie',
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.secondary,
+                            color: lastGrade != null && lastGrade.numericValue < 2.0
+                                ? const Color(0xFFB91C1C)
+                                : AppColors.secondary,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),

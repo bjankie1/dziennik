@@ -271,9 +271,9 @@ class FirestoreSchoolRepository implements SchoolRepository {
       avatarUrl: MockData.student.avatarUrl,
       attendancePercentage: attPct,
       overallAverage: avg,
-      previousPeriodAverage: 4.85,
-      classRank: 1,
-      totalStudentsInClass: 28,
+      previousPeriodAverage: avg,
+      classRank: 0,
+      totalStudentsInClass: 0,
       unreadMessagesCount: (data['unreadMessagesCount'] as num?)?.toInt() ??
           (data['unreadNotificationsCount'] as num?)?.toInt() ??
           0,
