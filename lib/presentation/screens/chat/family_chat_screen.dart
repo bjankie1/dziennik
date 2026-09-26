@@ -5,15 +5,24 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/chat_message.dart';
 import '../../../domain/models/justification_request.dart';
+import '../../providers/ai_assistant_provider.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/family_chat_provider.dart';
 import '../../providers/school_providers.dart';
+import '../../widgets/chat/ai_assistant_chat_view.dart';
+import '../../widgets/chat/floating_chat_panel.dart';
 import '../attendance/widgets/student_response_modal.dart';
 
 /// Screen providing real-time family chat between student and parent
-/// with embedded interactive justification cards (REQ-CHAT-01, D-01, D-02).
+/// with embedded interactive justification cards and a dual-mode switcher
+/// to the Gemini AI Assistant (`REQ-CHAT-01`, `REQ-AI-01`, `D-01`, `D-02`).
 class FamilyChatScreen extends ConsumerStatefulWidget {
-  const FamilyChatScreen({super.key});
+  final bool embeddedInPanel;
+
+  const FamilyChatScreen({
+    super.key,
+    this.embeddedInPanel = false,
+  });
 
   @override
   ConsumerState<FamilyChatScreen> createState() => _FamilyChatScreenState();
@@ -89,95 +98,14 @@ class _FamilyChatScreenState extends ConsumerState<FamilyChatScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final user = ref.watch(appUserProvider);
-    final isStudent = user?.isStudent ?? false;
-    final otherRoleLabel = isStudent ? 'Tata' : 'Oskar';
-    final messagesAsync = ref.watch(familyChatMessagesProvider);
-    final isDesktop = MediaQuery.of(context).size.width >= 1024;
-
-    final content = Column(
+  Widget _buildFamilyChatBody(
+    BuildContext context,
+    AsyncValue<List<ChatMessage>> messagesAsync,
+    bool isStudent,
+    String otherRoleLabel,
+  ) {
+    return Column(
       children: [
-        // Chat room header
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-          ),
-          child: Row(
-            children: [
-              if (!isDesktop)
-                IconButton(
-                  onPressed: () => context.canPop() ? context.pop() : context.go('/pulpit'),
-                  icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF475569)),
-                ),
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: isStudent ? const Color(0xFFDBEAFE) : const Color(0xFFDCFCE7),
-                child: Icon(
-                  isStudent ? Icons.person_rounded : Icons.school_rounded,
-                  color: isStudent ? const Color(0xFF1D4ED8) : const Color(0xFF15803D),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Czat rodzinny • $otherRoleLabel',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF22C55E),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        const Text(
-                          'Aktywny w aplikacji',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  isStudent ? 'Konto: Oskar (Uczeń)' : 'Konto: Rodzic',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF475569),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-
         // Message stream
         Expanded(
           child: Container(
@@ -185,7 +113,10 @@ class _FamilyChatScreenState extends ConsumerState<FamilyChatScreen> {
             child: messagesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(
-                child: Text('Błąd ładowania wiadomości: $err', style: const TextStyle(color: Colors.red)),
+                child: Text(
+                  'Błąd ładowania wiadomości: $err',
+                  style: const TextStyle(color: Colors.red),
+                ),
               ),
               data: (messages) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -197,16 +128,27 @@ class _FamilyChatScreenState extends ConsumerState<FamilyChatScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.chat_bubble_outline_rounded, size: 48, color: Colors.grey.shade400),
+                        Icon(
+                          Icons.chat_bubble_outline_rounded,
+                          size: 48,
+                          color: Colors.grey.shade400,
+                        ),
                         const SizedBox(height: 12),
                         const Text(
                           'Brak wiadomości w czacie rodzinnym',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Napisz pierwszą wiadomość do ${isStudent ? 'Taty' : 'Oskara'} poniżej.',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF94A3B8),
+                          ),
                         ),
                       ],
                     ),
@@ -215,11 +157,15 @@ class _FamilyChatScreenState extends ConsumerState<FamilyChatScreen> {
 
                 return ListView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final msg = messages[index];
-                    final isMe = isStudent ? msg.isStudentSender : msg.isParentSender;
+                    final isMe =
+                        isStudent ? msg.isStudentSender : msg.isParentSender;
                     return _buildMessageRow(context, msg, isMe, isStudent);
                   },
                 );
@@ -247,8 +193,14 @@ class _FamilyChatScreenState extends ConsumerState<FamilyChatScreen> {
                   onSubmitted: (_) => _handleSend(),
                   decoration: InputDecoration(
                     hintText: 'Napisz wiadomość do $otherRoleLabel...',
-                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 14,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     filled: true,
                     fillColor: const Color(0xFFF1F5F9),
                     border: OutlineInputBorder(
@@ -270,11 +222,148 @@ class _FamilyChatScreenState extends ConsumerState<FamilyChatScreen> {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Icon(Icons.send_rounded, size: 20),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = ref.watch(appUserProvider);
+    final isStudent = user?.isStudent ?? false;
+    final otherRoleLabel = isStudent ? 'Tata' : 'Oskar';
+    final messagesAsync = ref.watch(familyChatMessagesProvider);
+
+    if (widget.embeddedInPanel) {
+      return _buildFamilyChatBody(
+        context,
+        messagesAsync,
+        isStudent,
+        otherRoleLabel,
+      );
+    }
+
+    final activeMode = ref.watch(activeChatModeProvider);
+    final isDesktop = MediaQuery.of(context).size.width >= 1024;
+
+    final content = Column(
+      children: [
+        // Chat room header with segmented Family Chat ↔ AI Assistant switcher (D-02)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+          ),
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 12,
+            runSpacing: 10,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!isDesktop)
+                    IconButton(
+                      onPressed: () => context.canPop()
+                          ? context.pop()
+                          : context.go('/pulpit'),
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: Color(0xFF475569),
+                      ),
+                    ),
+                  CircleAvatar(
+                    radius: 19,
+                    backgroundColor: activeMode == ChatWorkspaceMode.aiAssistant
+                        ? const Color(0xFFEEF2FF)
+                        : (isStudent
+                            ? const Color(0xFFDBEAFE)
+                            : const Color(0xFFDCFCE7)),
+                    child: Icon(
+                      activeMode == ChatWorkspaceMode.aiAssistant
+                          ? Icons.auto_awesome_rounded
+                          : (isStudent
+                              ? Icons.person_rounded
+                              : Icons.school_rounded),
+                      color: activeMode == ChatWorkspaceMode.aiAssistant
+                          ? const Color(0xFF4F46E5)
+                          : (isStudent
+                              ? const Color(0xFF1D4ED8)
+                              : const Color(0xFF15803D)),
+                      size: 19,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        activeMode == ChatWorkspaceMode.aiAssistant
+                            ? 'Asystent AI Dziennika • Oskar'
+                            : 'Czat rodzinny • $otherRoleLabel',
+                        style: const TextStyle(
+                          fontSize: 15.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: activeMode == ChatWorkspaceMode.aiAssistant
+                                  ? const Color(0xFF6366F1)
+                                  : const Color(0xFF22C55E),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            activeMode == ChatWorkspaceMode.aiAssistant
+                                ? 'Pełny kontekst ocen, planu i wiadomości Librus'
+                                : 'Aktywny w aplikacji',
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const ChatModeSegmentedSwitcher(),
+            ],
+          ),
+        ),
+
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: activeMode == ChatWorkspaceMode.aiAssistant
+                ? const AiAssistantChatView(key: ValueKey('full_ai_view'))
+                : _buildFamilyChatBody(
+                    context,
+                    messagesAsync,
+                    isStudent,
+                    otherRoleLabel,
+                  ),
           ),
         ),
       ],

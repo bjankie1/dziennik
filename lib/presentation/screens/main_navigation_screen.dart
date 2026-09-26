@@ -18,8 +18,11 @@ import 'messages/messages_screen.dart';
 import 'tasks/tasks_screen.dart';
 import 'chat/family_chat_screen.dart';
 import '../providers/family_chat_provider.dart';
+import '../providers/ai_assistant_provider.dart';
 import '../providers/notification_settings_provider.dart';
 import '../providers/tasks_provider.dart';
+import '../widgets/chat/floating_chat_fab.dart';
+import '../widgets/chat/floating_chat_panel.dart';
 import '../widgets/modals/notification_settings_modal.dart';
 
 import 'package:go_router/go_router.dart';
@@ -209,6 +212,9 @@ class MainNavigationScreen extends ConsumerWidget {
       FamilyChatScreen(),
     ];
 
+    final isFloatingChatOpen = ref.watch(isFloatingChatOpenProvider);
+    final showFloatingChat = activeIndex != 6;
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final isDesktop = constraints.maxWidth >= 1024;
@@ -216,38 +222,56 @@ class MainNavigationScreen extends ConsumerWidget {
         if (isDesktop) {
           return Scaffold(
             backgroundColor: AppColors.surface,
-            body: Row(
+            body: Stack(
               children: [
-                AppSidebar(
-                  currentIndex: activeIndex,
-                  onIndexSelected: (index) => _onDestinationSelected(context, ref, index),
-                  unexcusedCount: unexcusedCount,
-                  unreadCount: messageBadgeCount,
-                  tasksBadgeCount: tasksBadgeCount,
-                  chatUnreadCount: chatUnreadCount,
-                  student: studentAsync.value,
+                Row(
+                  children: [
+                    AppSidebar(
+                      currentIndex: activeIndex,
+                      onIndexSelected: (index) =>
+                          _onDestinationSelected(context, ref, index),
+                      unexcusedCount: unexcusedCount,
+                      unreadCount: messageBadgeCount,
+                      tasksBadgeCount: tasksBadgeCount,
+                      chatUnreadCount: chatUnreadCount,
+                      student: studentAsync.value,
+                    ),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          AppDesktopHeader(
+                            student: studentAsync.value,
+                            unreadCount: messageBadgeCount,
+                            onNotificationsTap: () =>
+                                _onDestinationSelected(context, ref, 4),
+                            onProfileTap: () {
+                              _showProfileSheet(context, ref);
+                            },
+                          ),
+                          Expanded(
+                            child: navigationShell ??
+                                IndexedStack(
+                                  index: activeIndex,
+                                  children: screens,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: Column(
-                    children: [
-                      AppDesktopHeader(
-                        student: studentAsync.value,
-                        unreadCount: messageBadgeCount,
-                        onNotificationsTap: () => _onDestinationSelected(context, ref, 4),
-                        onProfileTap: () {
-                          _showProfileSheet(context, ref);
-                        },
-                      ),
-                      Expanded(
-                        child: navigationShell ??
-                            IndexedStack(
-                              index: activeIndex,
-                              children: screens,
-                            ),
-                      ),
-                    ],
+                if (showFloatingChat && isFloatingChatOpen)
+                  const Positioned(
+                    right: 24,
+                    bottom: 88,
+                    child: FloatingChatPanel(),
                   ),
-                ),
+                if (showFloatingChat)
+                  const Positioned(
+                    right: 24,
+                    bottom: 24,
+                    child: FloatingChatFab(isDesktop: true),
+                  ),
               ],
             ),
           );
@@ -268,11 +292,23 @@ class MainNavigationScreen extends ConsumerWidget {
             loading: () => null,
             error: (err, stack) => null,
           ),
-          body: navigationShell ??
-              IndexedStack(
-                index: activeIndex,
-                children: screens,
+          body: Stack(
+            children: [
+              Positioned.fill(
+                child: navigationShell ??
+                    IndexedStack(
+                      index: activeIndex,
+                      children: screens,
+                    ),
               ),
+              if (showFloatingChat)
+                Positioned(
+                  right: 16,
+                  bottom: activeIndex == 3 ? 84 : 16,
+                  child: const FloatingChatFab(isDesktop: false),
+                ),
+            ],
+          ),
           bottomNavigationBar: NavigationBar(
             selectedIndex: activeIndex < 6 ? activeIndex : 0,
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
