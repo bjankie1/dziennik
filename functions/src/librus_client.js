@@ -621,8 +621,13 @@ class LibrusClient {
         const msgId = idMatch ? idMatch[1] : `${Date.now()}_${i}`;
 
         let sender = $(tds[2]).text().trim().replace(/\s+/g, " ");
-        // Clean up redundant (Name Surname)
-        sender = sender.replace(/\s*\([^)]*\)/, "").trim();
+        // If sender starts with "(Name Surname) [Role]", unwrap the parentheses instead of deleting them;
+        // otherwise strip redundant "(Name Surname)" when the name is already present before "("
+        if (/^\s*\([^)]+\)/.test(sender)) {
+          sender = sender.replace(/^\s*\(([^)]+)\)/, "$1").trim();
+        } else {
+          sender = sender.replace(/\s*\([^)]*\)/, "").trim();
+        }
 
         const subject = $(tds[3]).text().trim().replace(/\s+/g, " ");
         const date = $(tds[4]).text().trim();

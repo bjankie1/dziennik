@@ -28,13 +28,73 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
   bool _isReplying = false;
   bool _isSending = false;
   bool _isLoadingBody = false;
+  late List<String> _replyRecipients;
   final TextEditingController _replyController = TextEditingController();
   final FocusNode _replyFocusNode = FocusNode();
+
+  String _resolveSenderName(MessageThread thread, {String? overrideBody}) {
+    final existing = thread.senderName.trim();
+    if (existing.isNotEmpty) return existing;
+
+    final bodyText = overrideBody ??
+        (thread.body.trim().isNotEmpty
+            ? thread.body
+            : (thread.messages.isNotEmpty ? thread.messages.first.body : thread.preview));
+    final sigMatch = RegExp(
+      r'(?:Pozdrawiam|Z\s+poważaniem)[,:\s]*\r?\n+\s*([^\r\n\-]{3,70}(?:-[^\r\n]{2,50})?)',
+      caseSensitive: false,
+    ).firstMatch(bodyText);
+    final signedBy = sigMatch?.group(1)?.trim() ?? '';
+    final baseRole =
+        thread.senderRole.trim().isNotEmpty ? thread.senderRole.trim() : 'Administrator szkoły';
+    if (signedBy.isNotEmpty && !signedBy.toLowerCase().contains('kopia powyższej')) {
+      return '$signedBy ($baseRole)';
+    }
+    return baseRole;
+  }
+
+  String? _extractCcTeacherFromBody() {
+    final bodyText = _currentThread.body.trim().isNotEmpty
+        ? _currentThread.body
+        : (_currentThread.messages.isNotEmpty
+            ? _currentThread.messages.first.body
+            : _currentThread.preview);
+    final ccMatch = RegExp(
+      r'Kopia powyższej wiadomości została wysłana do nauczyciela:\s*([^\r\n]+)',
+      caseSensitive: false,
+    ).firstMatch(bodyText);
+    final ccName = ccMatch?.group(1)?.trim();
+    if (ccName != null && ccName.isNotEmpty) return ccName;
+    return null;
+  }
 
   @override
   void initState() {
     super.initState();
     _currentThread = widget.thread;
+    final resolvedSender = _resolveSenderName(_currentThread);
+    if (_currentThread.senderName.trim().isEmpty) {
+      final fixedMessages = _currentThread.messages.map((m) {
+        if (!m.isFromMe && m.senderName.trim().isEmpty) {
+          return MessageItem(
+            id: m.id,
+            senderName: resolvedSender,
+            senderRole: m.senderRole,
+            senderInitials: m.senderInitials,
+            timestamp: m.timestamp,
+            body: m.body,
+            attachments: m.attachments,
+            isFromMe: m.isFromMe,
+          );
+        }
+        return m;
+      }).toList();
+      _currentThread = _currentThread.copyWith(
+        senderName: resolvedSender,
+        messages: fixedMessages,
+      );
+    }
+    _replyRecipients = [resolvedSender];
     // By default, the latest message is expanded
     if (_currentThread.messages.isNotEmpty) {
       _expandedMessageIds.add(_currentThread.messages.last.id);
@@ -89,11 +149,12 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         final fullBody = await ref.read(schoolRepositoryProvider).getMessageBody(_currentThread.id);
         if (fullBody != null && fullBody.trim().isNotEmpty && mounted) {
           setState(() {
+            final resolvedSender = _resolveSenderName(_currentThread, overrideBody: fullBody);
             final updatedMessages = _currentThread.messages.map((m) {
               if (m == _currentThread.messages.first) {
                 return MessageItem(
                   id: m.id,
-                  senderName: m.senderName,
+                  senderName: m.senderName.trim().isNotEmpty ? m.senderName : resolvedSender,
                   senderRole: m.senderRole,
                   senderInitials: m.senderInitials,
                   timestamp: m.timestamp,
@@ -106,10 +167,14 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
             }).toList();
 
             _currentThread = _currentThread.copyWith(
+              senderName: resolvedSender,
               body: fullBody,
               preview: fullBody.length > 90 ? '${fullBody.substring(0, 90)}...' : fullBody,
               messages: updatedMessages,
             );
+            if (_replyRecipients.isEmpty || _replyRecipients.every((r) => r.trim().isEmpty)) {
+              _replyRecipients = [resolvedSender];
+            }
             _isLoadingBody = false;
           });
           return;
@@ -144,6 +209,11 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
     final text = _replyController.text.trim();
     if (text.isEmpty) return;
 
+    final recipients = _replyRecipients.where((r) => r.trim().isNotEmpty).toList();
+    if (recipients.isEmpty) {
+      recipients.add(_resolveSenderName(_currentThread));
+    }
+
     setState(() => _isSending = true);
 
     try {
@@ -151,7 +221,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
       final profile = await repo.getStudentProfile();
 
       await repo.sendMessage(
-        recipientNames: [_currentThread.senderName],
+        recipientNames: recipients,
         subject: _currentThread.subject.startsWith('Re:')
             ? _currentThread.subject
             : 'Re: ${_currentThread.subject}',
@@ -184,8 +254,8 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Odpowiedź została wysłana'),
+          SnackBar(
+            content: Text('Odpowiedź została wysłana do: ${recipients.join(", ")}'),
             backgroundColor: AppColors.primary,
           ),
         );
@@ -967,18 +1037,28 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
   }
 
   Widget _buildReplySection() {
+    final defaultSender = _resolveSenderName(_currentThread);
+    final ccTeacher = _extractCcTeacherFromBody();
+    final teachers = ref.watch(teachersProvider).value ?? const [];
+
     if (!_isReplying) {
       return Container(
         margin: const EdgeInsets.only(top: 8),
         child: OutlinedButton.icon(
           onPressed: () {
-            setState(() => _isReplying = true);
+            setState(() {
+              _isReplying = true;
+              if (_replyRecipients.isEmpty ||
+                  _replyRecipients.every((r) => r.trim().isEmpty)) {
+                _replyRecipients = [defaultSender];
+              }
+            });
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _replyFocusNode.requestFocus();
             });
           },
           icon: const Icon(Icons.reply, size: 18, color: AppColors.primary),
-          label: Text('Odpowiedz do ${_currentThread.senderName}'),
+          label: Text('Odpowiedz do $defaultSender'),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
             side: BorderSide(color: AppColors.primary.withValues(alpha: 0.4)),
@@ -989,6 +1069,11 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
           ),
         ),
       );
+    }
+
+    final activeRecipients = _replyRecipients.where((r) => r.trim().isNotEmpty).toList();
+    if (activeRecipients.isEmpty) {
+      activeRecipients.add(defaultSender);
     }
 
     return Container(
@@ -1010,21 +1095,174 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  const Icon(Icons.reply, size: 18, color: AppColors.primary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Odpowiedź do: ${_currentThread.senderName}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.onSurface,
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.reply, size: 18, color: AppColors.primary),
+                        SizedBox(width: 6),
+                        Text(
+                          'Odpowiedź do:',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                    ...activeRecipients.map((recipient) {
+                      final canRemove = activeRecipients.length > 1;
+                      return Container(
+                        padding: EdgeInsets.only(
+                          left: 10,
+                          right: canRemove ? 4 : 10,
+                          top: 4,
+                          bottom: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryFixed,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.person_rounded,
+                              size: 14,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              recipient,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            if (canRemove) ...[
+                              const SizedBox(width: 4),
+                              InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _replyRecipients.remove(recipient);
+                                  });
+                                },
+                                borderRadius: BorderRadius.circular(10),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(2),
+                                  child: Icon(
+                                    Icons.close_rounded,
+                                    size: 14,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    }),
+                    if (ccTeacher != null &&
+                        !activeRecipients.any(
+                          (r) => r.toLowerCase().contains(ccTeacher.toLowerCase()),
+                        ))
+                      ActionChip(
+                        avatar: const Icon(
+                          Icons.person_add_alt_1_rounded,
+                          size: 14,
+                          color: AppColors.secondary,
+                        ),
+                        label: Text(
+                          '+ DW: $ccTeacher',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.secondary,
+                          ),
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        backgroundColor:
+                            AppColors.secondaryContainer.withValues(alpha: 0.5),
+                        side: BorderSide(
+                          color: AppColors.secondary.withValues(alpha: 0.35),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _replyRecipients.add(ccTeacher);
+                          });
+                        },
+                      ),
+                    if (teachers.isNotEmpty)
+                      PopupMenuButton<String>(
+                        tooltip: 'Dodaj adresata z listy nauczycieli',
+                        onSelected: (selectedName) {
+                          if (!_replyRecipients.contains(selectedName)) {
+                            setState(() {
+                              _replyRecipients.add(selectedName);
+                            });
+                          }
+                        },
+                        itemBuilder: (context) {
+                          return teachers.map((t) {
+                            final label = t.subjectName.isNotEmpty
+                                ? '${t.name} (${t.subjectName})'
+                                : t.name;
+                            return PopupMenuItem<String>(
+                              value: t.name,
+                              child: Text(
+                                label,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            );
+                          }).toList();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: AppColors.outlineVariant.withValues(alpha: 0.5),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.add_rounded,
+                                size: 14,
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                              SizedBox(width: 2),
+                              Text(
+                                'Dodaj adresata',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
               IconButton(
                 icon: const Icon(Icons.close, size: 18, color: AppColors.outline),
@@ -1045,7 +1283,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
             maxLines: 6,
             minLines: 3,
             decoration: InputDecoration(
-              hintText: 'Napisz odpowiedź do nauczyciela...',
+              hintText: 'Napisz odpowiedź do: ${activeRecipients.join(", ")}...',
               hintStyle: const TextStyle(fontSize: 13, color: AppColors.outline),
               filled: true,
               fillColor: AppColors.surfaceContainerLowest,

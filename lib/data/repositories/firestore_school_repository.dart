@@ -1076,17 +1076,59 @@ class FirestoreSchoolRepository implements SchoolRepository {
     if (rawList.isEmpty) return [];
 
     return rawList.map((item) {
-      final senderRaw = item['sender'] as String? ?? 'Nauczyciel';
+      final senderRaw = (item['sender'] as String? ?? 'Nauczyciel').trim();
+      final subject = item['subject'] as String? ?? 'Wiadomość';
+      final bodyText =
+          item['body'] as String? ?? item['preview'] as String? ?? subject;
+
+      final bracketMatch = RegExp(r'\[(.*?)\]').firstMatch(senderRaw);
+      final bracketRole = bracketMatch?.group(1)?.trim() ?? '';
+
       String role = 'Nauczyciel';
-      if (senderRaw.toLowerCase().contains('dyrektor')) {
+      final lowerSender = senderRaw.toLowerCase();
+      if (lowerSender.contains('dyrektor')) {
         role = 'Dyrektor Szkoły';
-      } else if (senderRaw.toLowerCase().contains('wychowawc')) {
+      } else if (lowerSender.contains('wychowawc')) {
         role = 'Wychowawca';
+      } else if (lowerSender.contains('administrator')) {
+        role = 'Administrator szkoły';
+      } else if (lowerSender.contains('sekretariat')) {
+        role = 'Sekretariat';
+      } else if (lowerSender.contains('pedagog')) {
+        role = 'Pedagog szkolny';
+      } else if (lowerSender.contains('psycholog')) {
+        role = 'Psycholog szkolny';
+      } else if (lowerSender.contains('usprawiedliwieni')) {
+        role = 'System Librus';
+      } else if (bracketRole.isNotEmpty) {
+        role = bracketRole;
       }
 
-      // Clean sender name
-      final cleanName = senderRaw.replaceAll(RegExp(r'\[.*?\]'), '').trim();
-      final words = cleanName.split(RegExp(r'\s+'));
+      // Clean sender name without losing bracket-only senders like "[Administrator szkoły]"
+      String cleanName = senderRaw.replaceAll(RegExp(r'\[.*?\]'), '').trim();
+      if (cleanName.isEmpty) {
+        // Check if the message body has a signature (e.g. "Pozdrawiam\nKamila Buczek - szkolna Rada Rodziców")
+        final sigMatch = RegExp(
+          r'(?:Pozdrawiam|Z\s+poważaniem)[,:\s]*\r?\n+\s*([^\r\n\-]{3,70}(?:-[^\r\n]{2,50})?)',
+          caseSensitive: false,
+        ).firstMatch(bodyText);
+        final signedBy = sigMatch?.group(1)?.trim() ?? '';
+        final baseSender =
+            bracketRole.isNotEmpty ? bracketRole : (senderRaw.isNotEmpty ? senderRaw : role);
+        if (signedBy.isNotEmpty &&
+            !signedBy.toLowerCase().contains('kopia powyższej')) {
+          cleanName = '$signedBy ($baseSender)';
+        } else {
+          cleanName = baseSender;
+        }
+      }
+
+      final words = cleanName
+          .replaceAll(RegExp(r'[()\[\]]'), '')
+          .trim()
+          .split(RegExp(r'\s+'))
+          .where((w) => w.isNotEmpty)
+          .toList();
       String initials = 'L';
       if (words.length >= 2) {
         initials = '${words[0][0]}${words[1][0]}'.toUpperCase();
@@ -1094,7 +1136,6 @@ class FirestoreSchoolRepository implements SchoolRepository {
         initials = words[0][0].toUpperCase();
       }
 
-      final subject = item['subject'] as String? ?? 'Wiadomość';
       final isImportant = subject.toUpperCase().contains('PILNE') ||
           subject.toUpperCase().contains('WAŻNE');
 
@@ -1134,7 +1175,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
         senderRole: role,
         subject: subject,
         preview: item['preview'] as String? ?? subject,
-        body: item['body'] as String? ?? item['preview'] as String? ?? subject,
+        body: bodyText,
         timestamp: dt,
         isUnread: isUnread,
         isImportant: isImportant,
