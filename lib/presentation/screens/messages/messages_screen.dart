@@ -483,18 +483,26 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (thread.attachments.isNotEmpty) ...[
+                    if (thread.attachments.isNotEmpty || thread.hasAttachments) ...[
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           const Icon(Icons.attach_file, size: 14, color: AppColors.primary),
                           const SizedBox(width: 4),
-                          Text(
-                            '${thread.attachments.length} załączniki',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
+                          Flexible(
+                            child: Text(
+                              thread.attachments.isEmpty
+                                  ? 'Zawiera załącznik'
+                                  : (thread.attachments.length == 1
+                                      ? '1 załącznik: ${thread.attachments.first}'
+                                      : '${thread.attachments.length} ${thread.attachments.length < 5 ? "załączniki" : "załączników"}: ${thread.attachments.join(", ")}'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ],

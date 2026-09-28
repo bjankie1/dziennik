@@ -1,3 +1,17 @@
+class MessageDetailsResult {
+  final String body;
+  final List<String> attachments;
+  final Map<String, String> attachmentUrls;
+  final bool hasAttachments;
+
+  const MessageDetailsResult({
+    required this.body,
+    this.attachments = const [],
+    this.attachmentUrls = const {},
+    this.hasAttachments = false,
+  });
+}
+
 class MessageItem {
   final String id;
   final String senderName;
@@ -7,6 +21,8 @@ class MessageItem {
   final String body;
   final bool isFromMe;
   final List<String> attachments;
+  final Map<String, String> attachmentUrls;
+  final bool hasAttachments;
 
   const MessageItem({
     required this.id,
@@ -17,6 +33,8 @@ class MessageItem {
     required this.body,
     this.isFromMe = false,
     this.attachments = const [],
+    this.attachmentUrls = const {},
+    this.hasAttachments = false,
   });
 }
 
@@ -32,6 +50,8 @@ class MessageThread {
   final bool isUnread;
   final bool isImportant;
   final List<String> attachments;
+  final Map<String, String> attachmentUrls;
+  final bool hasAttachments;
   final List<MessageItem> messages;
 
   MessageThread({
@@ -46,8 +66,11 @@ class MessageThread {
     this.isUnread = false,
     this.isImportant = false,
     this.attachments = const [],
+    this.attachmentUrls = const {},
+    bool? hasAttachments,
     List<MessageItem>? messages,
-  }) : messages = messages ??
+  })  : hasAttachments = hasAttachments ?? attachments.isNotEmpty,
+        messages = messages ??
             [
               MessageItem(
                 id: '${id}_0',
@@ -57,6 +80,8 @@ class MessageThread {
                 timestamp: timestamp,
                 body: body,
                 attachments: attachments,
+                attachmentUrls: attachmentUrls,
+                hasAttachments: hasAttachments ?? attachments.isNotEmpty,
                 isFromMe: false,
               ),
             ];
@@ -73,8 +98,14 @@ class MessageThread {
     bool? isUnread,
     bool? isImportant,
     List<String>? attachments,
+    Map<String, String>? attachmentUrls,
+    bool? hasAttachments,
     List<MessageItem>? messages,
   }) {
+    final nextAttachments = attachments ?? this.attachments;
+    final nextAttachmentUrls = attachmentUrls ?? this.attachmentUrls;
+    final nextHasAttachments =
+        hasAttachments ?? (nextAttachments.isNotEmpty || this.hasAttachments);
     return MessageThread(
       id: id ?? this.id,
       senderName: senderName ?? this.senderName,
@@ -86,7 +117,9 @@ class MessageThread {
       timestamp: timestamp ?? this.timestamp,
       isUnread: isUnread ?? this.isUnread,
       isImportant: isImportant ?? this.isImportant,
-      attachments: attachments ?? this.attachments,
+      attachments: nextAttachments,
+      attachmentUrls: nextAttachmentUrls,
+      hasAttachments: nextHasAttachments,
       messages: messages ?? this.messages,
     );
   }

@@ -455,6 +455,19 @@ class MockSchoolRepository implements SchoolRepository {
   }
 
   @override
+  Future<MessageDetailsResult?> getMessageDetails(String msgId, {String? url}) async {
+    await Future.delayed(const Duration(milliseconds: 50));
+    final thread = _messages.cast<MessageThread?>().firstWhere((t) => t?.id == msgId, orElse: () => null);
+    if (thread == null) return null;
+    return MessageDetailsResult(
+      body: thread.body,
+      attachments: thread.attachments,
+      attachmentUrls: thread.attachmentUrls,
+      hasAttachments: thread.hasAttachments,
+    );
+  }
+
+  @override
   Future<void> markMessageAsRead(String msgId, {bool isRead = true}) async {
     final idx = _messages.indexWhere((t) => t.id == msgId);
     if (idx != -1) {

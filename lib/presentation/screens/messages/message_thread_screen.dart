@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/calendar_browser_helper_stub.dart'
+    if (dart.library.js_interop) '../../../core/utils/calendar_browser_helper_web.dart';
 import '../../../domain/models/message_thread.dart';
 import '../../../domain/models/school_task.dart';
 import '../../providers/auth_providers.dart';
@@ -84,6 +86,8 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
             timestamp: m.timestamp,
             body: m.body,
             attachments: m.attachments,
+            attachmentUrls: m.attachmentUrls,
+            hasAttachments: m.hasAttachments,
             isFromMe: m.isFromMe,
           );
         }
@@ -137,17 +141,44 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
     } catch (_) {}
   }
 
+  bool _looksLikeMessageWithAttachment(String text) {
+    final lower = text.toLowerCase();
+    return lower.contains('załącz') ||
+        lower.contains('prezentacj') ||
+        lower.contains('przesyłam') ||
+        lower.contains('plik') ||
+        lower.contains('formularz') ||
+        lower.contains('regulamin') ||
+        lower.contains('dokument');
+  }
+
   Future<void> _fetchBodyIfNeeded({bool force = false}) async {
     final firstMsg = _currentThread.messages.isNotEmpty ? _currentThread.messages.first : null;
     final isBodyMissingOrSameAsSubject = firstMsg == null ||
         firstMsg.body.trim().isEmpty ||
         firstMsg.body.trim() == _currentThread.subject.trim();
+    final needsAttachmentDetails = (_currentThread.hasAttachments &&
+            (_currentThread.attachments.isEmpty || _currentThread.attachmentUrls.isEmpty)) ||
+        (_currentThread.attachments.isEmpty &&
+            _looksLikeMessageWithAttachment(firstMsg?.body ?? _currentThread.body));
 
-    if (force || isBodyMissingOrSameAsSubject) {
+    if (force || isBodyMissingOrSameAsSubject || needsAttachmentDetails) {
       if (mounted) setState(() => _isLoadingBody = true);
       try {
-        final fullBody = await ref.read(schoolRepositoryProvider).getMessageBody(_currentThread.id);
-        if (fullBody != null && fullBody.trim().isNotEmpty && mounted) {
+        final details = await ref.read(schoolRepositoryProvider).getMessageDetails(_currentThread.id);
+        if (details != null && mounted) {
+          final fullBody = details.body.trim().isNotEmpty
+              ? details.body
+              : (firstMsg?.body ?? _currentThread.body);
+          final mergedAttachments = details.attachments.isNotEmpty
+              ? details.attachments
+              : _currentThread.attachments;
+          final mergedUrls = details.attachmentUrls.isNotEmpty
+              ? details.attachmentUrls
+              : _currentThread.attachmentUrls;
+          final mergedHasAttachments =
+              details.hasAttachments || mergedAttachments.isNotEmpty || _currentThread.hasAttachments;
+
           setState(() {
             final resolvedSender = _resolveSenderName(_currentThread, overrideBody: fullBody);
             final updatedMessages = _currentThread.messages.map((m) {
@@ -159,7 +190,9 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                   senderInitials: m.senderInitials,
                   timestamp: m.timestamp,
                   body: fullBody,
-                  attachments: m.attachments,
+                  attachments: mergedAttachments,
+                  attachmentUrls: mergedUrls,
+                  hasAttachments: mergedHasAttachments,
                   isFromMe: m.isFromMe,
                 );
               }
@@ -170,6 +203,9 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
               senderName: resolvedSender,
               body: fullBody,
               preview: fullBody.length > 90 ? '${fullBody.substring(0, 90)}...' : fullBody,
+              attachments: mergedAttachments,
+              attachmentUrls: mergedUrls,
+              hasAttachments: mergedHasAttachments,
               messages: updatedMessages,
             );
             if (_replyRecipients.isEmpty || _replyRecipients.every((r) => r.trim().isEmpty)) {
@@ -177,10 +213,13 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
             }
             _isLoadingBody = false;
           });
+          if (details.attachments.isNotEmpty) {
+            ref.invalidate(messagesProvider);
+          }
           return;
         }
       } catch (e) {
-        debugPrint('Error loading full message body: $e');
+        debugPrint('Error loading full message details: $e');
       }
       if (mounted) {
         setState(() => _isLoadingBody = false);
@@ -964,7 +1003,10 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
           const Divider(height: 24, thickness: 0.8),
 
           // Message Body
-          if (_isLoadingBody && !message.isFromMe && message == _currentThread.messages.first) ...[
+          if (_isLoadingBody &&
+              !message.isFromMe &&
+              message == _currentThread.messages.first &&
+              (message.body.trim().isEmpty || message.body.trim() == _currentThread.subject.trim())) ...[
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
               child: Row(
@@ -995,37 +1037,85 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                 color: AppColors.onSurface,
               ),
             ),
+            if (_isLoadingBody &&
+                !message.isFromMe &&
+                message == _currentThread.messages.first &&
+                message.attachments.isEmpty) ...[
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Sprawdzanie załączników w Librusie...',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.onSurfaceVariant.withValues(alpha: 0.8),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
 
           // Attachments
           if (message.attachments.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text(
-              'Załączniki:',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.onSurfaceVariant),
+            Text(
+              'Załączniki (${message.attachments.length}):',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppColors.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: message.attachments.map((file) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.surfaceContainerHigh),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.picture_as_pdf, size: 16, color: AppColors.error),
-                      const SizedBox(width: 6),
-                      Text(
-                        file,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                final (iconData, iconColor) = _attachmentIconAndColor(file);
+                return Material(
+                  color: AppColors.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(10),
+                  child: InkWell(
+                    onTap: () => _downloadAttachment(file, message),
+                    borderRadius: BorderRadius.circular(10),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.surfaceContainerHigh),
                       ),
-                    ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(iconData, size: 18, color: iconColor),
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              file,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.onSurface,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.download_rounded,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 );
               }).toList(),
@@ -1034,6 +1124,78 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         ],
       ),
     );
+  }
+
+  (IconData, Color) _attachmentIconAndColor(String fileName) {
+    final lower = fileName.toLowerCase();
+    if (lower.endsWith('.pdf')) {
+      return (Icons.picture_as_pdf_rounded, AppColors.error);
+    }
+    if (lower.endsWith('.ppt') || lower.endsWith('.pptx')) {
+      return (Icons.slideshow_rounded, const Color(0xFFD84315));
+    }
+    if (lower.endsWith('.doc') || lower.endsWith('.docx') || lower.endsWith('.odt')) {
+      return (Icons.description_rounded, const Color(0xFF1565C0));
+    }
+    if (lower.endsWith('.xls') || lower.endsWith('.xlsx') || lower.endsWith('.csv')) {
+      return (Icons.table_chart_rounded, const Color(0xFF2E7D32));
+    }
+    if (lower.endsWith('.png') ||
+        lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg') ||
+        lower.endsWith('.webp')) {
+      return (Icons.image_rounded, const Color(0xFF6A1B9A));
+    }
+    if (lower.endsWith('.zip') || lower.endsWith('.rar') || lower.endsWith('.7z')) {
+      return (Icons.folder_zip_rounded, const Color(0xFFF57F17));
+    }
+    return (Icons.attach_file_rounded, AppColors.primary);
+  }
+
+  Future<void> _downloadAttachment(String fileName, MessageItem message) async {
+    String? downloadPath =
+        message.attachmentUrls[fileName] ?? _currentThread.attachmentUrls[fileName];
+
+    if (downloadPath == null || downloadPath.isEmpty) {
+      // Fetch fresh details to resolve download path if not cached yet
+      try {
+        final details =
+            await ref.read(schoolRepositoryProvider).getMessageDetails(_currentThread.id);
+        if (details != null) {
+          downloadPath = details.attachmentUrls[fileName];
+          if (mounted && details.attachmentUrls.isNotEmpty) {
+            setState(() {
+              _currentThread = _currentThread.copyWith(
+                attachmentUrls: details.attachmentUrls,
+              );
+            });
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (downloadPath != null && downloadPath.isNotEmpty) {
+      final url = '/api/downloadAttachment?path=${Uri.encodeComponent(downloadPath)}';
+      final opened = openUrlInBrowser(url);
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Pobieranie załącznika: $fileName'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Załącznik „$fileName” (tryb demonstracyjny)'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _buildReplySection() {

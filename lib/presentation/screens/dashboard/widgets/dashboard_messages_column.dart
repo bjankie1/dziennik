@@ -398,7 +398,7 @@ class _DashboardMessagesColumnState extends State<DashboardMessagesColumn> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              if (msg.attachments.isNotEmpty)
+              if (msg.attachments.isNotEmpty || msg.hasAttachments)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -408,16 +408,23 @@ class _DashboardMessagesColumnState extends State<DashboardMessagesColumn> {
                     color: AppColors.surfaceContainerLowest,
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.description,
+                      const Icon(
+                        Icons.attach_file_rounded,
                         size: 14,
                         color: AppColors.primary,
                       ),
-                      SizedBox(width: 4),
-                      Text('Załącznik PDF', style: TextStyle(fontSize: 11)),
+                      const SizedBox(width: 4),
+                      Text(
+                        msg.attachments.isEmpty
+                            ? 'Załącznik'
+                            : (msg.attachments.length == 1
+                                ? msg.attachments.first
+                                : '${msg.attachments.first} (+${msg.attachments.length - 1})'),
+                        style: const TextStyle(fontSize: 11),
+                      ),
                     ],
                   ),
                 )

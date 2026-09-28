@@ -1168,6 +1168,49 @@ class FirestoreSchoolRepository implements SchoolRepository {
         }
       }
 
+      final attachments = <String>[];
+      final attachmentUrls = <String, String>{};
+
+      final rawAttachmentFiles = item['attachmentFiles'] as List<dynamic>? ?? const [];
+      for (final f in rawAttachmentFiles) {
+        if (f is Map) {
+          final name = (f['name'] ?? '').toString().trim();
+          final path = (f['path'] ?? '').toString().trim();
+          if (name.isNotEmpty) {
+            if (!attachments.contains(name)) {
+              attachments.add(name);
+            }
+            if (path.isNotEmpty) {
+              attachmentUrls[name] = path;
+            }
+          }
+        }
+      }
+
+      final rawAttachments = item['attachments'] as List<dynamic>? ?? const [];
+      for (final a in rawAttachments) {
+        if (a is String && a.trim().isNotEmpty) {
+          final name = a.trim();
+          if (!attachments.contains(name)) {
+            attachments.add(name);
+          }
+        } else if (a is Map) {
+          final name = (a['name'] ?? '').toString().trim();
+          final path = (a['path'] ?? '').toString().trim();
+          if (name.isNotEmpty) {
+            if (!attachments.contains(name)) {
+              attachments.add(name);
+            }
+            if (path.isNotEmpty) {
+              attachmentUrls[name] = path;
+            }
+          }
+        }
+      }
+
+      final hasAttachments =
+          item['hasAttachments'] == true || attachments.isNotEmpty;
+
       return MessageThread(
         id: id,
         senderName: cleanName,
@@ -1179,6 +1222,9 @@ class FirestoreSchoolRepository implements SchoolRepository {
         timestamp: dt,
         isUnread: isUnread,
         isImportant: isImportant,
+        attachments: attachments,
+        attachmentUrls: attachmentUrls,
+        hasAttachments: hasAttachments,
       );
     }).toList();
   }
@@ -1730,8 +1776,14 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
   @override
   Future<String?> getMessageBody(String msgId, {String? url}) async {
+    final details = await getMessageDetails(msgId, url: url);
+    return details?.body;
+  }
+
+  @override
+  Future<MessageDetailsResult?> getMessageDetails(String msgId, {String? url}) async {
     final isDemo = await _connectionService.isDemoMode();
-    if (isDemo) return _mockFallback.getMessageBody(msgId, url: url);
+    if (isDemo) return _mockFallback.getMessageDetails(msgId, url: url);
 
     final connectedLogin = await _connectionService.getConnectedLogin();
     final query = (connectedLogin != null && connectedLogin.isNotEmpty) ? '&login=$connectedLogin' : '';
@@ -1739,10 +1791,53 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
     try {
       final res = await http.get(Uri.parse('/api/messageDetails?msgId=$msgId$query$urlParam'))
-          .timeout(const Duration(seconds: 8));
+          .timeout(const Duration(seconds: 10));
       if (res.statusCode == 200) {
         final data = json.decode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
-        return data['body'] as String?;
+        final body = (data['body'] as String? ?? '').trim();
+        final attachments = <String>[];
+        final attachmentUrls = <String, String>{};
+
+        final rawFiles = data['attachmentFiles'] as List<dynamic>? ?? const [];
+        for (final f in rawFiles) {
+          if (f is Map) {
+            final name = (f['name'] ?? '').toString().trim();
+            final path = (f['path'] ?? '').toString().trim();
+            if (name.isNotEmpty) {
+              if (!attachments.contains(name)) attachments.add(name);
+              if (path.isNotEmpty) attachmentUrls[name] = path;
+            }
+          }
+        }
+
+        final rawAtt = data['attachments'] as List<dynamic>? ?? const [];
+        for (final a in rawAtt) {
+          if (a is String && a.trim().isNotEmpty && !attachments.contains(a.trim())) {
+            attachments.add(a.trim());
+          }
+        }
+
+        // Update in-memory cache so navigating back & forth retains attachments
+        if (_memoryCache != null && _memoryCache!['messages'] != null) {
+          final msgs = _memoryCache!['messages'] as List<dynamic>;
+          for (final m in msgs) {
+            if (m is Map && m['id']?.toString() == msgId) {
+              if (body.isNotEmpty) {
+                m['body'] = body;
+              }
+              m['attachments'] = attachments;
+              m['attachmentFiles'] = rawFiles;
+              m['hasAttachments'] = attachments.isNotEmpty;
+            }
+          }
+        }
+
+        return MessageDetailsResult(
+          body: body,
+          attachments: attachments,
+          attachmentUrls: attachmentUrls,
+          hasAttachments: attachments.isNotEmpty || data['hasAttachments'] == true,
+        );
       }
     } catch (_) {}
 

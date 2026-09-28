@@ -658,6 +658,11 @@ class LibrusClient {
                             statusSrc.includes("otwart") ||
                             statusSrc.includes("read");
 
+        const hasAttachmentIcon = $(tds[1]).find("img[src*='attachment'], img.existing-msg-files-icon").length > 0 ||
+                                  statusSrc.includes("attachment") ||
+                                  statusAlt.includes("plik") ||
+                                  statusTitle.includes("pliki");
+
         const isUnread = hasUnreadIcon || (hasBold && !hasReadIcon);
         const isRead = !isUnread;
 
@@ -667,6 +672,9 @@ class LibrusClient {
           subject,
           date,
           isRead,
+          hasAttachments: hasAttachmentIcon,
+          attachments: [],
+          attachmentFiles: [],
           preview: subject,
           body: subject,
           bodyLoaded: false,
@@ -689,10 +697,10 @@ class LibrusClient {
       }
     }
 
-    // Fetch full body for the latest 10 messages so they are immediately available
-    for (let i = 0; i < Math.min(messages.length, 10); i++) {
+    // Fetch full body and attachments for the latest 10 messages + any message with an attachment icon
+    for (let i = 0; i < messages.length; i++) {
       const m = messages[i];
-      if (m.librusUrl) {
+      if ((i < 10 || m.hasAttachments) && m.librusUrl) {
         try {
           const detailRes = await this.client.get(m.librusUrl);
           const $$ = cheerio.load(detailRes.data);
@@ -700,6 +708,12 @@ class LibrusClient {
           if (bodyText) {
             m.body = bodyText;
             m.preview = bodyText.replace(/\s+/g, " ").substring(0, 90);
+          }
+          const parsedAttachments = this._parseMessageAttachments($$);
+          if (parsedAttachments.length > 0) {
+            m.hasAttachments = true;
+            m.attachments = parsedAttachments.map(a => a.name);
+            m.attachmentFiles = parsedAttachments;
           }
           m.bodyLoaded = true;
         } catch (e) {
@@ -712,18 +726,72 @@ class LibrusClient {
     return { messages, unreadCount };
   }
 
+  _parseMessageAttachments($) {
+    const attachmentFiles = [];
+    const seenPaths = new Set();
+
+    $("img[onclick*='pobierz_zalacznik'], a[onclick*='pobierz_zalacznik'], a[href*='pobierz_zalacznik']").each((idx, el) => {
+      const rawAttr = ($(el).attr("onclick") || $(el).attr("href") || "").replace(/\\\//g, "/");
+      const pathMatch = rawAttr.match(/(\/wiadomosci\/pobierz_zalacznik\/\d+\/\d+)/);
+      if (!pathMatch) return;
+
+      const downloadPath = pathMatch[1];
+      if (seenPaths.has(downloadPath)) return;
+      seenPaths.add(downloadPath);
+
+      const tr = $(el).closest("tr");
+      let fileName = tr.find("td").first().text().trim().replace(/\s+/g, " ");
+      if (!fileName || fileName.toLowerCase() === "pliki:") {
+        fileName = `Zalacznik_${idx + 1}`;
+      }
+
+      attachmentFiles.push({
+        name: fileName,
+        path: downloadPath
+      });
+    });
+
+    return attachmentFiles;
+  }
+
   async fetchMessageDetails(msgId, librusUrl) {
     const cheerio = require("cheerio");
     const targetUrl = librusUrl || `https://synergia.librus.pl/wiadomosci/1/5/${msgId}`;
     const detailRes = await this.client.get(targetUrl);
     const $ = cheerio.load(detailRes.data);
     const bodyText = $("div.container-message-content").text().trim();
+    const attachmentFiles = this._parseMessageAttachments($);
     return {
       id: msgId,
       body: bodyText || "",
       bodyLoaded: true,
+      hasAttachments: attachmentFiles.length > 0,
+      attachments: attachmentFiles.map(a => a.name),
+      attachmentFiles,
       librusUrl: targetUrl
     };
+  }
+
+  async resolveAttachmentDownloadUrl(downloadPath) {
+    const cleanPath = String(downloadPath || "").replace(/\\\//g, "/").trim();
+    if (!cleanPath.startsWith("/wiadomosci/pobierz_zalacznik/")) {
+      throw new Error("Nieprawidłowa ścieżka załącznika Librus.");
+    }
+    const targetUrl = `https://synergia.librus.pl${cleanPath}`;
+    const res = await this.client.get(targetUrl, {
+      maxRedirects: 0,
+      validateStatus: () => true
+    });
+    const redirectLocation = res.headers?.location || res.request?.res?.responseUrl;
+    if (redirectLocation && redirectLocation.includes("GetFile")) {
+      return `${redirectLocation.replace(/\/+$/, "")}/get`;
+    }
+    const followRes = await this.client.get(targetUrl);
+    const finalUrl = followRes.request?.res?.responseUrl;
+    if (finalUrl && finalUrl.includes("GetFile")) {
+      return `${finalUrl.replace(/\/+$/, "")}/get`;
+    }
+    throw new Error("Nie udało się uzyskać linku do pobrania załącznika z Librusa.");
   }
 
   async sendMessage({ recipients, subject, body, replyToMsgId }) {

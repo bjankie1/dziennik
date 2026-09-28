@@ -439,7 +439,8 @@ exports.getMessageDetails = onRequest(
       const { LibrusClient } = require("./src/librus_client");
       const msgId = req.query.msgId || req.body?.msgId;
       const url = req.query.url || req.body?.url;
-      const login = req.query.login || req.body?.login || process.env.LIBRUS_LOGIN;
+      const rawLogin = req.query.login || req.body?.login || process.env.LIBRUS_LOGIN || "11010033";
+      const login = process.env.LIBRUS_LOGIN || String(rawLogin).replace(/u$/i, "");
       const pass = process.env.LIBRUS_PASSWORD;
 
       if (!msgId && !url) {
@@ -466,6 +467,13 @@ exports.getMessageDetails = onRequest(
                 if (details.body) {
                   m.preview = details.body.replace(/\s+/g, " ").substring(0, 90);
                 }
+                if (Array.isArray(details.attachments)) {
+                  m.attachments = details.attachments;
+                  m.hasAttachments = details.attachments.length > 0;
+                }
+                if (Array.isArray(details.attachmentFiles)) {
+                  m.attachmentFiles = details.attachmentFiles;
+                }
                 changed = true;
                 break;
               }
@@ -483,11 +491,58 @@ exports.getMessageDetails = onRequest(
 
       return res.status(200).json({
         id: msgId,
-        body: "Treść wiadomości pobrana w trybie demonstracyjnym."
+        body: "Treść wiadomości pobrana w trybie demonstracyjnym.",
+        attachments: [],
+        attachmentFiles: []
       });
     } catch (error) {
       console.error("getMessageDetails error:", error);
       res.status(500).json({ error: error.message });
+    }
+  }
+);
+
+/**
+ * Resolve and redirect to a Librus Synergia message attachment download URL.
+ */
+exports.downloadAttachment = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 30,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const { LibrusClient } = require("./src/librus_client");
+      const downloadPath = req.query.path || req.body?.path;
+      const msgId = req.query.msgId || req.body?.msgId;
+      const attId = req.query.attId || req.body?.attId;
+      const targetPath = downloadPath || (msgId && attId ? `/wiadomosci/pobierz_zalacznik/${msgId}/${attId}` : null);
+
+      if (!targetPath) {
+        return res.status(400).json({ error: "Brak ścieżki załącznika (path)." });
+      }
+
+      const login = process.env.LIBRUS_LOGIN || "11010033";
+      const pass = process.env.LIBRUS_PASSWORD;
+
+      if (!login || !pass) {
+        return res.status(503).json({ error: "Brak skonfigurowanych poświadczeń Librus." });
+      }
+
+      const client = new LibrusClient(login, pass);
+      await client.authenticate();
+      const directUrl = await client.resolveAttachmentDownloadUrl(targetPath);
+
+      if (req.query.json === "1" || req.query.json === "true") {
+        return res.status(200).json({ success: true, downloadUrl: directUrl });
+      }
+
+      return res.redirect(302, directUrl);
+    } catch (error) {
+      console.error("downloadAttachment error:", error);
+      res.status(500).json({ error: error.message || "Nie udało się pobrać załącznika z Librusa." });
     }
   }
 );

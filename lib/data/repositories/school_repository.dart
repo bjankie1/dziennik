@@ -34,6 +34,7 @@ abstract class SchoolRepository {
     String? replyToId,
   });
   Future<String?> getMessageBody(String msgId, {String? url});
+  Future<MessageDetailsResult?> getMessageDetails(String msgId, {String? url});
   Future<void> markMessageAsRead(String msgId, {bool isRead = true});
   Future<void> markAllMessagesAsRead();
 }

@@ -33,6 +33,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push** — Integracja bota Telegram w Cloud Functions z kodem parowania, natychmiastowe alerty o ocenach/wiadomościach/sprawdzianach oraz powiadomienia Web Push w przeglądarce. (completed 2026-09-25)
 - [ ] **Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)** — Automatyczny harmonogram Cloud Scheduler w piątki wieczorem generujący i wysyłający raport podsumowujący nadchodzący tydzień przez bota Telegram do rodzica i ucznia.
 - [x] **Phase 20: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A)** — Konwersacja z agentem AI na temat danych w dzienniku (oceny, plan lekcji, sprawdziany, wiadomości, ogłoszenia, nieobecności, zadania) z przeszukiwaniem pełnej treści wiadomości (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”). (completed 2026-09-26)
+- [ ] **Phase 21: Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen** — Rozbicie monolitycznego `message_thread_screen.dart` (1 340 LOC) oraz `messages_screen.dart` (725 LOC) na dedykowane, reużywalne widgety w `lib/presentation/screens/messages/widgets/`, przeniesienie logiki parsowania nadawców/DW do modelu domenowego `MessageThread` oraz izolacja granic przebudowy Riverpod.
 
 ---
 
@@ -64,6 +65,7 @@ Plans:
 **Requirements**: REQ-ROLE-04, REQ-CHAT-01  
 **Depends on**: Phase 14  
 **Success Criteria**:
+
 1. Na kafelku prośby na Pulpicie (`DashboardScreen`) oraz we Frekwencji (`AttendanceScreen`) obok przycisku „Zatwierdź (PIN)” widnieje przycisk „Odrzuć”, otwierający formularz wpisania komentarza/pytania do Oskara.
 2. Oskar na swoim koncie widzi powód odmowy i ma możliwość natychmiastowej odpowiedzi / ponownej prośby z dodatkowym wyjaśnieniem (wątek konwersacji w dokumencie wniosku w Firestore).
 3. Powstaje dedykowany moduł Czatu Rodzinnego (Rodzic ↔ Uczeń) w czasie rzeczywistym w Firestore z obsługą konwersacji tekstowych.
@@ -215,4 +217,26 @@ Plans:
 
 - [x] 20-01-PLAN.md: Backend Full Message Body Indexing (`sync_service.js` + `librus_client.js`) + Flutter AI Domain Models, `SchoolAiContextBuilder` & `SchoolAiAssistantService` (`firebase_ai: ^4.0.0`, Gemini 3.8 Flash / 3.1 Pro)
 - [x] 20-02-PLAN.md: Riverpod AI Providers (`ai_assistant_provider.dart`), Per-Role Firestore History, Floating Chat Widget (`FloatingChatFab` + `FloatingChatPanel`) & Dual-Mode `FamilyChatScreen` Integration
+
+### Phase 21: Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen
+
+**Goal**: Doprowadzenie modułu wiadomości (`message_thread_screen.dart` – 1 340 LOC, `messages_screen.dart` – 725 LOC) do pełnej zgodności z dobrymi praktykami Fluttera i standardem z Fazy 17.1 poprzez dekompozycję monolitycznych klas `State` na autonomiczne widgety `ConsumerWidget` / `StatelessWidget` w `lib/presentation/screens/messages/widgets/`, przeniesienie logiki parsowania nadawców i kopii DW do modelu domenowego `MessageThread` oraz eliminację duplikacji banerów zadań To-Do.  
+**Requirements**: REQ-ARCH-01, REQ-ARCH-02  
+**Depends on**: Phase 20  
+**Success Criteria**:
+
+1. Plik `lib/presentation/screens/messages/message_thread_screen.dart` zostaje zredukowany z **1 340 LOC do < 300 LOC**, pełniąc wyłącznie rolę koordynatora układu (`Scaffold` + `AppBar` + lista sekcji).
+2. Metody pomocnicze `_build*` zostają zastąpione osobnymi klasami widgetów z konstruktorami `const` w `lib/presentation/screens/messages/widgets/`:
+   - `MessageThreadHeaderCard` (nagłówek wątku, statusy `NOWA`/`Ważne`, rola nadawcy, licznik wiadomości),
+   - `MessageTaskBanner` (karta powiązanego zadania / heurystycznej sugestii zadania z izolowanym `ref.watch(tasksStreamProvider)`),
+   - `MessageAccordionTile` (zwinięta/rozwinięta karta pojedynczej wiadomości w wątku wraz z listą załączników),
+   - `MessageReplyComposer` (formularz odpowiedzi z pigułkami adresatów, szybką akcją `+ DW:` i wyborem nauczyciela z izolowanym `ref.watch(teachersProvider)`).
+3. Logika wyrażeń regularnych (`_resolveSenderName`, `_extractCcTeacherFromBody`) zostaje przeniesiona z warstwy widoku (`State`) do modelu domenowego `MessageThread` (`lib/domain/models/message_thread.dart`) i pokryta testami jednostkowymi.
+4. `flutter analyze` zwraca 0 błędów i ostrzeżeń, a interakcje w wątku (np. rozwijanie wiadomości czy pisanie odpowiedzi) przebudowują wyłącznie pojedynczy pod-widget zamiast całego drzewa ekranu.
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run `/gsd-plan-phase 21` to break down)
 

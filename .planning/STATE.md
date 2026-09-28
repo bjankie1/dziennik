@@ -64,6 +64,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - Phase 14.1 inserted: Czat rodzinny i dwukierunkowy dialog usprawiedliwień (URGENT)
 - Phase 17.1 inserted: Refactoring architektury widoków i biblioteka współdzielonych komponentów UI (URGENT)
 - Phase 20 added: Asystent AI dziennika szkolnego — Konwersacja z agentem na temat tego co znajduje się w dzienniku czyli oceny, plan lekcji, sprawdziany, wiadomości, nieobecności (np. „Kiedy jest następny sprawdzian”, „Kiedy jest wycieczka Oskara do Warszawy”, „Kiedy jest zebranie z rodzicami”)
+- Phase 21 added: Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen (1 340 LOC → modularne widgety zgodne z dobrymi praktykami Flutter)
 
 ### Quick Tasks Completed
 
@@ -80,18 +81,19 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 260923-spr | Oznaczenie sprawdzianu w planie lekcji (chip na lekcji + szczegóły i zakres w modalu) | 2026-09-23 | HEAD | [260923-spr-sprawdzian-w-planie-lekcji-chip-i-szczegoly](./quick/260923-spr-sprawdzian-w-planie-lekcji-chip-i-szczegoly/) |
 | 260924-cor | Automatyczna korelacja próśb o usprawiedliwienie od Oskara z niezależnie wysłanymi wnioskami rodzica + usunięcie wycieku mockowego req_init_01 | 2026-09-24 | HEAD | [260924-cor-korelacja-prosb-o-usprawiedliwienie](./quick/260924-cor-korelacja-prosb-o-usprawiedliwienie/) |
 | 260926-avg | Prawdziwa zmiana średniej po ostatniej ocenie (lastGradeDelta) i usunięcie zmyślonej lokaty w klasie (Top 5% / 1. lokata na 28) | 2026-09-26 | 736e97d | [260926-avg-prawdziwa-zmiana-sredniej-i-usuniecie-f](./quick/260926-avg-prawdziwa-zmiana-sredniej-i-usuniecie-f/) |
-| 260927-msg | Naprawa pustego adresata odpowiedzi na wiadomość "Ubezpieczenie szkolne" ([Administrator szkoły]) oraz chipy adresatów i DW | 2026-09-27 | HEAD | [260927-msg-naprawa-pustego-adresata-odpowiedzi-ubez](./quick/260927-msg-naprawa-pustego-adresata-odpowiedzi-ubez/) |
+| 260927-msg | Naprawa pustego adresata odpowiedzi na wiadomość "Ubezpieczenie szkolne" ([Administrator szkoły]) oraz chipy adresatów i DW | 2026-09-27 | 826baa0 | [260927-msg-naprawa-pustego-adresata-odpowiedzi-ubez](./quick/260927-msg-naprawa-pustego-adresata-odpowiedzi-ubez/) |
+| 260928-ogq | Parsowanie, wyświetlanie i pobieranie załączników wiadomości z Librus Synergia (np. wiadomość 2027508) | 2026-09-28 | HEAD | [260928-ogq-parsowanie-wy-wietlanie-i-pobieranie-za-](./quick/260928-ogq-parsowanie-wy-wietlanie-i-pobieranie-za-/) |
 
 ## Session
 
-**Last session:** 2026-09-27T09:38:00+02:00
-**Stopped at:** Completed Quick Task 260927-msg (Naprawa pustego adresata odpowiedzi na wiadomość Ubezpieczenie szkolne)
+**Last session:** 2026-09-28T17:54:00+02:00
+**Stopped at:** Completed Quick Task 260928-ogq (Parsowanie, wyświetlanie i pobieranie załączników wiadomości z Librus Synergia)
 **Resume file:** None
-Last activity: 2026-09-27
+Last activity: 2026-09-28
 
 ## Current Position
 
 Phase: 20 (Asystent AI dziennika szkolnego) — COMPLETE (2/2 plans completed)
-Next Phase: 19 (Raporty tygodniowe)
-Status: Phase 20 + Quick Tasks 260926-avg & 260927-msg completed & deployed.
-Last activity: 2026-09-27 — Completed Quick Task 260927-msg
+Next Phase: 19 (Raporty tygodniowe) / 21 (Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen)
+Status: Phase 20 + Quick Tasks 260926-avg, 260927-msg & 260928-ogq completed & deployed.
+Last activity: 2026-09-28 — Completed Quick Task 260928-ogq
