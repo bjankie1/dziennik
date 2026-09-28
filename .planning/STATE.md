@@ -2,18 +2,18 @@
 gsd_state_version: "1.0"
 milestone: v3.0
 current_phase: 20
-current_phase_name: "Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A)"
+current_phase_name: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A)
 status: completed
-stopped_at: Completed Phase 20 (Asystent AI dziennika szkolnego: Cloud Functions message body indexing, firebase_ai Gemini 3.8 Flash / 3.1 Pro, FloatingChatFab/Panel & dual-mode FamilyChatScreen)
-last_updated: "2026-09-26T18:19:00Z"
-last_activity: 2026-09-26
-state_head: bb52795
+stopped_at: Phase 22 context gathered
+last_updated: "2026-09-28T16:13:28.498Z"
+last_activity: 2026-09-28
+state_head: f21787a1087ac9c3ef3d75d1e4b32ea918da843d
 progress:
-  total_phases: 9
+  total_phases: 11
   completed_phases: 8
-  total_plans: 22
+  total_plans: 13
   completed_plans: 20
-  percent: 91
+  percent: 73
 milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ---
 
@@ -65,6 +65,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - Phase 17.1 inserted: Refactoring architektury widoków i biblioteka współdzielonych komponentów UI (URGENT)
 - Phase 20 added: Asystent AI dziennika szkolnego — Konwersacja z agentem na temat tego co znajduje się w dzienniku czyli oceny, plan lekcji, sprawdziany, wiadomości, nieobecności (np. „Kiedy jest następny sprawdzian”, „Kiedy jest wycieczka Oskara do Warszawy”, „Kiedy jest zebranie z rodzicami”)
 - Phase 21 added: Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen (1 340 LOC → modularne widgety zgodne z dobrymi praktykami Flutter)
+- Phase 22 added: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail (na życzenie użytkownika jednym kliknięciem z linkiem „Otwórz w Google Drive”)
 
 ### Quick Tasks Completed
 
@@ -86,9 +87,9 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 ## Session
 
-**Last session:** 2026-09-28T17:54:00+02:00
-**Stopped at:** Completed Quick Task 260928-ogq (Parsowanie, wyświetlanie i pobieranie załączników wiadomości z Librus Synergia)
-**Resume file:** None
+**Last session:** 2026-09-28T16:13:28.334Z
+**Stopped at:** Phase 22 context gathered
+**Resume file:** .planning/phases/22-zapisywanie-za-cznik-w-wiadomo-ci-w-google-drive-w-stylu-gma/22-CONTEXT.md
 Last activity: 2026-09-28
 
 ## Current Position

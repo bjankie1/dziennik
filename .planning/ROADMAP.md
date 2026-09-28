@@ -34,6 +34,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [ ] **Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)** — Automatyczny harmonogram Cloud Scheduler w piątki wieczorem generujący i wysyłający raport podsumowujący nadchodzący tydzień przez bota Telegram do rodzica i ucznia.
 - [x] **Phase 20: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A)** — Konwersacja z agentem AI na temat danych w dzienniku (oceny, plan lekcji, sprawdziany, wiadomości, ogłoszenia, nieobecności, zadania) z przeszukiwaniem pełnej treści wiadomości (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”). (completed 2026-09-26)
 - [ ] **Phase 21: Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen** — Rozbicie monolitycznego `message_thread_screen.dart` (1 340 LOC) oraz `messages_screen.dart` (725 LOC) na dedykowane, reużywalne widgety w `lib/presentation/screens/messages/widgets/`, przeniesienie logiki parsowania nadawców/DW do modelu domenowego `MessageThread` oraz izolacja granic przebudowy Riverpod.
+- [ ] **Phase 22: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail** — Zapisywanie pojedynczych lub wszystkich załączników wiadomości Librus na żądanie użytkownika bezpośrednio na jego koncie Google Drive (do dedykowanego folderu np. `EduSync / Załączniki szkolne`) z wizualnym statusem zapisania i bezpośrednim linkiem „Otwórz w Google Drive” na wzór Gmaila.
 
 ---
 
@@ -239,4 +240,22 @@ Plans:
 Plans:
 
 - [ ] TBD (run `/gsd-plan-phase 21` to break down)
+
+### Phase 22: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail
+
+**Goal**: Umożliwienie użytkownikowi zapisywania załączników wiadomości z Librus Synergia na własnym koncie Google Drive jednym kliknięciem („Dodaj do Dysku Google” / „Zapisz wszystkie na Dysku”), analogicznie do obsługi załączników w Gmailu — z automatycznym tworzeniem uporządkowanego folderu docelowego (np. `EduSync - Załączniki szkolne`), zapamiętywaniem stanu zapisania w Firestore oraz bezpośrednim przyciskiem „Otwórz w Google Drive”.  
+**Requirements**: REQ-DRIVE-01, REQ-DRIVE-02  
+**Depends on**: Phase 21  
+**Success Criteria**:
+
+1. Na kafelku każdego załącznika w widoku wątku wiadomości (`MessageThreadScreen`) obok akcji pobrania na urządzenie znajduje się przycisk/ikona **„Zapisz na Dysku Google”** (w stylu Gmaila), a przy wielu załącznikach również zbiorcza akcja **„Zapisz wszystkie na Dysku”**.
+2. Kliknięcie „Zapisz na Dysku Google” wykorzystuje autoryzację OAuth 2.0 konta Google zalogowanego użytkownika (scope `https://www.googleapis.com/auth/drive.file` — dostęp wyłącznie do plików utworzonych przez aplikację), pobiera strumień załącznika z Librusa przez Cloud Function (`downloadAttachment`) i przesyła go bezpośrednio na Google Drive użytkownika do dedykowanego folderu (np. `EduSync - Załączniki szkolne`).
+3. Po zapisaniu załącznika na Google Drive jego stan (`driveFileId`, `webViewLink`, `savedAt`) jest utrwalany w Firestore, a ikona na kafelku zmienia się na **„Zapisano na Dysku — Otwórz w Google Drive”**, pozwalając jednym kliknięciem otworzyć plik lub folder w Google Drive bez ponownego wgrywania duplikatu.
+4. Proces zapisu prezentuje czytelny stan ładowania (spinner / pasek postępu na kafelku załącznika) oraz powiadomienie `SnackBar` z akcją „Otwórz na Dysku”.
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run `/gsd-plan-phase 22` to break down)
 
