@@ -794,6 +794,19 @@ class LibrusClient {
     throw new Error("Nie udało się uzyskać linku do pobrania załącznika z Librusa.");
   }
 
+  async downloadAttachmentBuffer(downloadPath) {
+    const directUrl = await this.resolveAttachmentDownloadUrl(downloadPath);
+    const res = await this.client.get(directUrl, {
+      responseType: "arraybuffer",
+      timeout: 45000
+    });
+    return {
+      buffer: Buffer.from(res.data),
+      contentType: res.headers?.["content-type"],
+      directUrl
+    };
+  }
+
   async sendMessage({ recipients, subject, body, replyToMsgId }) {
     try {
       if (replyToMsgId) {

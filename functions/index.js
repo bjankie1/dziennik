@@ -453,6 +453,7 @@ exports.getMessageDetails = onRequest(
         const details = await client.fetchMessageDetails(msgId, url);
 
         // Update Firestore cached messages if present
+        let matchedMessage = null;
         try {
           const studentRef = admin.firestore().collection("students").doc(login);
           const studentDoc = await studentRef.get();
@@ -474,6 +475,7 @@ exports.getMessageDetails = onRequest(
                 if (Array.isArray(details.attachmentFiles)) {
                   m.attachmentFiles = details.attachmentFiles;
                 }
+                matchedMessage = m;
                 changed = true;
                 break;
               }
@@ -486,14 +488,18 @@ exports.getMessageDetails = onRequest(
           console.warn("Could not cache message details in Firestore:", cacheErr.message);
         }
 
-        return res.status(200).json(details);
+        return res.status(200).json({
+          ...details,
+          driveAttachments: matchedMessage?.driveAttachments || {}
+        });
       }
 
       return res.status(200).json({
         id: msgId,
         body: "Treść wiadomości pobrana w trybie demonstracyjnym.",
         attachments: [],
-        attachmentFiles: []
+        attachmentFiles: [],
+        driveAttachments: {}
       });
     } catch (error) {
       console.error("getMessageDetails error:", error);
@@ -546,6 +552,305 @@ exports.downloadAttachment = onRequest(
     }
   }
 );
+
+/**
+ * Download a Librus message attachment server-side and upload it directly to the user's Google Drive (Phase 22, D-01, D-07, D-10).
+ */
+exports.saveAttachmentToDrive = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 60,
+    memory: "512MiB"
+  },
+  async (req, res) => {
+    try {
+      const { LibrusClient } = require("./src/librus_client");
+      const {
+        guessMimeType,
+        uploadBufferToDrive,
+        updateMessageDriveAttachmentInFirestore
+      } = require("./src/drive_service");
+
+      const {
+        studentId,
+        login: reqLogin,
+        msgId,
+        attachmentName,
+        downloadPath,
+        accessToken,
+        folderId,
+        folderName,
+        savedBy
+      } = req.body || {};
+
+      if (!msgId || !attachmentName || !downloadPath || !accessToken) {
+        return res.status(400).json({
+          error: "Brak wymaganych parametrów (msgId, attachmentName, downloadPath, accessToken)."
+        });
+      }
+
+      const targetStudentId = String(
+        studentId || reqLogin || process.env.LIBRUS_LOGIN || "11010033"
+      ).replace(/u$/i, "");
+
+      const db = admin.firestore();
+      let effectiveFolderId = folderId ? String(folderId).trim() : "";
+      let effectiveFolderName = folderName ? String(folderName).trim() : "";
+
+      if (!effectiveFolderId) {
+        try {
+          const studentDoc = await db.collection("students").doc(targetStudentId).get();
+          if (studentDoc.exists) {
+            const sData = studentDoc.data() || {};
+            effectiveFolderId = String(sData.driveDefaultFolderId || "root").trim();
+            effectiveFolderName = String(sData.driveDefaultFolderName || "Mój dysk").trim();
+          }
+        } catch (prefErr) {
+          console.warn("[saveAttachmentToDrive] Could not read default Drive folder from Firestore:", prefErr.message);
+        }
+      }
+      if (!effectiveFolderId) effectiveFolderId = "root";
+      if (!effectiveFolderName) effectiveFolderName = effectiveFolderId === "root" ? "Mój dysk" : "Folder Google Drive";
+
+      const librusLogin = process.env.LIBRUS_LOGIN || targetStudentId;
+      const librusPass = process.env.LIBRUS_PASSWORD;
+
+      let fileBuffer;
+      let mimeType = guessMimeType(attachmentName);
+
+      if (librusLogin && librusPass) {
+        const client = new LibrusClient(librusLogin, librusPass);
+        await client.authenticate();
+        const downloaded = await client.downloadAttachmentBuffer(downloadPath);
+        fileBuffer = downloaded.buffer;
+        if (
+          downloaded.contentType &&
+          downloaded.contentType !== "application/octet-stream" &&
+          !downloaded.contentType.includes("text/html")
+        ) {
+          mimeType = downloaded.contentType.split(";")[0].trim();
+        }
+      } else {
+        // Fallback buffer for local emulator when LIBRUS_PASSWORD is not configured
+        fileBuffer = Buffer.from(`Załącznik demonstracyjny EduSync: ${attachmentName}`, "utf8");
+      }
+
+      const uploadRes = await uploadBufferToDrive({
+        accessToken,
+        fileName: attachmentName,
+        fileBuffer,
+        mimeType,
+        folderId: effectiveFolderId,
+        folderName: effectiveFolderName
+      });
+
+      const driveAttachmentInfo = {
+        driveFileId: uploadRes.driveFileId,
+        webViewLink: uploadRes.webViewLink,
+        folderId: uploadRes.folderId,
+        folderName: uploadRes.folderName,
+        savedAt: new Date().toISOString(),
+        savedBy: savedBy || "Rodzic"
+      };
+
+      await updateMessageDriveAttachmentInFirestore({
+        db,
+        studentId: targetStudentId,
+        msgId,
+        attachmentName,
+        driveAttachmentInfo
+      });
+
+      return res.status(200).json({
+        success: true,
+        attachmentName,
+        driveAttachment: driveAttachmentInfo,
+        fallbackToRoot: Boolean(uploadRes.fallbackToRoot)
+      });
+    } catch (error) {
+      const status = error.response?.status;
+      if (status === 401 || status === 403) {
+        return res.status(status).json({
+          error: "UNAUTHENTICATED_DRIVE",
+          message: "Sesja Google Drive wygasła lub wymaga ponownej autoryzacji."
+        });
+      }
+      console.error("saveAttachmentToDrive error:", error.message);
+      return res.status(500).json({
+        error: error.message || "Nie udało się zapisać załącznika na Dysku Google."
+      });
+    }
+  }
+);
+
+/**
+ * Manage Google Drive folders (list, create, move saved attachments, set default folder) (Phase 22, D-01, D-02, D-03).
+ */
+exports.manageDriveFolders = onRequest(
+  {
+    region: "europe-west3",
+    cors: true,
+    timeoutSeconds: 30,
+    memory: "256MiB"
+  },
+  async (req, res) => {
+    try {
+      const {
+        listDriveFolders,
+        createDriveFolder,
+        moveDriveFileToFolder
+      } = require("./src/drive_service");
+
+      const action = String(req.query.action || req.body?.action || "list").trim();
+      const accessToken = req.body?.accessToken || req.headers?.authorization?.replace(/^Bearer\s+/i, "");
+      const rawStudentId =
+        req.body?.studentId || req.query.studentId || req.body?.login || process.env.LIBRUS_LOGIN || "11010033";
+      const targetStudentId = String(rawStudentId).replace(/u$/i, "");
+      const db = admin.firestore();
+
+      if (action === "setDefault") {
+        const folderId = String(req.body?.folderId || "root").trim() || "root";
+        const folderName =
+          String(req.body?.folderName || (folderId === "root" ? "Mój dysk" : "Folder Google Drive")).trim();
+
+        await db.collection("students").doc(targetStudentId).set(
+          {
+            driveDefaultFolderId: folderId,
+            driveDefaultFolderName: folderName
+          },
+          { merge: true }
+        );
+        return res.status(200).json({
+          success: true,
+          folderId,
+          folderName
+        });
+      }
+
+      if (!accessToken) {
+        return res.status(400).json({
+          error: "Brak tokenu autoryzacji Google Drive (accessToken)."
+        });
+      }
+
+      if (action === "list") {
+        const folders = await listDriveFolders({ accessToken });
+        return res.status(200).json({ success: true, folders });
+      }
+
+      if (action === "create") {
+        const folderName = req.body?.folderName;
+        const parentId = req.body?.parentId || "root";
+        const setAsDefault = Boolean(req.body?.setAsDefault);
+        const folder = await createDriveFolder({
+          accessToken,
+          folderName,
+          parentId
+        });
+
+        if (setAsDefault) {
+          await db.collection("students").doc(targetStudentId).set(
+            {
+              driveDefaultFolderId: folder.id,
+              driveDefaultFolderName: folder.name
+            },
+            { merge: true }
+          );
+        }
+
+        return res.status(200).json({ success: true, folder });
+      }
+
+      if (action === "move") {
+        const msgId = req.body?.msgId;
+        const items = Array.isArray(req.body?.items) ? req.body.items : [];
+        const targetFolderId = String(req.body?.targetFolderId || "root").trim() || "root";
+        const targetFolderName =
+          String(req.body?.targetFolderName || (targetFolderId === "root" ? "Mój dysk" : "Folder Google Drive")).trim();
+        const setAsDefault = req.body?.setAsDefault !== false;
+
+        let movedCount = 0;
+        for (const item of items) {
+          if (!item || !item.fileId) continue;
+          await moveDriveFileToFolder({
+            accessToken,
+            fileId: item.fileId,
+            targetFolderId,
+            previousFolderId: item.previousFolderId || "root"
+          });
+          movedCount++;
+        }
+
+        const studentRef = db.collection("students").doc(targetStudentId);
+        const studentDoc = await studentRef.get();
+        if (studentDoc.exists) {
+          const data = studentDoc.data() || {};
+          const msgs = Array.isArray(data.messages) ? data.messages : [];
+          let msgsChanged = false;
+          if (msgId && items.length > 0) {
+            for (const m of msgs) {
+              if (String(m.id) === String(msgId) && m.driveAttachments && typeof m.driveAttachments === "object") {
+                for (const item of items) {
+                  const attName = item.attachmentName;
+                  if (attName && m.driveAttachments[attName]) {
+                    m.driveAttachments[attName] = {
+                      ...m.driveAttachments[attName],
+                      folderId: targetFolderId,
+                      folderName: targetFolderName
+                    };
+                    msgsChanged = true;
+                  }
+                }
+              }
+            }
+          }
+          const updatePayload = {};
+          if (msgsChanged) {
+            updatePayload.messages = msgs;
+          }
+          if (setAsDefault) {
+            updatePayload.driveDefaultFolderId = targetFolderId;
+            updatePayload.driveDefaultFolderName = targetFolderName;
+          }
+          if (Object.keys(updatePayload).length > 0) {
+            await studentRef.update(updatePayload);
+          }
+        } else if (setAsDefault) {
+          await studentRef.set(
+            {
+              driveDefaultFolderId: targetFolderId,
+              driveDefaultFolderName: targetFolderName
+            },
+            { merge: true }
+          );
+        }
+
+        return res.status(200).json({
+          success: true,
+          movedCount,
+          targetFolderId,
+          targetFolderName
+        });
+      }
+
+      return res.status(400).json({ error: `Nieobsługiwana akcja: ${action}` });
+    } catch (error) {
+      const status = error.response?.status;
+      if (status === 401 || status === 403) {
+        return res.status(status).json({
+          error: "UNAUTHENTICATED_DRIVE",
+          message: "Sesja Google Drive wygasła lub wymaga ponownej autoryzacji."
+        });
+      }
+      console.error("manageDriveFolders error:", error.message);
+      return res.status(500).json({
+        error: error.message || "Nie udało się wykonać operacji na folderach Google Drive."
+      });
+    }
+  }
+);
+
 
 /**
  * Submit an e-Justification to Librus Synergia.

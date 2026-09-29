@@ -363,10 +363,27 @@ async function mergeAndIndexMessages({
 
   const merged = freshMessages.map(m => ({ ...m }));
 
-  // Step 1: Preserve already-loaded full message bodies from previous Firestore snapshot
+  // Step 1: Preserve already-loaded full message bodies and Drive attachment metadata from previous Firestore snapshot
   for (const m of merged) {
-    if (m.bodyLoaded === true) continue;
     const prev = prevById.get(String(m.id));
+    if (prev) {
+      if (prev.driveAttachments && typeof prev.driveAttachments === "object") {
+        m.driveAttachments = {
+          ...prev.driveAttachments,
+          ...(m.driveAttachments || {})
+        };
+      }
+      if (
+        (!Array.isArray(m.attachmentFiles) || m.attachmentFiles.length === 0) &&
+        Array.isArray(prev.attachmentFiles) &&
+        prev.attachmentFiles.length > 0
+      ) {
+        m.attachmentFiles = prev.attachmentFiles;
+        m.attachments = prev.attachments || prev.attachmentFiles.map(a => a.name);
+        m.hasAttachments = true;
+      }
+    }
+    if (m.bodyLoaded === true) continue;
     if (!prev) continue;
 
     const hasCachedFullBody =

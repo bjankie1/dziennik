@@ -167,3 +167,99 @@ test("mergeAndIndexMessages respects maxIndexDepth and continues gracefully on s
   assert.equal(merged[1].body, "Treść dla 202");
   assert.equal(merged[2].bodyLoaded, false); // Beyond maxIndexDepth=2
 });
+
+test("mergeAndIndexMessages preserves driveAttachments and attachmentFiles for both top-10 (bodyLoaded=true) and older messages across sync cycles", async () => {
+  const freshMessages = [
+    {
+      id: "301",
+      sender: "Dyrekcja",
+      subject: "Harmonogram matury",
+      date: "2026-05-12",
+      preview: "Pełna treść w top 10",
+      body: "Pełna treść w top 10",
+      bodyLoaded: true,
+      hasAttachments: true,
+      attachments: ["matura2027.pdf", "matura2027.pptx"],
+      attachmentFiles: [
+        { name: "matura2027.pdf", path: "/wiadomosci/pobierz_zalacznik/301/1" },
+        { name: "matura2027.pptx", path: "/wiadomosci/pobierz_zalacznik/301/2" }
+      ],
+      librusUrl: "https://synergia.librus.pl/wiadomosci/1/5/301"
+    },
+    {
+      id: "302",
+      sender: "Wychowawca",
+      subject: "Starsza wiadomość z załącznikiem",
+      date: "2026-04-10",
+      preview: "Starsza wiadomość z załącznikiem",
+      body: "Starsza wiadomość z załącznikiem",
+      bodyLoaded: false,
+      hasAttachments: true,
+      attachments: [],
+      librusUrl: "https://synergia.librus.pl/wiadomosci/1/5/302"
+    }
+  ];
+
+  const prevMessages = [
+    {
+      id: "301",
+      sender: "Dyrekcja",
+      subject: "Harmonogram matury",
+      date: "2026-05-12",
+      body: "Pełna treść w top 10",
+      bodyLoaded: true,
+      driveAttachments: {
+        "matura2027.pdf": {
+          driveFileId: "drive_301_1",
+          webViewLink: "https://drive.google.com/file/d/drive_301_1/view",
+          folderId: "root",
+          folderName: "Mój dysk",
+          savedAt: "2026-09-28T10:00:00.000Z",
+          savedBy: "Rodzic"
+        }
+      }
+    },
+    {
+      id: "302",
+      sender: "Wychowawca",
+      subject: "Starsza wiadomość z załącznikiem",
+      date: "2026-04-10",
+      body: "Pełna treść starszej wiadomości",
+      bodyLoaded: true,
+      hasAttachments: true,
+      attachments: ["zgoda.pdf"],
+      attachmentFiles: [
+        { name: "zgoda.pdf", path: "/wiadomosci/pobierz_zalacznik/302/1" }
+      ],
+      driveAttachments: {
+        "zgoda.pdf": {
+          driveFileId: "drive_302_1",
+          webViewLink: "https://drive.google.com/file/d/drive_302_1/view",
+          folderId: "folder_szkola",
+          folderName: "Szkoła",
+          savedAt: "2026-09-28T11:00:00.000Z",
+          savedBy: "Oskar"
+        }
+      }
+    }
+  ];
+
+  const merged = await mergeAndIndexMessages({
+    freshMessages,
+    prevMessages,
+    client: null,
+    maxIncrementalFetch: 0
+  });
+
+  assert.equal(merged.length, 2);
+  assert.ok(merged[0].driveAttachments);
+  assert.equal(merged[0].driveAttachments["matura2027.pdf"].driveFileId, "drive_301_1");
+
+  assert.equal(merged[1].bodyLoaded, true);
+  assert.deepEqual(merged[1].attachments, ["zgoda.pdf"]);
+  assert.equal(merged[1].attachmentFiles.length, 1);
+  assert.equal(merged[1].attachmentFiles[0].path, "/wiadomosci/pobierz_zalacznik/302/1");
+  assert.ok(merged[1].driveAttachments);
+  assert.equal(merged[1].driveAttachments["zgoda.pdf"].folderName, "Szkoła");
+});
+

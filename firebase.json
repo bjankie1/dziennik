@@ -68,6 +68,20 @@
         }
       },
       {
+        "source": "/api/saveAttachmentToDrive",
+        "function": {
+          "functionId": "saveAttachmentToDrive",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/api/driveFolder",
+        "function": {
+          "functionId": "manageDriveFolders",
+          "region": "europe-west3"
+        }
+      },
+      {
         "source": "/api/submitJustification",
         "function": {
           "functionId": "submitJustification",
