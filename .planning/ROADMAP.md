@@ -253,9 +253,13 @@ Plans:
 3. Po zapisaniu załącznika na Google Drive jego stan (`driveFileId`, `webViewLink`, `savedAt`) jest utrwalany w Firestore, a ikona na kafelku zmienia się na **„Zapisano na Dysku — Otwórz w Google Drive”**, pozwalając jednym kliknięciem otworzyć plik lub folder w Google Drive bez ponownego wgrywania duplikatu.
 4. Proces zapisu prezentuje czytelny stan ładowania (spinner / pasek postępu na kafelku załącznika) oraz powiadomienie `SnackBar` z akcją „Otwórz na Dysku”.
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
+**Wave 1**
 
-- [ ] TBD (run `/gsd-plan-phase 22` to break down)
+- [ ] 22-01-PLAN.md: Cloud Functions Google Drive Service (`drive_service.js`, `/api/saveAttachmentToDrive`, `/api/driveFolder`), Sync Preservation (`sync_service.js`), Google OAuth `drive.file` Token Acquisition (`FirebaseAuthService`) & Repository Layer (`DriveAttachmentInfo`, `FirestoreSchoolRepository`, `MockSchoolRepository`)
 
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 22-02-PLAN.md: Gmail-Style Attachment Actions in `MessageThreadScreen` (`Pobierz` + `Zapisz na Dysku Google` / `Otwórz w Google Drive`, bulk `Zapisz wszystkie na Dysku`), `DriveFolderPickerModal` (`Zmień folder / Przenieś`), Settings Default Drive Folder & Widget Tests
