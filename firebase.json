@@ -70,14 +70,14 @@
       {
         "source": "/api/saveAttachmentToDrive",
         "function": {
-          "functionId": "saveAttachmentToDrive",
+          "functionId": "downloadAttachment",
           "region": "europe-west3"
         }
       },
       {
         "source": "/api/driveFolder",
         "function": {
-          "functionId": "manageDriveFolders",
+          "functionId": "downloadAttachment",
           "region": "europe-west3"
         }
       },
