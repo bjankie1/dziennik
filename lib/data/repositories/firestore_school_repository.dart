@@ -300,7 +300,30 @@ class FirestoreSchoolRepository implements SchoolRepository {
       currentWeek: 'Tydzień A',
       luckyNumber: lucky,
       educator: studentMap['educator'] as String? ?? 'Sobota Łukasz',
+      lastSyncTime: _parseSyncTime(data['lastSyncTime']) ?? _parseSyncTime(data['updatedAt']),
     );
+  }
+
+  /// Parses a backend sync timestamp (ISO string, Firestore Timestamp,
+  /// epoch millis or `{_seconds}` JSON map) and converts it to local time.
+  static DateTime? _parseSyncTime(dynamic raw) {
+    if (raw == null) return null;
+    DateTime? dt;
+    if (raw is Timestamp) {
+      dt = raw.toDate();
+    } else if (raw is DateTime) {
+      dt = raw;
+    } else if (raw is String) {
+      dt = DateTime.tryParse(raw);
+    } else if (raw is num) {
+      dt = DateTime.fromMillisecondsSinceEpoch(raw.toInt(), isUtc: true);
+    } else if (raw is Map) {
+      final seconds = raw['_seconds'] ?? raw['seconds'];
+      if (seconds is num) {
+        dt = DateTime.fromMillisecondsSinceEpoch(seconds.toInt() * 1000, isUtc: true);
+      }
+    }
+    return dt?.toLocal();
   }
 
   String _cleanEventSubjectName(Map<String, dynamic> event, List<dynamic> timetable) {

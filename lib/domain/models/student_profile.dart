@@ -14,6 +14,10 @@ class StudentProfile {
   final int luckyNumber;
   final String? educator;
 
+  /// Real time of the last successful Librus sync written by the backend
+  /// (local time). Null when unknown (e.g. demo/mock data).
+  final DateTime? lastSyncTime;
+
   const StudentProfile({
     required this.id,
     required this.name,
@@ -29,5 +33,6 @@ class StudentProfile {
     required this.currentWeek,
     this.luckyNumber = 0,
     this.educator,
+    this.lastSyncTime,
   });
 }

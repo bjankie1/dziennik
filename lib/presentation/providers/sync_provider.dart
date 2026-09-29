@@ -6,7 +6,10 @@ import 'school_providers.dart';
 
 class SyncState {
   final bool isSyncing;
-  final DateTime lastSyncTime;
+
+  /// Real time of the last successful Librus sync (local time), taken from the
+  /// backend snapshot. Null when not yet known.
+  final DateTime? lastSyncTime;
   final String statusMessage;
   final String? connectedLogin;
   final bool isDemoMode;
@@ -19,17 +22,28 @@ class SyncState {
     required this.isDemoMode,
   });
 
-  String get formattedLastSync {
-    final now = DateTime.now();
-    final diff = now.difference(lastSyncTime);
+  String get formattedLastSync => formatLastSync(DateTime.now());
+
+  /// Formats [lastSyncTime] relative to [now] with a correct day label.
+  String formatLastSync(DateTime now) {
+    final last = lastSyncTime?.toLocal();
+    if (last == null) return 'brak danych';
+
+    final diff = now.difference(last);
+    // Guard against clock skew: never present a sync from the future.
     if (diff.inSeconds < 45) {
       return 'przed chwilą';
     } else if (diff.inMinutes < 60) {
       return '${diff.inMinutes} min temu';
-    } else {
-      final formatter = DateFormat('HH:mm', 'pl_PL');
-      return 'dzisiaj o ${formatter.format(lastSyncTime)}';
     }
+
+    final time = DateFormat('HH:mm', 'pl_PL').format(last);
+    final today = DateTime(now.year, now.month, now.day);
+    final lastDay = DateTime(last.year, last.month, last.day);
+    final dayDiff = today.difference(lastDay).inDays;
+    if (dayDiff == 0) return 'dzisiaj o $time';
+    if (dayDiff == 1) return 'wczoraj o $time';
+    return '${DateFormat('dd.MM', 'pl_PL').format(last)} o $time';
   }
 
   SyncState copyWith({
@@ -55,10 +69,19 @@ class SyncNotifier extends Notifier<SyncState> {
 
   @override
   SyncState build() {
+    // Keep the displayed sync time in line with the backend snapshot
+    // (scheduled syncs + on-demand syncs both update it).
+    ref.listen(studentProfileProvider, (_, next) {
+      final serverTime = next.asData?.value.lastSyncTime;
+      if (serverTime != null) {
+        state = state.copyWith(lastSyncTime: serverTime);
+      }
+    });
+
     _init();
-    return SyncState(
+    return const SyncState(
       isSyncing: false,
-      lastSyncTime: DateTime.now(),
+      lastSyncTime: null,
       statusMessage: 'Połączono z serwerem Synergia',
       connectedLogin: null,
       isDemoMode: true,
@@ -66,13 +89,22 @@ class SyncNotifier extends Notifier<SyncState> {
   }
 
   Future<void> _init() async {
+    // Defer until build() has returned so `state` is initialized.
+    await Future<void>.microtask(() {});
+
+    // Profile may already be loaded before this notifier was created.
+    final initialServerTime =
+        ref.read(studentProfileProvider).asData?.value.lastSyncTime;
+    if (initialServerTime != null) {
+      state = state.copyWith(lastSyncTime: initialServerTime);
+    }
+
     final connService = ref.read(librusConnectionServiceProvider);
     final isDemo = await connService.isDemoMode();
     final login = await connService.getConnectedLogin();
     state = state.copyWith(
       isDemoMode: isDemo,
       connectedLogin: login,
-      lastSyncTime: DateTime.now(),
     );
   }
 
@@ -141,9 +173,10 @@ class SyncNotifier extends Notifier<SyncState> {
           ? 'Zsynchronizowano na żądanie (serwery w trybie nocnym)'
           : 'Wszystkie dane są aktualne';
 
+      // lastSyncTime is updated by the studentProfileProvider listener once the
+      // refreshed backend snapshot arrives (so it reflects the real sync time).
       state = state.copyWith(
         isSyncing: false,
-        lastSyncTime: DateTime.now(),
         statusMessage: successMsg,
         isDemoMode: isDemo,
         connectedLogin: login,

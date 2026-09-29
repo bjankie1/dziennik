@@ -86,6 +86,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 260927-msg | Naprawa pustego adresata odpowiedzi na wiadomość "Ubezpieczenie szkolne" ([Administrator szkoły]) oraz chipy adresatów i DW | 2026-09-27 | 826baa0 | [260927-msg-naprawa-pustego-adresata-odpowiedzi-ubez](./quick/260927-msg-naprawa-pustego-adresata-odpowiedzi-ubez/) |
 | 260928-ogq | Parsowanie, wyświetlanie i pobieranie załączników wiadomości z Librus Synergia (np. wiadomość 2027508) | 2026-09-28 | HEAD | [260928-ogq-parsowanie-wy-wietlanie-i-pobieranie-za-](./quick/260928-ogq-parsowanie-wy-wietlanie-i-pobieranie-za-/) |
 | 260929-jas | Naprawa układu modala prośby o usprawiedliwienie - stały przycisk Wyślij i przewijana zawartość | 2026-09-29 | HEAD | [260929-jas-naprawa-uk-adu-modala-pro-by-o-usprawied](./quick/260929-jas-naprawa-uk-adu-modala-pro-by-o-usprawied/) |
+| 260929-ooj | Rzeczywisty czas ostatniej synchronizacji z backendu (zamiast czasu otwarcia aplikacji) i poprawne etykiety dnia | 2026-09-29 | HEAD | [260929-ooj-naprawa-czasu-ostatniej-synchronizacji-w](./quick/260929-ooj-naprawa-czasu-ostatniej-synchronizacji-w/) |
 
 ## Session
 
