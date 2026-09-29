@@ -34,7 +34,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [ ] **Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)** — Automatyczny harmonogram Cloud Scheduler w piątki wieczorem generujący i wysyłający raport podsumowujący nadchodzący tydzień przez bota Telegram do rodzica i ucznia.
 - [x] **Phase 20: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A)** — Konwersacja z agentem AI na temat danych w dzienniku (oceny, plan lekcji, sprawdziany, wiadomości, ogłoszenia, nieobecności, zadania) z przeszukiwaniem pełnej treści wiadomości (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”). (completed 2026-09-26)
 - [ ] **Phase 21: Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen** — Rozbicie monolitycznego `message_thread_screen.dart` (1 340 LOC) oraz `messages_screen.dart` (725 LOC) na dedykowane, reużywalne widgety w `lib/presentation/screens/messages/widgets/`, przeniesienie logiki parsowania nadawców/DW do modelu domenowego `MessageThread` oraz izolacja granic przebudowy Riverpod.
-- [ ] **Phase 22: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail** — Zapisywanie pojedynczych lub wszystkich załączników wiadomości Librus na żądanie użytkownika bezpośrednio na jego koncie Google Drive (do dedykowanego folderu np. `EduSync / Załączniki szkolne`) z wizualnym statusem zapisania i bezpośrednim linkiem „Otwórz w Google Drive” na wzór Gmaila.
+- [x] **Phase 22: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail** — Zapisywanie pojedynczych lub wszystkich załączników wiadomości Librus na żądanie użytkownika bezpośrednio na jego koncie Google Drive (do dedykowanego folderu np. `EduSync / Załączniki szkolne`) z wizualnym statusem zapisania i bezpośrednim linkiem „Otwórz w Google Drive” na wzór Gmaila. (completed 2026-09-29)
 
 ---
 
@@ -253,13 +253,13 @@ Plans:
 3. Po zapisaniu załącznika na Google Drive jego stan (`driveFileId`, `webViewLink`, `savedAt`) jest utrwalany w Firestore, a ikona na kafelku zmienia się na **„Zapisano na Dysku — Otwórz w Google Drive”**, pozwalając jednym kliknięciem otworzyć plik lub folder w Google Drive bez ponownego wgrywania duplikatu.
 4. Proces zapisu prezentuje czytelny stan ładowania (spinner / pasek postępu na kafelku załącznika) oraz powiadomienie `SnackBar` z akcją „Otwórz na Dysku”.
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 **Wave 1**
 
-- [ ] 22-01-PLAN.md: Cloud Functions Google Drive Service (`drive_service.js`, `/api/saveAttachmentToDrive`, `/api/driveFolder`), Sync Preservation (`sync_service.js`), Google OAuth `drive.file` Token Acquisition (`FirebaseAuthService`) & Repository Layer (`DriveAttachmentInfo`, `FirestoreSchoolRepository`, `MockSchoolRepository`)
+- [x] 22-01-PLAN.md: Cloud Functions Google Drive Service (`drive_service.js`, `/api/saveAttachmentToDrive`, `/api/driveFolder`), Sync Preservation (`sync_service.js`), Google OAuth `drive.file` Token Acquisition (`FirebaseAuthService`) & Repository Layer (`DriveAttachmentInfo`, `FirestoreSchoolRepository`, `MockSchoolRepository`)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 22-02-PLAN.md: Gmail-Style Attachment Actions in `MessageThreadScreen` (`Pobierz` + `Zapisz na Dysku Google` / `Otwórz w Google Drive`, bulk `Zapisz wszystkie na Dysku`), `DriveFolderPickerModal` (`Zmień folder / Przenieś`), Settings Default Drive Folder & Widget Tests
+- [x] 22-02-PLAN.md: Gmail-Style Attachment Actions in `MessageThreadScreen` (`Pobierz` + `Zapisz na Dysku Google` / `Otwórz w Google Drive`, bulk `Zapisz wszystkie na Dysku`), `DriveFolderPickerModal` (`Zmień folder / Przenieś`), Settings Default Drive Folder & Widget Tests
