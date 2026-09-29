@@ -11,6 +11,7 @@ import '../../providers/school_providers.dart';
 import '../../providers/tasks_provider.dart';
 import '../tasks/widgets/task_form_modal.dart';
 import 'widgets/drive_folder_picker_modal.dart';
+import '../../widgets/linkified_text.dart';
 import 'package:go_router/go_router.dart';
 
 class MessageThreadScreen extends ConsumerStatefulWidget {
@@ -1042,7 +1043,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
               ),
             ),
           ] else ...[
-            SelectableText(
+            LinkifiedSelectableText(
               message.body,
               style: const TextStyle(
                 fontSize: 14,
