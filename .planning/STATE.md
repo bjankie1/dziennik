@@ -88,6 +88,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 260929-jas | Naprawa układu modala prośby o usprawiedliwienie - stały przycisk Wyślij i przewijana zawartość | 2026-09-29 | HEAD | [260929-jas-naprawa-uk-adu-modala-pro-by-o-usprawied](./quick/260929-jas-naprawa-uk-adu-modala-pro-by-o-usprawied/) |
 | 260929-ooj | Rzeczywisty czas ostatniej synchronizacji z backendu (zamiast czasu otwarcia aplikacji) i poprawne etykiety dnia | 2026-09-29 | HEAD | [260929-ooj-naprawa-czasu-ostatniej-synchronizacji-w](./quick/260929-ooj-naprawa-czasu-ostatniej-synchronizacji-w/) |
 | 260929-ox0 | Automatyczne linkowanie URL w treści wiadomości (otwieranie w nowej karcie) | 2026-09-29 | HEAD | [260929-ox0-automatyczne-linkowanie-url-w-tre-ci-wia](./quick/260929-ox0-automatyczne-linkowanie-url-w-tre-ci-wia/) |
+| 260929-plh | Naprawa zapisu załączników na Google Drive – włączenie Drive API i rozróżnienie błędów 403 | 2026-09-29 | HEAD | [260929-plh-naprawa-zapisu-za-cznik-w-na-google-driv](./quick/260929-plh-naprawa-zapisu-za-cznik-w-na-google-driv/) |
 
 ## Session
 

@@ -7,8 +7,41 @@ const {
   listDriveFolders,
   createDriveFolder,
   moveDriveFileToFolder,
-  updateMessageDriveAttachmentInFirestore
+  updateMessageDriveAttachmentInFirestore,
+  classifyDriveError
 } = require("../src/drive_service");
+
+const driveErr = (status, reason, url = "https://www.googleapis.com/upload/drive/v3/files") => ({
+  message: `Request failed with status code ${status}`,
+  config: { url },
+  response: {
+    status,
+    data: { error: { code: status, message: `msg-${reason}`, errors: [{ reason }] } }
+  }
+});
+
+test("classifyDriveError: disabled Drive API is not reported as expired session", () => {
+  const r = classifyDriveError(driveErr(403, "accessNotConfigured"));
+  assert.equal(r.status, 503);
+  assert.equal(r.body.code, "DRIVE_API_DISABLED");
+  assert.ok(!String(r.body.error).includes("UNAUTHENTICATED_DRIVE"));
+});
+
+test("classifyDriveError: 401 and insufficient scope map to UNAUTHENTICATED_DRIVE", () => {
+  assert.equal(classifyDriveError(driveErr(401, "authError")).body.error, "UNAUTHENTICATED_DRIVE");
+  const scope = classifyDriveError(driveErr(403, "insufficientPermissions"));
+  assert.equal(scope.status, 401);
+  assert.equal(scope.body.error, "UNAUTHENTICATED_DRIVE");
+});
+
+test("classifyDriveError: other 403 and non-Google errors keep the real reason", () => {
+  const forbidden = classifyDriveError(driveErr(403, "forbidden"));
+  assert.equal(forbidden.status, 502);
+  assert.match(forbidden.body.error, /msg-forbidden/);
+  const librus = classifyDriveError(driveErr(403, "x", "https://synergia.librus.pl/wiadomosci/pobierz"));
+  assert.equal(librus.status, 502);
+  assert.equal(librus.body.code, "UPSTREAM_ERROR");
+});
 
 test("guessMimeType resolves common school attachment extensions and falls back to application/octet-stream", () => {
   assert.equal(guessMimeType("matura2027.pdf"), "application/pdf");

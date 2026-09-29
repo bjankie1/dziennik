@@ -257,6 +257,68 @@ async function updateMessageDriveAttachmentInFirestore({
   return changed;
 }
 
+/**
+ * Classify an error thrown while talking to Google Drive (or Librus) into an
+ * HTTP response for the client. Only genuine token/scope problems are reported
+ * as UNAUTHENTICATED_DRIVE (401) so the client re-prompts for consent; other
+ * failures (Drive API disabled in the GCP project, forbidden folder, Librus
+ * errors) are reported with their real reason instead of "session expired".
+ */
+function classifyDriveError(error) {
+  const status = error?.response?.status;
+  const url = String(error?.config?.url || "");
+  const isGoogleApi = url.includes("googleapis.com");
+  const gErr = error?.response?.data?.error || {};
+  const reasons = [
+    ...(Array.isArray(gErr.errors) ? gErr.errors.map(e => e?.reason) : []),
+    ...(Array.isArray(gErr.details) ? gErr.details.map(d => d?.reason) : [])
+  ].filter(Boolean).map(String);
+  const googleMessage = typeof gErr.message === "string" ? gErr.message : "";
+
+  if (!isGoogleApi || !status) {
+    return {
+      status: 502,
+      body: {
+        error: error?.message || "Nie udało się zapisać załącznika na Dysku Google.",
+        code: "UPSTREAM_ERROR"
+      }
+    };
+  }
+
+  if (reasons.some(r => r === "SERVICE_DISABLED" || r === "accessNotConfigured")) {
+    return {
+      status: 503,
+      body: {
+        error: "DRIVE_API_DISABLED: Google Drive API jest wyłączone w projekcie Google Cloud aplikacji.",
+        code: "DRIVE_API_DISABLED"
+      }
+    };
+  }
+
+  const isAuthProblem =
+    status === 401 ||
+    reasons.some(r =>
+      ["authError", "insufficientPermissions", "ACCESS_TOKEN_SCOPE_INSUFFICIENT", "ACCESS_TOKEN_EXPIRED"].includes(r)
+    );
+  if (isAuthProblem) {
+    return {
+      status: 401,
+      body: {
+        error: "UNAUTHENTICATED_DRIVE",
+        message: "Sesja Google Drive wygasła lub brakuje zgody na dostęp do Dysku."
+      }
+    };
+  }
+
+  return {
+    status: 502,
+    body: {
+      error: `Google Drive (${status}): ${googleMessage || error.message}`,
+      code: "DRIVE_ERROR"
+    }
+  };
+}
+
 module.exports = {
   guessMimeType,
   buildMultipartRelatedBody,
@@ -264,5 +326,6 @@ module.exports = {
   listDriveFolders,
   createDriveFolder,
   moveDriveFileToFolder,
-  updateMessageDriveAttachmentInFirestore
+  updateMessageDriveAttachmentInFirestore,
+  classifyDriveError
 };

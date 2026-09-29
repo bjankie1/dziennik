@@ -617,17 +617,15 @@ async function handleSaveAttachmentToDrive(req, res) {
       fallbackToRoot: Boolean(uploadRes.fallbackToRoot)
     });
   } catch (error) {
-    const status = error.response?.status;
-    if (status === 401 || status === 403) {
-      return res.status(status).json({
-        error: "UNAUTHENTICATED_DRIVE",
-        message: "Sesja Google Drive wygasła lub wymaga ponownej autoryzacji."
-      });
-    }
-    console.error("saveAttachmentToDrive error:", error.message);
-    return res.status(500).json({
-      error: error.message || "Nie udało się zapisać załącznika na Dysku Google."
-    });
+    const { classifyDriveError } = require("./src/drive_service");
+    console.error(
+      "saveAttachmentToDrive error:",
+      error.message,
+      error.config?.url || "",
+      JSON.stringify(error.response?.data || {})
+    );
+    const { status, body } = classifyDriveError(error);
+    return res.status(status).json(body);
   }
 }
 
@@ -776,17 +774,15 @@ async function handleManageDriveFolders(req, res) {
 
     return res.status(400).json({ error: `Nieobsługiwana akcja: ${action}` });
   } catch (error) {
-    const status = error.response?.status;
-    if (status === 401 || status === 403) {
-      return res.status(status).json({
-        error: "UNAUTHENTICATED_DRIVE",
-        message: "Sesja Google Drive wygasła lub wymaga ponownej autoryzacji."
-      });
-    }
-    console.error("manageDriveFolders error:", error.message);
-    return res.status(500).json({
-      error: error.message || "Nie udało się wykonać operacji na folderach Google Drive."
-    });
+    const { classifyDriveError } = require("./src/drive_service");
+    console.error(
+      "manageDriveFolders error:",
+      error.message,
+      error.config?.url || "",
+      JSON.stringify(error.response?.data || {})
+    );
+    const { status, body } = classifyDriveError(error);
+    return res.status(status).json(body);
   }
 }
 
