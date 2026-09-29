@@ -1405,6 +1405,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   void _showRequestedDetailsModal(BuildContext context, AttendanceRecord record) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),

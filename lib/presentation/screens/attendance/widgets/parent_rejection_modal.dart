@@ -21,6 +21,7 @@ class ParentRejectionModal extends StatefulWidget {
   }) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => ParentRejectionModal(
@@ -96,274 +97,294 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
 
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final mediaQuery = MediaQuery.of(context);
+    final bottomInset = mediaQuery.viewInsets.bottom;
     final lessonsCount = widget.request.lessonNumbers.isNotEmpty
         ? widget.request.lessonNumbers.length
         : widget.request.recordIds.length;
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: mediaQuery.size.height * 0.90,
       ),
-      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Drag handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-
-            // Header
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: EdgeInsets.fromLTRB(20, 10, 20, 12 + bottomInset),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEE2E2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.cancel_outlined,
-                    color: Color(0xFFDC2626),
-                    size: 24,
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Odrzucenie prośby',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1E293B),
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      Text(
-                        'Wyjaśnij Oskarowi powód odmowy lub zadaj pytanie',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 18),
-
-            // Request summary card
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+
+              // Header
+              Row(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEE2E2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.cancel_outlined,
+                      color: Color(0xFFDC2626),
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Odrzucenie prośby',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF1E293B),
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        Text(
+                          'Wyjaśnij Oskarowi powód odmowy lub zadaj pytanie',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Scrollable middle content
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        widget.request.studentName,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
+                      // Request summary card
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  widget.request.studentName,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                Text(
+                                  _formatDate(widget.request.date),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF64748B),
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '$lessonsCount lekcji: ${widget.request.subjectNames.isNotEmpty ? widget.request.subjectNames.join(', ') : 'Zajęcia lekcyjne'}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF475569),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                              ),
+                              child: Text(
+                                'Powód ucznia: „${widget.request.reason}”',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
+                                  color: Color(0xFF334155),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Text(
-                        _formatDate(widget.request.date),
-                        style: const TextStyle(
+
+                      const SizedBox(height: 12),
+
+                      const Text(
+                        'Szybkie szablony odpowiedzi:',
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF64748B),
-                          fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF475569),
                         ),
                       ),
+                      const SizedBox(height: 6),
+
+                      // Suggestion chips
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: _quickSuggestions.map((suggestion) {
+                          final isSelected = _reasonController.text == suggestion;
+                          return ChoiceChip(
+                            label: Text(suggestion),
+                            selected: isSelected,
+                            visualDensity: VisualDensity.compact,
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            onSelected: (selected) {
+                              setState(() {
+                                _reasonController.text = suggestion;
+                                _errorMessage = null;
+                              });
+                            },
+                            labelStyle: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              color: isSelected ? const Color(0xFF991B1B) : const Color(0xFF475569),
+                            ),
+                            selectedColor: const Color(0xFFFEE2E2),
+                            backgroundColor: const Color(0xFFF1F5F9),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(
+                                color: isSelected ? const Color(0xFFF87171) : Colors.transparent,
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Custom comment TextField
+                      TextField(
+                        controller: _reasonController,
+                        maxLines: 3,
+                        maxLength: 250,
+                        decoration: InputDecoration(
+                          labelText: 'Komentarz rodzica (widoczny dla Oskara)',
+                          hintText: 'Wpisz treść wiadomości lub pytania...',
+                          alignLabelWithHint: true,
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.5),
+                          ),
+                        ),
+                      ),
+
+                      if (_errorMessage != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          _errorMessage!,
+                          style: const TextStyle(color: Color(0xFFDC2626), fontSize: 12),
+                        ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '$lessonsCount lekcji: ${widget.request.subjectNames.isNotEmpty ? widget.request.subjectNames.join(', ') : 'Zajęcia lekcyjne'}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF475569),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              // Pinned Actions
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _isProcessing ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                      ),
+                      child: const Text(
+                        'Anuluj',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF475569),
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Text(
-                      'Powód ucznia: „${widget.request.reason}”',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontStyle: FontStyle.italic,
-                        color: Color(0xFF334155),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: FilledButton.icon(
+                      onPressed: _isProcessing ? null : _handleSubmit,
+                      icon: _isProcessing
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.send_rounded, size: 16),
+                      label: Text(
+                        _isProcessing ? 'Zapisywanie...' : 'Przekaż odmowę Oskarowi',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFFDC2626),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
-
-            const SizedBox(height: 18),
-
-            const Text(
-              'Szybkie szablony odpowiedzi:',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF475569),
-              ),
-            ),
-            const SizedBox(height: 8),
-
-            // Suggestion chips
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _quickSuggestions.map((suggestion) {
-                final isSelected = _reasonController.text == suggestion;
-                return ChoiceChip(
-                  label: Text(suggestion),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      _reasonController.text = suggestion;
-                      _errorMessage = null;
-                    });
-                  },
-                  labelStyle: TextStyle(
-                    fontSize: 12,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? const Color(0xFF991B1B) : const Color(0xFF475569),
-                  ),
-                  selectedColor: const Color(0xFFFEE2E2),
-                  backgroundColor: const Color(0xFFF1F5F9),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(
-                      color: isSelected ? const Color(0xFFF87171) : Colors.transparent,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Custom comment TextField
-            TextField(
-              controller: _reasonController,
-              maxLines: 3,
-              maxLength: 250,
-              decoration: InputDecoration(
-                labelText: 'Komentarz rodzica (widoczny dla Oskara)',
-                hintText: 'Wpisz treść wiadomości lub pytania...',
-                alignLabelWithHint: true,
-                filled: true,
-                fillColor: const Color(0xFFF8FAFC),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.5),
-                ),
-              ),
-            ),
-
-            if (_errorMessage != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                _errorMessage!,
-                style: const TextStyle(color: Color(0xFFDC2626), fontSize: 12),
-              ),
             ],
-
-            const SizedBox(height: 20),
-
-            // Actions
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _isProcessing ? null : () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      side: const BorderSide(color: Color(0xFFCBD5E1)),
-                    ),
-                    child: const Text(
-                      'Anuluj',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF475569),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: FilledButton.icon(
-                    onPressed: _isProcessing ? null : _handleSubmit,
-                    icon: _isProcessing
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.send_rounded, size: 16),
-                    label: Text(
-                      _isProcessing ? 'Zapisywanie...' : 'Przekaż odmowę Oskarowi',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFDC2626),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -25,6 +25,7 @@ class JustificationModal extends StatefulWidget {
   }) {
     showModalBottomSheet(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => JustificationModal(
@@ -89,7 +90,7 @@ class _JustificationModalState extends State<JustificationModal> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFEEF2FF) : const Color(0xFFF8FAFC),
           borderRadius: BorderRadius.circular(20),
@@ -128,6 +129,7 @@ class _JustificationModalState extends State<JustificationModal> {
     final now = DateTime.now();
     final tomorrow = now.add(const Duration(days: 1));
     final yesterday = now.subtract(const Duration(days: 1));
+    final mediaQuery = MediaQuery.of(context);
 
     final isCustomSelected = _selectedDate != null &&
         !_isSameDay(_selectedDate, now) &&
@@ -153,246 +155,275 @@ class _JustificationModalState extends State<JustificationModal> {
       subtitleText = 'Zgłoszenie nieobecności';
     }
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxHeight: mediaQuery.size.height * 0.90,
       ),
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 12,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(2),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 10,
+          bottom: mediaQuery.viewInsets.bottom + 12,
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Stały nagłówek
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2FF),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFC7D2FE)),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF2FF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFC7D2FE)),
+                    ),
+                    child: const Icon(Icons.verified_user_rounded, color: Color(0xFF3525CD), size: 22),
                   ),
-                  child: const Icon(Icons.verified_user_rounded, color: Color(0xFF3525CD), size: 24),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Autoryzacja e-Usprawiedliwienia',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                        ),
+                        Text(
+                          subtitleText,
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Przewijana zawartość formularza
+              Flexible(
+                child: SingleChildScrollView(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Autoryzacja e-Usprawiedliwienia',
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                      // Wybór dnia (opcjonalnie)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Dzień nieobecności (opcjonalnie):',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                            ),
+                          ),
+                          if (_selectedDate != null) ...[
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () => setState(() => _selectedDate = null),
+                              child: const Text(
+                                'Wyczyść dzień',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF3525CD)),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                      Text(
-                        subtitleText,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      const SizedBox(height: 6),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildDateChip(
+                              label: 'Dzisiaj',
+                              isSelected: _isSameDay(_selectedDate, now),
+                              onTap: () {
+                                setState(() {
+                                  _selectedDate = _isSameDay(_selectedDate, now) ? null : now;
+                                });
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            _buildDateChip(
+                              label: 'Jutro',
+                              isSelected: _isSameDay(_selectedDate, tomorrow),
+                              onTap: () {
+                                setState(() {
+                                  _selectedDate = _isSameDay(_selectedDate, tomorrow) ? null : tomorrow;
+                                });
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            _buildDateChip(
+                              label: 'Wczoraj',
+                              isSelected: _isSameDay(_selectedDate, yesterday),
+                              onTap: () {
+                                setState(() {
+                                  _selectedDate = _isSameDay(_selectedDate, yesterday) ? null : yesterday;
+                                });
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            _buildDateChip(
+                              label: isCustomSelected ? DateFormat('dd.MM.yyyy').format(_selectedDate!) : 'Wybierz datę...',
+                              icon: Icons.calendar_month_outlined,
+                              isSelected: isCustomSelected,
+                              onTap: _pickCustomDate,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Powód nieobecności
+                      const Text(
+                        'Wybrany powód nieobecności:',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _reasonController,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFF3525CD), width: 1.5),
+                          ),
+                        ),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Kod PIN rodzica
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Kod PIN rodzica:',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'Domyślny PIN: 1234',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: _pinController,
+                        obscureText: true,
+                        keyboardType: TextInputType.number,
+                        maxLength: 4,
+                        decoration: InputDecoration(
+                          counterText: '',
+                          prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Color(0xFF64748B)),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: _pinError ? const Color(0xFFDC2626) : const Color(0xFFE2E8F0)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: _pinError ? const Color(0xFFDC2626) : const Color(0xFFE2E8F0)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: Color(0xFF3525CD), width: 1.5),
+                          ),
+                          errorText: _pinError ? 'Wymagany jest 4-cyfrowy kod PIN (np. 1234)' : null,
+                        ),
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 4),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 18),
-
-            // Wybór dnia (opcjonalnie)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Dzień nieobecności (opcjonalnie):',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
-                ),
-                if (_selectedDate != null)
-                  GestureDetector(
-                    onTap: () => setState(() => _selectedDate = null),
-                    child: const Text(
-                      'Wyczyść dzień',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF3525CD)),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildDateChip(
-                    label: 'Dzisiaj',
-                    isSelected: _isSameDay(_selectedDate, now),
-                    onTap: () {
-                      setState(() {
-                        _selectedDate = _isSameDay(_selectedDate, now) ? null : now;
-                      });
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  _buildDateChip(
-                    label: 'Jutro',
-                    isSelected: _isSameDay(_selectedDate, tomorrow),
-                    onTap: () {
-                      setState(() {
-                        _selectedDate = _isSameDay(_selectedDate, tomorrow) ? null : tomorrow;
-                      });
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  _buildDateChip(
-                    label: 'Wczoraj',
-                    isSelected: _isSameDay(_selectedDate, yesterday),
-                    onTap: () {
-                      setState(() {
-                        _selectedDate = _isSameDay(_selectedDate, yesterday) ? null : yesterday;
-                      });
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  _buildDateChip(
-                    label: isCustomSelected ? DateFormat('dd.MM.yyyy').format(_selectedDate!) : 'Wybierz datę...',
-                    icon: Icons.calendar_month_outlined,
-                    isSelected: isCustomSelected,
-                    onTap: _pickCustomDate,
-                  ),
-                ],
               ),
-            ),
-            const SizedBox(height: 16),
 
-            // Powód nieobecności
-            const Text(
-              'Wybrany powód nieobecności:',
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
-            ),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _reasonController,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: const Color(0xFFF8FAFC),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF3525CD), width: 1.5),
+              // Przypięta na stałe dolna stopka z przyciskami akcji
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    final pin = _pinController.text.trim();
+                    if (pin.length < 4) {
+                      setState(() => _pinError = true);
+                      return;
+                    }
+                    final reason = _reasonController.text.trim();
+                    widget.onConfirm(reason.isNotEmpty ? reason : 'Wizyta lekarska', pin, _selectedDate);
+                    Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.send_rounded, size: 18),
+                  label: const Text(
+                    'Zatwierdź i wyślij usprawiedliwienie',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
               ),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
-            ),
-            const SizedBox(height: 16),
-
-            // Kod PIN rodzica
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Kod PIN rodzica:',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(6),
+              const SizedBox(height: 4),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
                   ),
                   child: const Text(
-                    'Domyślny PIN: 1234',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                    'Anuluj',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            TextField(
-              controller: _pinController,
-              obscureText: true,
-              keyboardType: TextInputType.number,
-              maxLength: 4,
-              decoration: InputDecoration(
-                counterText: '',
-                prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Color(0xFF64748B)),
-                filled: true,
-                fillColor: const Color(0xFFF8FAFC),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: _pinError ? const Color(0xFFDC2626) : const Color(0xFFE2E8F0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: _pinError ? const Color(0xFFDC2626) : const Color(0xFFE2E8F0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF3525CD), width: 1.5),
-                ),
-                errorText: _pinError ? 'Wymagany jest 4-cyfrowy kod PIN (np. 1234)' : null,
               ),
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 4),
-            ),
-            const SizedBox(height: 20),
-
-            // Przycisk Zatwierdź i wyślij
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: FilledButton.icon(
-                onPressed: () {
-                  final pin = _pinController.text.trim();
-                  if (pin.length < 4) {
-                    setState(() => _pinError = true);
-                    return;
-                  }
-                  final reason = _reasonController.text.trim();
-                  widget.onConfirm(reason.isNotEmpty ? reason : 'Wizyta lekarska', pin, _selectedDate);
-                  Navigator.pop(context);
-                },
-                icon: const Icon(Icons.send_rounded, size: 18),
-                label: const Text(
-                  'Zatwierdź i wyślij usprawiedliwienie',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                ),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Center(
-              child: TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Anuluj',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
