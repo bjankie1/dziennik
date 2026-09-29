@@ -10,6 +10,7 @@ import '../../providers/auth_providers.dart';
 import '../../providers/school_providers.dart';
 import '../../providers/tasks_provider.dart';
 import '../tasks/widgets/task_form_modal.dart';
+import 'widgets/drive_folder_picker_modal.dart';
 import 'package:go_router/go_router.dart';
 
 class MessageThreadScreen extends ConsumerStatefulWidget {
@@ -27,6 +28,8 @@ class MessageThreadScreen extends ConsumerStatefulWidget {
 class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
   late MessageThread _currentThread;
   final Set<String> _expandedMessageIds = {};
+  final Set<String> _savingDriveAttachments = {};
+  bool _isSavingAllDrive = false;
   bool _isReplying = false;
   bool _isSending = false;
   bool _isLoadingBody = false;
@@ -88,6 +91,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
             attachments: m.attachments,
             attachmentUrls: m.attachmentUrls,
             hasAttachments: m.hasAttachments,
+            driveAttachments: m.driveAttachments,
             isFromMe: m.isFromMe,
           );
         }
@@ -178,6 +182,10 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
               : _currentThread.attachmentUrls;
           final mergedHasAttachments =
               details.hasAttachments || mergedAttachments.isNotEmpty || _currentThread.hasAttachments;
+          final mergedDriveAttachments = {
+            ..._currentThread.driveAttachments,
+            ...details.driveAttachments,
+          };
 
           setState(() {
             final resolvedSender = _resolveSenderName(_currentThread, overrideBody: fullBody);
@@ -193,6 +201,10 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                   attachments: mergedAttachments,
                   attachmentUrls: mergedUrls,
                   hasAttachments: mergedHasAttachments,
+                  driveAttachments: {
+                    ...m.driveAttachments,
+                    ...mergedDriveAttachments,
+                  },
                   isFromMe: m.isFromMe,
                 );
               }
@@ -206,6 +218,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
               attachments: mergedAttachments,
               attachmentUrls: mergedUrls,
               hasAttachments: mergedHasAttachments,
+              driveAttachments: mergedDriveAttachments,
               messages: updatedMessages,
             );
             if (_replyRecipients.isEmpty || _replyRecipients.every((r) => r.trim().isEmpty)) {
@@ -1066,6 +1079,31 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
           // Attachments
           if (message.attachments.isNotEmpty) ...[
             const SizedBox(height: 16),
+            _buildAttachmentsSection(message),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttachmentsSection(MessageItem message) {
+    final effectiveDriveAttachments = <String, DriveAttachmentInfo>{
+      ..._currentThread.driveAttachments,
+      ...message.driveAttachments,
+    };
+    final hasUnsaved = message.attachments.any(
+      (f) => !effectiveDriveAttachments.containsKey(f),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
             Text(
               'Załączniki (${message.attachments.length}):',
               style: const TextStyle(
@@ -1074,55 +1112,225 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                 color: AppColors.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: message.attachments.map((file) {
-                final (iconData, iconColor) = _attachmentIconAndColor(file);
-                return Material(
-                  color: AppColors.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(10),
-                  child: InkWell(
-                    onTap: () => _downloadAttachment(file, message),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.surfaceContainerHigh),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(iconData, size: 18, color: iconColor),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              file,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.onSurface,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(
-                            Icons.download_rounded,
-                            size: 16,
+            if (message.attachments.length >= 2)
+              if (hasUnsaved)
+                TextButton.icon(
+                  key: const ValueKey('save_all_drive_button'),
+                  onPressed: _isSavingAllDrive
+                      ? null
+                      : () => _saveAllAttachmentsToDrive(message),
+                  icon: _isSavingAllDrive
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
                             color: AppColors.primary,
                           ),
-                        ],
+                        )
+                      : const Icon(
+                          Icons.add_to_drive_rounded,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                  label: const Text(
+                    'Zapisz wszystkie na Dysku',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondaryContainer.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.cloud_done_rounded,
+                        size: 14,
+                        color: AppColors.secondary,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Zapisano wszystkie na Dysku',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: message.attachments.map((file) {
+            final (iconData, iconColor) = _attachmentIconAndColor(file);
+            final driveInfo = effectiveDriveAttachments[file];
+            final isSavingToDrive = _savingDriveAttachments.contains(
+              '${message.id}::$file',
+            );
+
+            return Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: driveInfo != null
+                      ? AppColors.secondary.withValues(alpha: 0.45)
+                      : AppColors.surfaceContainerHigh,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: InkWell(
+                      key: ValueKey('download_attachment_$file'),
+                      onTap: () => _downloadAttachment(file, message),
+                      borderRadius: const BorderRadius.horizontal(
+                        left: Radius.circular(10),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(iconData, size: 18, color: iconColor),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                file,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.onSurface,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Tooltip(
+                              message: 'Pobierz na urządzenie',
+                              child: Icon(
+                                Icons.download_rounded,
+                                size: 16,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                );
-              }).toList(),
-            ),
-          ],
-        ],
-      ),
+                  Container(
+                    width: 1,
+                    height: 20,
+                    color: AppColors.surfaceContainerHigh,
+                  ),
+                  if (isSavingToDrive)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      child: SizedBox(
+                        key: ValueKey('drive_spinner_$file'),
+                        width: 16,
+                        height: 16,
+                        child: const CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    )
+                  else if (driveInfo != null)
+                    Tooltip(
+                      message: 'Otwórz w Google Drive (${driveInfo.folderName})',
+                      child: InkWell(
+                        key: ValueKey('open_drive_$file'),
+                        onTap: () => _openSavedDriveAttachment(driveInfo),
+                        borderRadius: const BorderRadius.horizontal(
+                          right: Radius.circular(10),
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.open_in_new_rounded,
+                                size: 15,
+                                color: AppColors.secondary,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Otwórz w Google Drive',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.secondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    Tooltip(
+                      message: 'Zapisz na Dysku Google',
+                      child: InkWell(
+                        key: ValueKey('save_drive_$file'),
+                        onTap: () => _saveAttachmentToDrive(file, message),
+                        borderRadius: const BorderRadius.horizontal(
+                          right: Radius.circular(10),
+                        ),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                          child: Icon(
+                            Icons.add_to_drive_rounded,
+                            size: 17,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
@@ -1152,12 +1360,14 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
     return (Icons.attach_file_rounded, AppColors.primary);
   }
 
-  Future<void> _downloadAttachment(String fileName, MessageItem message) async {
+  Future<String?> _resolveAttachmentDownloadPath(
+    String fileName,
+    MessageItem message,
+  ) async {
     String? downloadPath =
         message.attachmentUrls[fileName] ?? _currentThread.attachmentUrls[fileName];
 
     if (downloadPath == null || downloadPath.isEmpty) {
-      // Fetch fresh details to resolve download path if not cached yet
       try {
         final details =
             await ref.read(schoolRepositoryProvider).getMessageDetails(_currentThread.id);
@@ -1173,6 +1383,11 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         }
       } catch (_) {}
     }
+    return downloadPath;
+  }
+
+  Future<void> _downloadAttachment(String fileName, MessageItem message) async {
+    final downloadPath = await _resolveAttachmentDownloadPath(fileName, message);
 
     if (downloadPath != null && downloadPath.isNotEmpty) {
       final url = '/api/downloadAttachment?path=${Uri.encodeComponent(downloadPath)}';
@@ -1192,6 +1407,348 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Załącznik „$fileName” (tryb demonstracyjny)'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<String?> _acquireDriveTokenOrDemo({bool forceRefresh = false}) async {
+    final authService = ref.read(firebaseAuthServiceProvider);
+    if (!forceRefresh && authService.hasValidDriveAccessToken) {
+      return authService.requestGoogleDriveAccessToken();
+    }
+    if (!authService.isSignedIn) {
+      return 'demo_access_token';
+    }
+    try {
+      return await authService.requestGoogleDriveAccessToken(
+        forceRefresh: forceRefresh,
+      );
+    } catch (e) {
+      debugPrint('OAuth token acquisition error: $e');
+      return null;
+    }
+  }
+
+  void _applySavedDriveAttachmentsToState(
+    String messageId,
+    Map<String, DriveAttachmentInfo> newEntries,
+  ) {
+    final mergedThreadDrive = <String, DriveAttachmentInfo>{
+      ..._currentThread.driveAttachments,
+      ...newEntries,
+    };
+    final updatedMessages = _currentThread.messages.map((m) {
+      if (m.id == messageId || m == _currentThread.messages.first) {
+        return m.copyWith(
+          driveAttachments: {
+            ...m.driveAttachments,
+            ...newEntries,
+          },
+        );
+      }
+      return m;
+    }).toList();
+
+    _currentThread = _currentThread.copyWith(
+      driveAttachments: mergedThreadDrive,
+      messages: updatedMessages,
+    );
+  }
+
+  Future<DriveAttachmentInfo> _uploadSingleAttachmentWithRetry({
+    required String fileName,
+    required MessageItem message,
+    required String initialAccessToken,
+  }) async {
+    final repo = ref.read(schoolRepositoryProvider);
+    final isStudent = ref.read(appUserProvider)?.isStudent ?? false;
+    final savedBy = isStudent ? 'Uczeń (Oskar)' : 'Rodzic';
+    final resolvedPath = await _resolveAttachmentDownloadPath(fileName, message);
+    final downloadPath = (resolvedPath != null && resolvedPath.isNotEmpty)
+        ? resolvedPath
+        : '/wiadomosci/pobierz_zalacznik/${_currentThread.id}/0';
+
+    try {
+      return await repo.saveAttachmentToDrive(
+        msgId: _currentThread.id,
+        attachmentName: fileName,
+        downloadPath: downloadPath,
+        accessToken: initialAccessToken,
+        savedBy: savedBy,
+      );
+    } catch (e) {
+      if (e.toString().contains('UNAUTHENTICATED_DRIVE')) {
+        ref.read(firebaseAuthServiceProvider).clearDriveAccessToken();
+        final freshToken = await _acquireDriveTokenOrDemo(forceRefresh: true);
+        if (freshToken != null && freshToken.isNotEmpty) {
+          return await repo.saveAttachmentToDrive(
+            msgId: _currentThread.id,
+            attachmentName: fileName,
+            downloadPath: downloadPath,
+            accessToken: freshToken,
+            savedBy: savedBy,
+          );
+        }
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> _saveAttachmentToDrive(
+    String fileName,
+    MessageItem message,
+  ) async {
+    final key = '${message.id}::$fileName';
+    if (_savingDriveAttachments.contains(key)) return;
+
+    // Acquire OAuth token directly on user gesture before other async work
+    final accessToken = await _acquireDriveTokenOrDemo();
+    if (accessToken == null || accessToken.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Nie udało się uzyskać autoryzacji Google Drive. Spróbuj ponownie.',
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _savingDriveAttachments.add(key);
+      });
+    }
+
+    try {
+      final savedInfo = await _uploadSingleAttachmentWithRetry(
+        fileName: fileName,
+        message: message,
+        initialAccessToken: accessToken,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _savingDriveAttachments.remove(key);
+        _applySavedDriveAttachmentsToState(
+          message.id,
+          {fileName: savedInfo},
+        );
+      });
+      ref.invalidate(messagesProvider);
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Zapisano „$fileName” w: ${savedInfo.folderName}'),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: 'Zmień folder / Przenieś',
+            onPressed: () => _openDriveMoveModal(
+              message,
+              [fileName],
+              savedInfo,
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _savingDriveAttachments.remove(key);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Błąd zapisu na Google Drive: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _saveAllAttachmentsToDrive(MessageItem message) async {
+    if (_isSavingAllDrive) return;
+
+    final effectiveDrive = <String, DriveAttachmentInfo>{
+      ..._currentThread.driveAttachments,
+      ...message.driveAttachments,
+    };
+    final unsavedFiles = message.attachments
+        .where((f) => !effectiveDrive.containsKey(f))
+        .toList();
+    if (unsavedFiles.isEmpty) return;
+
+    // Acquire OAuth token directly on user gesture before other async work
+    final accessToken = await _acquireDriveTokenOrDemo();
+    if (accessToken == null || accessToken.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Nie udało się uzyskać autoryzacji Google Drive. Spróbuj ponownie.',
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isSavingAllDrive = true;
+        for (final f in unsavedFiles) {
+          _savingDriveAttachments.add('${message.id}::$f');
+        }
+      });
+    }
+
+    final savedNames = <String>[];
+    DriveAttachmentInfo? lastSavedInfo;
+
+    try {
+      for (final fileName in unsavedFiles) {
+        final key = '${message.id}::$fileName';
+        final info = await _uploadSingleAttachmentWithRetry(
+          fileName: fileName,
+          message: message,
+          initialAccessToken: accessToken,
+        );
+        savedNames.add(fileName);
+        lastSavedInfo = info;
+        if (mounted) {
+          setState(() {
+            _savingDriveAttachments.remove(key);
+            _applySavedDriveAttachmentsToState(
+              message.id,
+              {fileName: info},
+            );
+          });
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _isSavingAllDrive = false;
+      });
+      ref.invalidate(messagesProvider);
+
+      if (lastSavedInfo != null && savedNames.isNotEmpty) {
+        final info = lastSavedInfo;
+        final text = savedNames.length == 1
+            ? 'Zapisano „${savedNames.first}” w: ${info.folderName}'
+            : 'Zapisano ${savedNames.length} załączniki w: ${info.folderName}';
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(text),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 6),
+            action: SnackBarAction(
+              label: 'Zmień folder / Przenieś',
+              onPressed: () => _openDriveMoveModal(
+                message,
+                savedNames,
+                info,
+              ),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSavingAllDrive = false;
+        for (final f in unsavedFiles) {
+          _savingDriveAttachments.remove('${message.id}::$f');
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Błąd zapisu załączników na Google Drive: $e'),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _openSavedDriveAttachment(DriveAttachmentInfo info) {
+    final link = info.webViewLink.trim();
+    final isSafeGoogleUrl = link.startsWith('https://drive.google.com/') ||
+        link.startsWith('https://docs.google.com/');
+    if (!isSafeGoogleUrl) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nieprawidłowy link Google Drive.'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+      return;
+    }
+
+    final opened = openUrlInBrowser(link);
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Otwieranie w Google Drive (${info.folderName})'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  Future<void> _openDriveMoveModal(
+    MessageItem message,
+    List<String> attachmentNames,
+    DriveAttachmentInfo currentInfo,
+  ) async {
+    final currentDriveMap = <String, DriveAttachmentInfo>{
+      ..._currentThread.driveAttachments,
+      ...message.driveAttachments,
+    };
+
+    final newFolder = await DriveFolderPickerModal.showMoveDialog(
+      context,
+      msgId: _currentThread.id,
+      attachmentNames: attachmentNames,
+      currentDriveAttachments: currentDriveMap,
+      initialFolder: DriveFolderOption(
+        id: currentInfo.folderId,
+        name: currentInfo.folderName,
+      ),
+    );
+
+    if (newFolder != null && mounted) {
+      final updatedEntries = <String, DriveAttachmentInfo>{};
+      for (final name in attachmentNames) {
+        final existing = currentDriveMap[name] ?? currentInfo;
+        updatedEntries[name] = existing.copyWith(
+          folderId: newFolder.id,
+          folderName: newFolder.name,
+        );
+      }
+      setState(() {
+        _applySavedDriveAttachmentsToState(message.id, updatedEntries);
+      });
+      ref.invalidate(messagesProvider);
+
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Przeniesiono do folderu: ${newFolder.name}'),
           behavior: SnackBarBehavior.floating,
         ),
       );

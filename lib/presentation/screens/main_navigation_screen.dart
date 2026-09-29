@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/notification_channels_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/models/attendance_record.dart';
+import '../../domain/models/message_thread.dart';
 import '../../domain/models/user_role.dart';
 import '../providers/school_providers.dart';
 import '../providers/auth_providers.dart';
@@ -15,6 +16,7 @@ import 'grades/grades_screen.dart';
 import 'schedule/schedule_screen.dart';
 import 'attendance/attendance_screen.dart';
 import 'messages/messages_screen.dart';
+import 'messages/widgets/drive_folder_picker_modal.dart';
 import 'tasks/tasks_screen.dart';
 import 'chat/family_chat_screen.dart';
 import '../providers/family_chat_provider.dart';
@@ -497,6 +499,25 @@ class MainNavigationScreen extends ConsumerWidget {
                 onTap: () {
                   Navigator.pop(context);
                   NotificationSettingsModal.show(context);
+                },
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.add_to_drive_rounded,
+                  color: AppColors.primary,
+                ),
+                title: const Text('Google Drive — załączniki wiadomości'),
+                subtitle: FutureBuilder<DriveFolderOption>(
+                  future: ref.read(schoolRepositoryProvider).getDefaultDriveFolder(),
+                  builder: (context, snapshot) {
+                    final folderName = snapshot.data?.name ?? 'Mój dysk';
+                    return Text('Domyślny folder: $folderName');
+                  },
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(context);
+                  DriveFolderPickerModal.showDefaultFolderSettings(context);
                 },
               ),
               ListTile(

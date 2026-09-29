@@ -54,6 +54,199 @@ void main() {
       expect(find.byIcon(Icons.picture_as_pdf_rounded), findsOneWidget);
       expect(find.byIcon(Icons.slideshow_rounded), findsOneWidget);
       expect(find.byIcon(Icons.download_rounded), findsNWidgets(2));
+      expect(find.byTooltip('Zapisz na Dysku Google'), findsNWidgets(2));
+      expect(find.text('Zapisz wszystkie na Dysku'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'MessageThreadScreen hides bulk Zapisz wszystkie na Dysku button when message has 1 attachment',
+    (tester) async {
+      final singleAttThread = MessageThread(
+        id: '2027509',
+        senderName: 'Sobota Łukasz',
+        senderInitials: 'SŁ',
+        senderRole: 'Nauczyciel',
+        subject: 'Harmonogram',
+        preview: 'Załączam plik PDF.',
+        body: 'Dzień dobry,\n\nzałączam plik PDF.\n\nPozdrawiam,\nŁukasz Sobota',
+        timestamp: DateTime(2026, 9, 28, 10, 0),
+        isUnread: false,
+        attachments: const ['harmonogram.pdf'],
+        attachmentUrls: const {
+          'harmonogram.pdf': '/wiadomosci/pobierz_zalacznik/2027509/1',
+        },
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            schoolRepositoryProvider.overrideWithValue(MockSchoolRepository()),
+          ],
+          child: MaterialApp(
+            home: MessageThreadScreen(thread: singleAttThread),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Załączniki (1):'), findsOneWidget);
+      expect(find.byIcon(Icons.download_rounded), findsOneWidget);
+      expect(find.byTooltip('Zapisz na Dysku Google'), findsOneWidget);
+      expect(find.text('Zapisz wszystkie na Dysku'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'Clicking Zapisz na Dysku Google shows spinner, saves to Mój dysk, transitions to Otwórz w Google Drive, and opens DriveFolderPickerModal via Zmień folder / Przenieś',
+    (tester) async {
+      final mockRepo = MockSchoolRepository();
+      final thread = MessageThread(
+        id: 'msg_001',
+        senderName: 'Sobota Łukasz',
+        senderInitials: 'SŁ',
+        senderRole: 'Nauczyciel',
+        subject: 'Informacje na temat egzaminu maturalnego',
+        preview: 'Dzień dobry, przesyłam Państwu obiecaną prezentację.',
+        body: 'Dzień dobry,\n\nprzesyłam Państwu obiecaną prezentację.\n\nPozdrawiam,\nŁukasz Sobota',
+        timestamp: DateTime(2026, 9, 28, 9, 54),
+        isUnread: false,
+        attachments: const [
+          'matura2027_wrzesien2026_R_U.pdf',
+          'matura2027_wrzesien2026_R_U.pptx',
+        ],
+        attachmentUrls: const {
+          'matura2027_wrzesien2026_R_U.pdf': '/wiadomosci/pobierz_zalacznik/msg_001/12466101',
+          'matura2027_wrzesien2026_R_U.pptx': '/wiadomosci/pobierz_zalacznik/msg_001/12466102',
+        },
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            schoolRepositoryProvider.overrideWithValue(mockRepo),
+          ],
+          child: MaterialApp(
+            home: MessageThreadScreen(thread: thread),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final savePdfBtn = find.byKey(
+        const ValueKey('save_drive_matura2027_wrzesien2026_R_U.pdf'),
+      );
+      expect(savePdfBtn, findsOneWidget);
+
+      await tester.ensureVisible(savePdfBtn);
+      await tester.pumpAndSettle();
+      await tester.tap(savePdfBtn);
+      await tester.pump(const Duration(milliseconds: 20));
+
+      // Verify loading spinner appears on the chip while saving (D-06)
+      expect(
+        find.byKey(
+          const ValueKey('drive_spinner_matura2027_wrzesien2026_R_U.pdf'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify chip transitions to 'Otwórz w Google Drive' (D-08)
+      expect(find.text('Otwórz w Google Drive'), findsOneWidget);
+      expect(
+        find.byKey(
+          const ValueKey('open_drive_matura2027_wrzesien2026_R_U.pdf'),
+        ),
+        findsOneWidget,
+      );
+
+      // Verify SnackBar confirmation and 'Zmień folder / Przenieś' action (D-01, D-02)
+      expect(
+        find.textContaining('Zapisano „matura2027_wrzesien2026_R_U.pdf” w: Mój dysk'),
+        findsOneWidget,
+      );
+      expect(find.text('Zmień folder / Przenieś'), findsOneWidget);
+
+      // Tap 'Zmień folder / Przenieś' in SnackBar to open DriveFolderPickerModal
+      await tester.tap(find.text('Zmień folder / Przenieś'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Zmień folder / Przenieś na Dysku Google'),
+        findsOneWidget,
+      );
+      expect(find.text('Mój dysk (katalog główny)'), findsOneWidget);
+      expect(find.text('Szkoła - Oskar'), findsOneWidget);
+      expect(find.text('Matura 2027'), findsOneWidget);
+
+      // Select 'Matura 2027' folder and confirm move
+      await tester.tap(find.text('Matura 2027'));
+      await tester.pump();
+      await tester.tap(find.text('Przenieś tutaj'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Przeniesiono do folderu: Matura 2027'),
+        findsOneWidget,
+      );
+      final updatedDefault = await mockRepo.getDefaultDriveFolder();
+      expect(updatedDefault.name, 'Matura 2027');
+    },
+  );
+
+  testWidgets(
+    'Clicking Zapisz wszystkie na Dysku saves all attachments and transitions all chips to Otwórz w Google Drive',
+    (tester) async {
+      final mockRepo = MockSchoolRepository();
+      final thread = MessageThread(
+        id: 'msg_002',
+        senderName: 'Sobota Łukasz',
+        senderInitials: 'SŁ',
+        senderRole: 'Nauczyciel',
+        subject: 'Materiały maturalne',
+        preview: 'Załączniki',
+        body: 'Dzień dobry,\n\nzałączam dwa pliki.\n\nPozdrawiam,\nŁukasz Sobota',
+        timestamp: DateTime(2026, 9, 28, 9, 54),
+        isUnread: false,
+        attachments: const [
+          'matura2027_wrzesien2026_R_U.pdf',
+          'matura2027_wrzesien2026_R_U.pptx',
+        ],
+        attachmentUrls: const {
+          'matura2027_wrzesien2026_R_U.pdf': '/wiadomosci/pobierz_zalacznik/msg_002/1',
+          'matura2027_wrzesien2026_R_U.pptx': '/wiadomosci/pobierz_zalacznik/msg_002/2',
+        },
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            schoolRepositoryProvider.overrideWithValue(mockRepo),
+          ],
+          child: MaterialApp(
+            home: MessageThreadScreen(thread: thread),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final saveAllBtn = find.byKey(const ValueKey('save_all_drive_button'));
+      expect(saveAllBtn, findsOneWidget);
+
+      await tester.ensureVisible(saveAllBtn);
+      await tester.pumpAndSettle();
+      await tester.tap(saveAllBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Otwórz w Google Drive'), findsNWidgets(2));
+      expect(find.text('Zapisano wszystkie na Dysku'), findsOneWidget);
+      expect(
+        find.textContaining('Zapisano 2 załączniki w: Mój dysk'),
+        findsOneWidget,
+      );
+      expect(find.text('Zmień folder / Przenieś'), findsOneWidget);
     },
   );
 
