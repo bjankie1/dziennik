@@ -1,14 +1,107 @@
+class DriveAttachmentInfo {
+  final String driveFileId;
+  final String webViewLink;
+  final String folderId;
+  final String folderName;
+  final DateTime savedAt;
+  final String savedBy;
+
+  const DriveAttachmentInfo({
+    required this.driveFileId,
+    required this.webViewLink,
+    this.folderId = 'root',
+    this.folderName = 'Mój dysk',
+    required this.savedAt,
+    this.savedBy = 'Rodzic',
+  });
+
+  factory DriveAttachmentInfo.fromMap(Map<String, dynamic> map) {
+    final rawFolderId = (map['folderId'] ?? 'root').toString().trim();
+    final rawFolderName = (map['folderName'] ?? 'Mój dysk').toString().trim();
+    return DriveAttachmentInfo(
+      driveFileId: (map['driveFileId'] ?? '').toString(),
+      webViewLink: (map['webViewLink'] ?? '').toString(),
+      folderId: rawFolderId.isEmpty ? 'root' : rawFolderId,
+      folderName: rawFolderName.isEmpty ? 'Mój dysk' : rawFolderName,
+      savedAt: DateTime.tryParse((map['savedAt'] ?? '').toString()) ?? DateTime.now(),
+      savedBy: (map['savedBy'] ?? 'Rodzic').toString(),
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'driveFileId': driveFileId,
+        'webViewLink': webViewLink,
+        'folderId': folderId,
+        'folderName': folderName,
+        'savedAt': savedAt.toIso8601String(),
+        'savedBy': savedBy,
+      };
+
+  DriveAttachmentInfo copyWith({
+    String? driveFileId,
+    String? webViewLink,
+    String? folderId,
+    String? folderName,
+    DateTime? savedAt,
+    String? savedBy,
+  }) {
+    return DriveAttachmentInfo(
+      driveFileId: driveFileId ?? this.driveFileId,
+      webViewLink: webViewLink ?? this.webViewLink,
+      folderId: folderId ?? this.folderId,
+      folderName: folderName ?? this.folderName,
+      savedAt: savedAt ?? this.savedAt,
+      savedBy: savedBy ?? this.savedBy,
+    );
+  }
+}
+
+class DriveFolderOption {
+  final String id;
+  final String name;
+  final String? webViewLink;
+
+  const DriveFolderOption({
+    required this.id,
+    required this.name,
+    this.webViewLink,
+  });
+
+  static const DriveFolderOption rootFolder = DriveFolderOption(
+    id: 'root',
+    name: 'Mój dysk',
+  );
+
+  factory DriveFolderOption.fromMap(Map<String, dynamic> map) {
+    final id = (map['id'] ?? 'root').toString().trim();
+    final name = (map['name'] ?? 'Mój dysk').toString().trim();
+    return DriveFolderOption(
+      id: id.isEmpty ? 'root' : id,
+      name: name.isEmpty ? 'Mój dysk' : name,
+      webViewLink: map['webViewLink']?.toString(),
+    );
+  }
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'name': name,
+        if (webViewLink != null) 'webViewLink': webViewLink,
+      };
+}
+
 class MessageDetailsResult {
   final String body;
   final List<String> attachments;
   final Map<String, String> attachmentUrls;
   final bool hasAttachments;
+  final Map<String, DriveAttachmentInfo> driveAttachments;
 
   const MessageDetailsResult({
     required this.body,
     this.attachments = const [],
     this.attachmentUrls = const {},
     this.hasAttachments = false,
+    this.driveAttachments = const {},
   });
 }
 
@@ -23,6 +116,7 @@ class MessageItem {
   final List<String> attachments;
   final Map<String, String> attachmentUrls;
   final bool hasAttachments;
+  final Map<String, DriveAttachmentInfo> driveAttachments;
 
   const MessageItem({
     required this.id,
@@ -35,7 +129,37 @@ class MessageItem {
     this.attachments = const [],
     this.attachmentUrls = const {},
     this.hasAttachments = false,
+    this.driveAttachments = const {},
   });
+
+  MessageItem copyWith({
+    String? id,
+    String? senderName,
+    String? senderRole,
+    String? senderInitials,
+    DateTime? timestamp,
+    String? body,
+    bool? isFromMe,
+    List<String>? attachments,
+    Map<String, String>? attachmentUrls,
+    bool? hasAttachments,
+    Map<String, DriveAttachmentInfo>? driveAttachments,
+  }) {
+    final nextAttachments = attachments ?? this.attachments;
+    return MessageItem(
+      id: id ?? this.id,
+      senderName: senderName ?? this.senderName,
+      senderRole: senderRole ?? this.senderRole,
+      senderInitials: senderInitials ?? this.senderInitials,
+      timestamp: timestamp ?? this.timestamp,
+      body: body ?? this.body,
+      isFromMe: isFromMe ?? this.isFromMe,
+      attachments: nextAttachments,
+      attachmentUrls: attachmentUrls ?? this.attachmentUrls,
+      hasAttachments: hasAttachments ?? (nextAttachments.isNotEmpty || this.hasAttachments),
+      driveAttachments: driveAttachments ?? this.driveAttachments,
+    );
+  }
 }
 
 class MessageThread {
@@ -52,6 +176,7 @@ class MessageThread {
   final List<String> attachments;
   final Map<String, String> attachmentUrls;
   final bool hasAttachments;
+  final Map<String, DriveAttachmentInfo> driveAttachments;
   final List<MessageItem> messages;
 
   MessageThread({
@@ -68,6 +193,7 @@ class MessageThread {
     this.attachments = const [],
     this.attachmentUrls = const {},
     bool? hasAttachments,
+    this.driveAttachments = const {},
     List<MessageItem>? messages,
   })  : hasAttachments = hasAttachments ?? attachments.isNotEmpty,
         messages = messages ??
@@ -82,6 +208,7 @@ class MessageThread {
                 attachments: attachments,
                 attachmentUrls: attachmentUrls,
                 hasAttachments: hasAttachments ?? attachments.isNotEmpty,
+                driveAttachments: driveAttachments,
                 isFromMe: false,
               ),
             ];
@@ -100,12 +227,33 @@ class MessageThread {
     List<String>? attachments,
     Map<String, String>? attachmentUrls,
     bool? hasAttachments,
+    Map<String, DriveAttachmentInfo>? driveAttachments,
     List<MessageItem>? messages,
   }) {
     final nextAttachments = attachments ?? this.attachments;
     final nextAttachmentUrls = attachmentUrls ?? this.attachmentUrls;
     final nextHasAttachments =
         hasAttachments ?? (nextAttachments.isNotEmpty || this.hasAttachments);
+    final nextDriveAttachments = driveAttachments ?? this.driveAttachments;
+
+    List<MessageItem> nextMessages;
+    if (messages != null) {
+      nextMessages = messages;
+    } else if (this.messages.isNotEmpty) {
+      nextMessages = [
+        this.messages.first.copyWith(
+          body: body ?? this.messages.first.body,
+          attachments: attachments ?? this.messages.first.attachments,
+          attachmentUrls: attachmentUrls ?? this.messages.first.attachmentUrls,
+          hasAttachments: hasAttachments ?? this.messages.first.hasAttachments,
+          driveAttachments: driveAttachments ?? this.messages.first.driveAttachments,
+        ),
+        ...this.messages.skip(1),
+      ];
+    } else {
+      nextMessages = this.messages;
+    }
+
     return MessageThread(
       id: id ?? this.id,
       senderName: senderName ?? this.senderName,
@@ -120,7 +268,8 @@ class MessageThread {
       attachments: nextAttachments,
       attachmentUrls: nextAttachmentUrls,
       hasAttachments: nextHasAttachments,
-      messages: messages ?? this.messages,
+      driveAttachments: nextDriveAttachments,
+      messages: nextMessages,
     );
   }
 }

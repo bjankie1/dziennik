@@ -4,6 +4,25 @@ import 'package:flutter/foundation.dart';
 import '../../firebase_options.dart';
 
 class FirebaseAuthService {
+  static const String googleDriveFileScope = 'https://www.googleapis.com/auth/drive.file';
+  static String? _cachedDriveAccessToken;
+  static DateTime? _driveTokenExpiry;
+
+  bool get hasValidDriveAccessToken {
+    if (_cachedDriveAccessToken == null || _cachedDriveAccessToken!.isEmpty) {
+      return false;
+    }
+    if (_driveTokenExpiry == null) return false;
+    return DateTime.now().isBefore(_driveTokenExpiry!);
+  }
+
+  void clearDriveAccessToken() {
+    _cachedDriveAccessToken = null;
+    _driveTokenExpiry = null;
+  }
+
+  void clearDriveAccessTokenCache() => clearDriveAccessToken();
+
   FirebaseAuth? get _auth {
     try {
       if (Firebase.apps.isNotEmpty) {
@@ -68,6 +87,59 @@ class FirebaseAuthService {
     }
   }
 
+  Future<String?> requestGoogleDriveAccessToken({bool forceRefresh = false}) async {
+    if (!forceRefresh && hasValidDriveAccessToken) {
+      return _cachedDriveAccessToken;
+    }
+
+    if (Firebase.apps.isEmpty) {
+      try {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      } catch (e) {
+        debugPrint('Late Firebase initialization failed: $e');
+      }
+    }
+
+    final auth = _auth;
+    if (auth == null) {
+      throw Exception('Usługa Firebase Auth nie jest zainicjalizowana.');
+    }
+
+    final provider = GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
+    provider.addScope(googleDriveFileScope);
+    if (forceRefresh) {
+      provider.setCustomParameters({'prompt': 'consent'});
+    }
+
+    UserCredential userCredential;
+    final current = auth.currentUser;
+    if (kIsWeb) {
+      if (current != null && !current.isAnonymous) {
+        try {
+          userCredential = await current.reauthenticateWithPopup(provider);
+        } catch (_) {
+          userCredential = await auth.signInWithPopup(provider);
+        }
+      } else {
+        userCredential = await auth.signInWithPopup(provider);
+      }
+    } else {
+      userCredential = await auth.signInWithProvider(provider);
+    }
+
+    final oauthCred = userCredential.credential as OAuthCredential?;
+    final token = oauthCred?.accessToken;
+    if (token != null && token.isNotEmpty) {
+      _cachedDriveAccessToken = token;
+      _driveTokenExpiry = DateTime.now().add(const Duration(minutes: 50));
+    }
+    return token;
+  }
+
   Future<UserCredential?> signInDemo() async {
     final auth = _auth;
     if (auth == null) return null;
@@ -80,6 +152,7 @@ class FirebaseAuthService {
   }
 
   Future<void> signOut() async {
+    clearDriveAccessToken();
     try {
       await _auth?.signOut();
     } catch (e) {
@@ -87,4 +160,5 @@ class FirebaseAuthService {
     }
   }
 }
+
 

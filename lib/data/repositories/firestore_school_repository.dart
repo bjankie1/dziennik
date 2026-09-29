@@ -30,6 +30,26 @@ class FirestoreSchoolRepository implements SchoolRepository {
   static bool _readOverridesLoaded = false;
   static final Map<String, String> _localJustificationOverrides = {};
   static bool _justificationOverridesLoaded = false;
+  static final Map<String, Map<String, DriveAttachmentInfo>> _localDriveAttachmentsOverrides = {};
+
+  Map<String, DriveAttachmentInfo> _parseDriveAttachments(dynamic raw, String msgId) {
+    final result = <String, DriveAttachmentInfo>{};
+    if (raw is Map) {
+      raw.forEach((key, value) {
+        if (value is Map) {
+          result[key.toString()] = DriveAttachmentInfo.fromMap(
+            Map<String, dynamic>.from(value),
+          );
+        }
+      });
+    }
+    final localForMsg = _localDriveAttachmentsOverrides[msgId];
+    if (localForMsg != null) {
+      result.addAll(localForMsg);
+    }
+    return result;
+  }
+
 
   Future<void> _loadReadOverrides() async {
     if (_readOverridesLoaded) return;
@@ -1210,6 +1230,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
       final hasAttachments =
           item['hasAttachments'] == true || attachments.isNotEmpty;
+      final driveAttachments = _parseDriveAttachments(item['driveAttachments'], id);
 
       return MessageThread(
         id: id,
@@ -1225,6 +1246,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
         attachments: attachments,
         attachmentUrls: attachmentUrls,
         hasAttachments: hasAttachments,
+        driveAttachments: driveAttachments,
       );
     }).toList();
   }
@@ -1817,6 +1839,8 @@ class FirestoreSchoolRepository implements SchoolRepository {
           }
         }
 
+        final driveAttachments = _parseDriveAttachments(data['driveAttachments'], msgId);
+
         // Update in-memory cache so navigating back & forth retains attachments
         if (_memoryCache != null && _memoryCache!['messages'] != null) {
           final msgs = _memoryCache!['messages'] as List<dynamic>;
@@ -1828,6 +1852,12 @@ class FirestoreSchoolRepository implements SchoolRepository {
               m['attachments'] = attachments;
               m['attachmentFiles'] = rawFiles;
               m['hasAttachments'] = attachments.isNotEmpty;
+              if (driveAttachments.isNotEmpty) {
+                m['driveAttachments'] = {
+                  for (final entry in driveAttachments.entries)
+                    entry.key: entry.value.toMap(),
+                };
+              }
             }
           }
         }
@@ -1837,6 +1867,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
           attachments: attachments,
           attachmentUrls: attachmentUrls,
           hasAttachments: attachments.isNotEmpty || data['hasAttachments'] == true,
+          driveAttachments: driveAttachments,
         );
       }
     } catch (_) {}
@@ -1918,7 +1949,429 @@ class FirestoreSchoolRepository implements SchoolRepository {
       }
     } catch (_) {}
   }
+
+  static const String _prefDefaultDriveFolderId = 'edusync_drive_default_folder_id';
+  static const String _prefDefaultDriveFolderName = 'edusync_drive_default_folder_name';
+
+  void _updateCachedMessageDriveAttachment(
+    String msgId,
+    String attachmentName,
+    DriveAttachmentInfo info,
+  ) {
+    final mapForMsg = _localDriveAttachmentsOverrides.putIfAbsent(
+      msgId,
+      () => <String, DriveAttachmentInfo>{},
+    );
+    mapForMsg[attachmentName] = info;
+
+    if (_memoryCache != null && _memoryCache!['messages'] is List) {
+      final msgs = _memoryCache!['messages'] as List<dynamic>;
+      for (final m in msgs) {
+        if (m is Map && m['id']?.toString() == msgId) {
+          final existing = m['driveAttachments'] is Map
+              ? Map<String, dynamic>.from(m['driveAttachments'] as Map)
+              : <String, dynamic>{};
+          existing[attachmentName] = info.toMap();
+          m['driveAttachments'] = existing;
+        }
+      }
+    }
+  }
+
+  @override
+  Future<DriveFolderOption> getDefaultDriveFolder() async {
+    final isDemo = await _connectionService.isDemoMode();
+    if (isDemo) {
+      return _mockFallback.getDefaultDriveFolder();
+    }
+
+    String? localId;
+    String? localName;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      localId = prefs.getString(_prefDefaultDriveFolderId)?.trim();
+      localName = prefs.getString(_prefDefaultDriveFolderName)?.trim();
+    } catch (_) {}
+
+    if (_memoryCache != null) {
+      final cachedId = (_memoryCache!['driveDefaultFolderId'] ?? '').toString().trim();
+      final cachedName = (_memoryCache!['driveDefaultFolderName'] ?? '').toString().trim();
+      if (cachedId.isNotEmpty) {
+        return DriveFolderOption(
+          id: cachedId,
+          name: cachedName.isNotEmpty
+              ? cachedName
+              : (cachedId == 'root' ? 'Mój dysk' : 'Folder Google Drive'),
+        );
+      }
+    }
+
+    try {
+      final targetLogin = await _getTargetStudentDocLogin();
+      if (targetLogin != null && targetLogin.isNotEmpty) {
+        final doc = await _firestore.collection('students').doc(targetLogin).get();
+        if (doc.exists && doc.data() != null) {
+          final d = doc.data()!;
+          final fsId = (d['driveDefaultFolderId'] ?? '').toString().trim();
+          final fsName = (d['driveDefaultFolderName'] ?? '').toString().trim();
+          if (fsId.isNotEmpty) {
+            final resolvedName = fsName.isNotEmpty
+                ? fsName
+                : (fsId == 'root' ? 'Mój dysk' : 'Folder Google Drive');
+            try {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setString(_prefDefaultDriveFolderId, fsId);
+              await prefs.setString(_prefDefaultDriveFolderName, resolvedName);
+            } catch (_) {}
+            return DriveFolderOption(id: fsId, name: resolvedName);
+          }
+        }
+      }
+    } catch (_) {}
+
+    if (localId != null && localId.isNotEmpty) {
+      return DriveFolderOption(
+        id: localId,
+        name: (localName != null && localName.isNotEmpty)
+            ? localName
+            : (localId == 'root' ? 'Mój dysk' : 'Folder Google Drive'),
+      );
+    }
+
+    return DriveFolderOption.rootFolder;
+  }
+
+  @override
+  Future<void> setDefaultDriveFolder(DriveFolderOption folder) async {
+    final normalizedId = folder.id.trim().isEmpty ? 'root' : folder.id.trim();
+    final normalizedName = folder.name.trim().isEmpty
+        ? (normalizedId == 'root' ? 'Mój dysk' : 'Folder Google Drive')
+        : folder.name.trim();
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefDefaultDriveFolderId, normalizedId);
+      await prefs.setString(_prefDefaultDriveFolderName, normalizedName);
+    } catch (_) {}
+
+    if (_memoryCache != null) {
+      _memoryCache!['driveDefaultFolderId'] = normalizedId;
+      _memoryCache!['driveDefaultFolderName'] = normalizedName;
+    }
+
+    final isDemo = await _connectionService.isDemoMode();
+    if (isDemo) {
+      await _mockFallback.setDefaultDriveFolder(
+        DriveFolderOption(id: normalizedId, name: normalizedName, webViewLink: folder.webViewLink),
+      );
+      return;
+    }
+
+    try {
+      final targetLogin = await _getTargetStudentDocLogin();
+      if (targetLogin != null && targetLogin.isNotEmpty) {
+        await _firestore.collection('students').doc(targetLogin).set({
+          'driveDefaultFolderId': normalizedId,
+          'driveDefaultFolderName': normalizedName,
+        }, SetOptions(merge: true));
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Future<DriveAttachmentInfo> saveAttachmentToDrive({
+    required String msgId,
+    required String attachmentName,
+    required String downloadPath,
+    required String accessToken,
+    String? folderId,
+    String? folderName,
+    String? savedBy,
+  }) async {
+    final isDemo = await _connectionService.isDemoMode();
+    if (isDemo) {
+      return _mockFallback.saveAttachmentToDrive(
+        msgId: msgId,
+        attachmentName: attachmentName,
+        downloadPath: downloadPath,
+        accessToken: accessToken,
+        folderId: folderId,
+        folderName: folderName,
+        savedBy: savedBy,
+      );
+    }
+
+    final defaultFolder = await getDefaultDriveFolder();
+    final effectiveFolderId =
+        (folderId != null && folderId.trim().isNotEmpty) ? folderId.trim() : defaultFolder.id;
+    final effectiveFolderName =
+        (folderName != null && folderName.trim().isNotEmpty) ? folderName.trim() : defaultFolder.name;
+
+    final targetLogin = await _getTargetStudentDocLogin() ?? '11010033';
+    final appUser = await _connectionService.getSavedAppUser();
+    final effectiveSavedBy = savedBy ??
+        appUser?.displayName ??
+        ((appUser?.isStudent ?? false) ? 'Uczeń' : 'Rodzic');
+
+    final payload = jsonEncode({
+      'studentId': targetLogin,
+      'login': targetLogin,
+      'msgId': msgId,
+      'attachmentName': attachmentName,
+      'downloadPath': downloadPath,
+      'accessToken': accessToken,
+      'folderId': effectiveFolderId,
+      'folderName': effectiveFolderName,
+      'savedBy': effectiveSavedBy,
+    });
+
+    http.Response res;
+    try {
+      res = await http
+          .post(
+            Uri.parse('/api/saveAttachmentToDrive'),
+            headers: {'Content-Type': 'application/json'},
+            body: payload,
+          )
+          .timeout(const Duration(seconds: 45));
+    } catch (_) {
+      res = await http
+          .post(
+            Uri.parse('https://europe-west3-lepsza-szkola.cloudfunctions.net/saveAttachmentToDrive'),
+            headers: {'Content-Type': 'application/json'},
+            body: payload,
+          )
+          .timeout(const Duration(seconds: 45));
+    }
+
+    if (res.statusCode == 401 || res.statusCode == 403) {
+      throw Exception('UNAUTHENTICATED_DRIVE: Sesja Google Drive wygasła.');
+    }
+
+    final decoded = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    if (res.statusCode != 200 || decoded['driveAttachment'] == null) {
+      throw Exception(
+        decoded['error']?.toString() ?? 'Nie udało się zapisać załącznika na Dysku Google.',
+      );
+    }
+
+    final info = DriveAttachmentInfo.fromMap(
+      Map<String, dynamic>.from(decoded['driveAttachment'] as Map),
+    );
+    _updateCachedMessageDriveAttachment(msgId, attachmentName, info);
+    return info;
+  }
+
+  @override
+  Future<List<DriveFolderOption>> listDriveFolders({
+    required String accessToken,
+  }) async {
+    final isDemo = await _connectionService.isDemoMode();
+    if (isDemo) {
+      return _mockFallback.listDriveFolders(accessToken: accessToken);
+    }
+
+    final payload = jsonEncode({
+      'action': 'list',
+      'accessToken': accessToken,
+    });
+
+    http.Response res;
+    try {
+      res = await http
+          .post(
+            Uri.parse('/api/driveFolder?action=list'),
+            headers: {'Content-Type': 'application/json'},
+            body: payload,
+          )
+          .timeout(const Duration(seconds: 20));
+    } catch (_) {
+      res = await http
+          .post(
+            Uri.parse('https://europe-west3-lepsza-szkola.cloudfunctions.net/manageDriveFolders?action=list'),
+            headers: {'Content-Type': 'application/json'},
+            body: payload,
+          )
+          .timeout(const Duration(seconds: 20));
+    }
+
+    if (res.statusCode == 401 || res.statusCode == 403) {
+      throw Exception('UNAUTHENTICATED_DRIVE: Sesja Google Drive wygasła.');
+    }
+
+    if (res.statusCode != 200) {
+      return const <DriveFolderOption>[];
+    }
+
+    final decoded = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    final rawList = decoded['folders'] as List<dynamic>? ?? const [];
+    return rawList
+        .whereType<Map>()
+        .map((f) => DriveFolderOption.fromMap(Map<String, dynamic>.from(f)))
+        .where((f) => f.id.isNotEmpty && f.id != 'root')
+        .toList();
+  }
+
+  @override
+  Future<DriveFolderOption> createDriveFolder({
+    required String accessToken,
+    required String folderName,
+    bool setAsDefault = false,
+  }) async {
+    final isDemo = await _connectionService.isDemoMode();
+    if (isDemo) {
+      return _mockFallback.createDriveFolder(
+        accessToken: accessToken,
+        folderName: folderName,
+        setAsDefault: setAsDefault,
+      );
+    }
+
+    final targetLogin = await _getTargetStudentDocLogin() ?? '11010033';
+    final payload = jsonEncode({
+      'action': 'create',
+      'accessToken': accessToken,
+      'folderName': folderName.trim(),
+      'studentId': targetLogin,
+      'setAsDefault': setAsDefault,
+    });
+
+    http.Response res;
+    try {
+      res = await http
+          .post(
+            Uri.parse('/api/driveFolder?action=create'),
+            headers: {'Content-Type': 'application/json'},
+            body: payload,
+          )
+          .timeout(const Duration(seconds: 20));
+    } catch (_) {
+      res = await http
+          .post(
+            Uri.parse('https://europe-west3-lepsza-szkola.cloudfunctions.net/manageDriveFolders?action=create'),
+            headers: {'Content-Type': 'application/json'},
+            body: payload,
+          )
+          .timeout(const Duration(seconds: 20));
+    }
+
+    if (res.statusCode == 401 || res.statusCode == 403) {
+      throw Exception('UNAUTHENTICATED_DRIVE: Sesja Google Drive wygasła.');
+    }
+
+    final decoded = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    if (res.statusCode != 200 || decoded['folder'] == null) {
+      throw Exception(
+        decoded['error']?.toString() ?? 'Nie udało się utworzyć folderu na Dysku Google.',
+      );
+    }
+
+    final created = DriveFolderOption.fromMap(
+      Map<String, dynamic>.from(decoded['folder'] as Map),
+    );
+    if (setAsDefault) {
+      await setDefaultDriveFolder(created);
+    }
+    return created;
+  }
+
+  @override
+  Future<void> moveDriveAttachment({
+    required String accessToken,
+    required String msgId,
+    required List<String> attachmentNames,
+    required Map<String, DriveAttachmentInfo> currentDriveAttachments,
+    required String targetFolderId,
+    required String targetFolderName,
+    bool setAsDefault = true,
+  }) async {
+    final isDemo = await _connectionService.isDemoMode();
+    if (isDemo) {
+      await _mockFallback.moveDriveAttachment(
+        accessToken: accessToken,
+        msgId: msgId,
+        attachmentNames: attachmentNames,
+        currentDriveAttachments: currentDriveAttachments,
+        targetFolderId: targetFolderId,
+        targetFolderName: targetFolderName,
+        setAsDefault: setAsDefault,
+      );
+      return;
+    }
+
+    final targetLogin = await _getTargetStudentDocLogin() ?? '11010033';
+    final items = <Map<String, dynamic>>[];
+    for (final name in attachmentNames) {
+      final info = currentDriveAttachments[name];
+      if (info != null && info.driveFileId.isNotEmpty) {
+        items.add({
+          'attachmentName': name,
+          'fileId': info.driveFileId,
+          'previousFolderId': info.folderId,
+        });
+      }
+    }
+
+    final payload = jsonEncode({
+      'action': 'move',
+      'accessToken': accessToken,
+      'studentId': targetLogin,
+      'msgId': msgId,
+      'items': items,
+      'targetFolderId': targetFolderId,
+      'targetFolderName': targetFolderName,
+      'setAsDefault': setAsDefault,
+    });
+
+    http.Response res;
+    try {
+      res = await http
+          .post(
+            Uri.parse('/api/driveFolder?action=move'),
+            headers: {'Content-Type': 'application/json'},
+            body: payload,
+          )
+          .timeout(const Duration(seconds: 25));
+    } catch (_) {
+      res = await http
+          .post(
+            Uri.parse('https://europe-west3-lepsza-szkola.cloudfunctions.net/manageDriveFolders?action=move'),
+            headers: {'Content-Type': 'application/json'},
+            body: payload,
+          )
+          .timeout(const Duration(seconds: 25));
+    }
+
+    if (res.statusCode == 401 || res.statusCode == 403) {
+      throw Exception('UNAUTHENTICATED_DRIVE: Sesja Google Drive wygasła.');
+    }
+
+    if (res.statusCode != 200) {
+      final decoded = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+      throw Exception(
+        decoded['error']?.toString() ?? 'Nie udało się przenieść załącznika do wybranego folderu.',
+      );
+    }
+
+    for (final name in attachmentNames) {
+      final info = currentDriveAttachments[name];
+      if (info != null) {
+        final updated = info.copyWith(
+          folderId: targetFolderId,
+          folderName: targetFolderName,
+        );
+        _updateCachedMessageDriveAttachment(msgId, name, updated);
+      }
+    }
+
+    if (setAsDefault) {
+      await setDefaultDriveFolder(
+        DriveFolderOption(id: targetFolderId, name: targetFolderName),
+      );
+    }
+  }
 }
+
 
 class UniqueKey {
   static int _c = 0;

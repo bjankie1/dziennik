@@ -37,4 +37,33 @@ abstract class SchoolRepository {
   Future<MessageDetailsResult?> getMessageDetails(String msgId, {String? url});
   Future<void> markMessageAsRead(String msgId, {bool isRead = true});
   Future<void> markAllMessagesAsRead();
+  Future<DriveAttachmentInfo> saveAttachmentToDrive({
+    required String msgId,
+    required String attachmentName,
+    required String downloadPath,
+    required String accessToken,
+    String? folderId,
+    String? folderName,
+    String? savedBy,
+  });
+  Future<List<DriveFolderOption>> listDriveFolders({
+    required String accessToken,
+  });
+  Future<DriveFolderOption> createDriveFolder({
+    required String accessToken,
+    required String folderName,
+    bool setAsDefault = false,
+  });
+  Future<void> moveDriveAttachment({
+    required String accessToken,
+    required String msgId,
+    required List<String> attachmentNames,
+    required Map<String, DriveAttachmentInfo> currentDriveAttachments,
+    required String targetFolderId,
+    required String targetFolderName,
+    bool setAsDefault = true,
+  });
+  Future<DriveFolderOption> getDefaultDriveFolder();
+  Future<void> setDefaultDriveFolder(DriveFolderOption folder);
 }
+

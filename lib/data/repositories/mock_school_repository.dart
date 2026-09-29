@@ -454,6 +454,20 @@ class MockSchoolRepository implements SchoolRepository {
     return thread?.body;
   }
 
+  DriveFolderOption _defaultDriveFolder = DriveFolderOption.rootFolder;
+  final List<DriveFolderOption> _mockDriveFolders = [
+    const DriveFolderOption(
+      id: 'folder_szkola_oskar',
+      name: 'Szkoła - Oskar',
+      webViewLink: 'https://drive.google.com/drive/folders/folder_szkola_oskar',
+    ),
+    const DriveFolderOption(
+      id: 'folder_matura_2027',
+      name: 'Matura 2027',
+      webViewLink: 'https://drive.google.com/drive/folders/folder_matura_2027',
+    ),
+  ];
+
   @override
   Future<MessageDetailsResult?> getMessageDetails(String msgId, {String? url}) async {
     await Future.delayed(const Duration(milliseconds: 50));
@@ -464,6 +478,7 @@ class MockSchoolRepository implements SchoolRepository {
       attachments: thread.attachments,
       attachmentUrls: thread.attachmentUrls,
       hasAttachments: thread.hasAttachments,
+      driveAttachments: thread.driveAttachments,
     );
   }
 
@@ -481,4 +496,120 @@ class MockSchoolRepository implements SchoolRepository {
       _messages[i] = _messages[i].copyWith(isUnread: false);
     }
   }
+
+  @override
+  Future<DriveFolderOption> getDefaultDriveFolder() async {
+    return _defaultDriveFolder;
+  }
+
+  @override
+  Future<void> setDefaultDriveFolder(DriveFolderOption folder) async {
+    _defaultDriveFolder = folder;
+  }
+
+  @override
+  Future<DriveAttachmentInfo> saveAttachmentToDrive({
+    required String msgId,
+    required String attachmentName,
+    required String downloadPath,
+    required String accessToken,
+    String? folderId,
+    String? folderName,
+    String? savedBy,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 80));
+    final effectiveFolderId = (folderId != null && folderId.trim().isNotEmpty)
+        ? folderId.trim()
+        : _defaultDriveFolder.id;
+    final effectiveFolderName = (folderName != null && folderName.trim().isNotEmpty)
+        ? folderName.trim()
+        : (effectiveFolderId == _defaultDriveFolder.id
+            ? _defaultDriveFolder.name
+            : (effectiveFolderId == 'root' ? 'Mój dysk' : 'Folder Google Drive'));
+
+    final cleanAtt = attachmentName.replaceAll(RegExp(r'[^a-zA-Z0-9._-]'), '_');
+    final fileId = 'mock_drive_${msgId}_$cleanAtt';
+    final info = DriveAttachmentInfo(
+      driveFileId: fileId,
+      webViewLink: 'https://drive.google.com/file/d/$fileId/view',
+      folderId: effectiveFolderId,
+      folderName: effectiveFolderName,
+      savedAt: DateTime.now(),
+      savedBy: savedBy ?? 'Rodzic',
+    );
+
+    final idx = _messages.indexWhere((t) => t.id == msgId);
+    if (idx != -1) {
+      final existing = _messages[idx];
+      final updatedDrive = Map<String, DriveAttachmentInfo>.from(existing.driveAttachments)
+        ..[attachmentName] = info;
+      _messages[idx] = existing.copyWith(driveAttachments: updatedDrive);
+    }
+    return info;
+  }
+
+  @override
+  Future<List<DriveFolderOption>> listDriveFolders({
+    required String accessToken,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 50));
+    return List.unmodifiable(_mockDriveFolders);
+  }
+
+  @override
+  Future<DriveFolderOption> createDriveFolder({
+    required String accessToken,
+    required String folderName,
+    bool setAsDefault = false,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 60));
+    final clean = folderName.trim();
+    final id = 'folder_${clean.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_')}';
+    final created = DriveFolderOption(
+      id: id,
+      name: clean,
+      webViewLink: 'https://drive.google.com/drive/folders/$id',
+    );
+    _mockDriveFolders.removeWhere((f) => f.id == id);
+    _mockDriveFolders.insert(0, created);
+    if (setAsDefault) {
+      _defaultDriveFolder = created;
+    }
+    return created;
+  }
+
+  @override
+  Future<void> moveDriveAttachment({
+    required String accessToken,
+    required String msgId,
+    required List<String> attachmentNames,
+    required Map<String, DriveAttachmentInfo> currentDriveAttachments,
+    required String targetFolderId,
+    required String targetFolderName,
+    bool setAsDefault = true,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 60));
+    if (setAsDefault) {
+      _defaultDriveFolder = DriveFolderOption(
+        id: targetFolderId,
+        name: targetFolderName,
+      );
+    }
+    final idx = _messages.indexWhere((t) => t.id == msgId);
+    if (idx != -1) {
+      final existing = _messages[idx];
+      final updatedDrive = Map<String, DriveAttachmentInfo>.from(existing.driveAttachments);
+      for (final name in attachmentNames) {
+        final current = updatedDrive[name] ?? currentDriveAttachments[name];
+        if (current != null) {
+          updatedDrive[name] = current.copyWith(
+            folderId: targetFolderId,
+            folderName: targetFolderName,
+          );
+        }
+      }
+      _messages[idx] = existing.copyWith(driveAttachments: updatedDrive);
+    }
+  }
 }
+
