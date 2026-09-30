@@ -89,17 +89,18 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 260929-ooj | Rzeczywisty czas ostatniej synchronizacji z backendu (zamiast czasu otwarcia aplikacji) i poprawne etykiety dnia | 2026-09-29 | HEAD | [260929-ooj-naprawa-czasu-ostatniej-synchronizacji-w](./quick/260929-ooj-naprawa-czasu-ostatniej-synchronizacji-w/) |
 | 260929-ox0 | Automatyczne linkowanie URL w treści wiadomości (otwieranie w nowej karcie) | 2026-09-29 | HEAD | [260929-ox0-automatyczne-linkowanie-url-w-tre-ci-wia](./quick/260929-ox0-automatyczne-linkowanie-url-w-tre-ci-wia/) |
 | 260929-plh | Naprawa zapisu załączników na Google Drive – włączenie Drive API i rozróżnienie błędów 403 | 2026-09-29 | HEAD | [260929-plh-naprawa-zapisu-za-cznik-w-na-google-driv](./quick/260929-plh-naprawa-zapisu-za-cznik-w-na-google-driv/) |
+| 260930-dhq | Naprawa wyświetlania rzeczywistych dat i godzin wiadomości na kartach zamiast stałego 'Dzisiaj, 09:15' | 2026-09-30 | 80f6fea | [260930-dhq-wszystkie-wiadomo-ci-pokazuj-si-jakby-by](./quick/260930-dhq-wszystkie-wiadomo-ci-pokazuj-si-jakby-by/) |
 
 ## Session
 
-**Last session:** 2026-09-29
-**Stopped at:** Completed quick task 260929-jas, ready to plan Phase 19
+**Last session:** 2026-09-30
+**Stopped at:** Completed quick task 260930-dhq, ready to plan Phase 19
 **Resume file:** .planning/phases/22-zapisywanie-za-cznik-w-wiadomo-ci-w-google-drive-w-stylu-gma/22-CONTEXT.md
-Last activity: 2026-09-29 — Completed quick task 260929-jas (Naprawa układu modala prośby o usprawiedliwienie)
+Last activity: 2026-09-30 — Completed quick task 260930-dhq (Naprawa wyświetlania rzeczywistych dat i godzin wiadomości)
 
 ## Current Position
 
 Phase: 19 — Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
 Next Phase: 19 (Raporty tygodniowe) / 21 (Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen)
 Status: Ready to plan Phase 19
-Last activity: 2026-09-29 — Completed quick task 260929-jas
+Last activity: 2026-09-30 — Completed quick task 260930-dhq
