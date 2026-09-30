@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/message_thread.dart';
 import '../../messages/message_thread_screen.dart';
@@ -278,7 +277,7 @@ class _DashboardMessagesColumnState extends State<DashboardMessagesColumn> {
     final isUrgent =
         msg.subject.toLowerCase().contains('pilne') || msg.isUnread;
     final isDirector = msg.senderRole.toLowerCase().contains('dyrekcj');
-    final timeStr = DateFormat('d MMM, HH:mm', 'pl_PL').format(msg.timestamp);
+    final timeStr = msg.formattedTimestamp;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

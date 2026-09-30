@@ -400,7 +400,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                           ),
                         ),
                         Text(
-                          'Dzisiaj, 09:15',
+                          thread.formattedTimestamp,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: thread.isUnread ? FontWeight.w700 : FontWeight.w500,

@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class DriveAttachmentInfo {
   final String driveFileId;
   final String webViewLink;
@@ -272,6 +274,36 @@ class MessageThread {
       messages: nextMessages,
     );
   }
+
+  static String formatTimestamp(DateTime timestamp, {DateTime? now}) {
+    final dt = timestamp.toLocal();
+    final refNow = (now ?? DateTime.now()).toLocal();
+    final today = DateTime(refNow.year, refNow.month, refNow.day);
+    final msgDay = DateTime(dt.year, dt.month, dt.day);
+    final dayDiff = today.difference(msgDay).inDays;
+    final hasTime = dt.hour != 0 || dt.minute != 0 || dt.second != 0;
+
+    if (dayDiff == 0) {
+      return hasTime
+          ? 'Dzisiaj, ${DateFormat('HH:mm', 'pl_PL').format(dt)}'
+          : 'Dzisiaj';
+    }
+    if (dayDiff == 1) {
+      return hasTime
+          ? 'Wczoraj, ${DateFormat('HH:mm', 'pl_PL').format(dt)}'
+          : 'Wczoraj';
+    }
+    if (dt.year == refNow.year) {
+      return hasTime
+          ? DateFormat('d MMM, HH:mm', 'pl_PL').format(dt)
+          : DateFormat('d MMM', 'pl_PL').format(dt);
+    }
+    return hasTime
+        ? DateFormat('d MMM yyyy, HH:mm', 'pl_PL').format(dt)
+        : DateFormat('d MMM yyyy', 'pl_PL').format(dt);
+  }
+
+  String get formattedTimestamp => formatTimestamp(timestamp);
 }
 
 class Announcement {

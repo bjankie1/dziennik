@@ -1182,12 +1182,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
       final isImportant = subject.toUpperCase().contains('PILNE') ||
           subject.toUpperCase().contains('WAŻNE');
 
-      DateTime dt;
-      try {
-        dt = DateTime.parse(item['date'] as String? ?? '');
-      } catch (_) {
-        dt = DateTime.now();
-      }
+      final dt = parseMessageDate(item['date'] ?? item['timestamp']);
 
       final id = item['id'] as String? ?? UniqueKey().toString();
       final localOverride = _localReadOverrides[id];
@@ -1274,6 +1269,74 @@ class FirestoreSchoolRepository implements SchoolRepository {
     }).toList();
   }
 
+  /// Resiliently parses a message or announcement date from Librus / Firestore
+  /// (`YYYY-MM-DD HH:MM:SS`, `YYYY-MM-DD`, `DD.MM.YYYY HH:MM`, multiline strings,
+  /// Firestore `Timestamp`, `{_seconds}` maps, or epoch milliseconds).
+  static DateTime parseMessageDate(dynamic raw, {DateTime? fallback}) {
+    if (raw == null) return fallback ?? DateTime.now();
+    if (raw is Timestamp) {
+      return raw.toDate().toLocal();
+    }
+    if (raw is DateTime) {
+      return raw.toLocal();
+    }
+    if (raw is num) {
+      return DateTime.fromMillisecondsSinceEpoch(raw.toInt(), isUtc: true)
+          .toLocal();
+    }
+    if (raw is Map) {
+      final seconds = raw['_seconds'] ?? raw['seconds'];
+      if (seconds is num) {
+        return DateTime.fromMillisecondsSinceEpoch(
+          seconds.toInt() * 1000,
+          isUtc: true,
+        ).toLocal();
+      }
+    }
+    try {
+      // Handle arbitrary Timestamp-like objects with .toDate()
+      final dynamic maybeDate = (raw as dynamic).toDate();
+      if (maybeDate is DateTime) {
+        return maybeDate.toLocal();
+      }
+    } catch (_) {}
+
+    if (raw is String) {
+      final cleaned = raw.trim().replaceAll(RegExp(r'\s+'), ' ');
+      if (cleaned.isEmpty) return fallback ?? DateTime.now();
+
+      final parsed = DateTime.tryParse(cleaned);
+      if (parsed != null) {
+        return parsed.isUtc ? parsed.toLocal() : parsed;
+      }
+
+      final dmyMatch = RegExp(
+        r'^(\d{1,2})[.\-/](\d{1,2})[.\-/](\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$',
+      ).firstMatch(cleaned);
+      if (dmyMatch != null) {
+        final day = int.parse(dmyMatch.group(1)!);
+        final month = int.parse(dmyMatch.group(2)!);
+        final year = int.parse(dmyMatch.group(3)!);
+        final hour = dmyMatch.group(4) != null ? int.parse(dmyMatch.group(4)!) : 0;
+        final minute = dmyMatch.group(5) != null ? int.parse(dmyMatch.group(5)!) : 0;
+        final second = dmyMatch.group(6) != null ? int.parse(dmyMatch.group(6)!) : 0;
+        return DateTime(year, month, day, hour, minute, second);
+      }
+
+      final isoEmbedded = RegExp(
+        r'(\d{4}-\d{2}-\d{2}(?:[T\s]\d{2}:\d{2}(?::\d{2})?)?)',
+      ).firstMatch(cleaned);
+      if (isoEmbedded != null) {
+        final embeddedParsed = DateTime.tryParse(isoEmbedded.group(1)!);
+        if (embeddedParsed != null) {
+          return embeddedParsed.isUtc ? embeddedParsed.toLocal() : embeddedParsed;
+        }
+      }
+    }
+
+    return fallback ?? DateTime.now();
+  }
+
   @override
   Future<List<Announcement>> getAnnouncements() async {
     final data = await _getStudentData();
@@ -1288,12 +1351,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
     if (rawAnn.isEmpty) return [];
 
     return rawAnn.map((a) {
-      DateTime dt;
-      try {
-        dt = DateTime.parse(a['date'] ?? '');
-      } catch (_) {
-        dt = DateTime.now();
-      }
+      final dt = parseMessageDate(a['date']);
 
       return Announcement(
         id: a['id'] ?? UniqueKey().toString(),

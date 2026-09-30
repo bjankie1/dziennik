@@ -630,7 +630,7 @@ class LibrusClient {
         }
 
         const subject = $(tds[3]).text().trim().replace(/\s+/g, " ");
-        const date = $(tds[4]).text().trim();
+        const date = $(tds[4]).text().trim().replace(/\s+/g, " ");
 
         // Robust unread detection in Synergia HTML:
         // 1. Text bold styling in tr, td, or subject link

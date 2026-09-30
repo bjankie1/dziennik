@@ -894,7 +894,7 @@ class DashboardMobileView extends ConsumerWidget {
   }
 
   Widget _buildMobileMessageItem(BuildContext context, MessageThread msg) {
-    final timeStr = DateFormat('d MMM, HH:mm', 'pl_PL').format(msg.timestamp);
+    final timeStr = msg.formattedTimestamp;
 
     return InkWell(
       onTap: () => context.go('/wiadomosci/${msg.id}', extra: msg),
