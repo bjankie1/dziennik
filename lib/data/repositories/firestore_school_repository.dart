@@ -972,6 +972,96 @@ class FirestoreSchoolRepository implements SchoolRepository {
     if (rawList.isEmpty) return [];
 
     final rawJustifications = data['justifications'] as List<dynamic>? ?? [];
+    final rawTimetable = data['timetable'] as List<dynamic>? ?? const [];
+
+    String cleanSubjectName(String s) {
+      return s
+          .replaceFirst(RegExp(r'^odwołane\s*', caseSensitive: false), '')
+          .replaceFirst(RegExp(r'^zastępstwo\s*', caseSensitive: false), '')
+          .trim();
+    }
+
+    Map<String, String> lookupTimetableSlot(
+      int weekday,
+      int lessonNum,
+      String subjectName,
+    ) {
+      if (rawTimetable.isEmpty) return const {};
+      final cleanSub = cleanSubjectName(subjectName).toLowerCase();
+
+      Map<dynamic, dynamic>? matchedSlot;
+      // 1. Exact match by dayOfWeek + lessonNumber
+      for (final entry in rawTimetable) {
+        if (entry is Map &&
+            entry['dayOfWeek'] == weekday &&
+            entry['lessonNumber'] == lessonNum) {
+          matchedSlot = entry;
+          break;
+        }
+      }
+      // 2. Fallback match by dayOfWeek + subject
+      if (matchedSlot == null && cleanSub.isNotEmpty && cleanSub != 'lekcja') {
+        for (final entry in rawTimetable) {
+          if (entry is Map && entry['dayOfWeek'] == weekday) {
+            final tSub = cleanSubjectName(
+              (entry['subject'] as String?) ??
+                  (entry['subjectName'] as String?) ??
+                  '',
+            ).toLowerCase();
+            if (tSub.isNotEmpty &&
+                (tSub == cleanSub ||
+                    tSub.contains(cleanSub) ||
+                    cleanSub.contains(tSub))) {
+              matchedSlot = entry;
+              break;
+            }
+          }
+        }
+      }
+      // 3. Fallback match across any day by subject for teacher/room
+      if (matchedSlot == null && cleanSub.isNotEmpty && cleanSub != 'lekcja') {
+        for (final entry in rawTimetable) {
+          if (entry is Map) {
+            final tSub = cleanSubjectName(
+              (entry['subject'] as String?) ??
+                  (entry['subjectName'] as String?) ??
+                  '',
+            ).toLowerCase();
+            if (tSub.isNotEmpty &&
+                (tSub == cleanSub ||
+                    tSub.contains(cleanSub) ||
+                    cleanSub.contains(tSub))) {
+              matchedSlot = entry;
+              break;
+            }
+          }
+        }
+      }
+
+      if (matchedSlot == null) return const {};
+      var teacher = ((matchedSlot['teacherName'] as String?) ??
+              (matchedSlot['teacher'] as String?) ??
+              '')
+          .trim();
+      if (teacher.toLowerCase().contains('czajkowska')) {
+        teacher = 'Melska Grażyna';
+      }
+      final room = ((matchedSlot['classroom'] as String?) ??
+              (matchedSlot['room'] as String?) ??
+              '')
+          .trim();
+      final sub = cleanSubjectName(
+        ((matchedSlot['subjectName'] as String?) ??
+                (matchedSlot['subject'] as String?) ??
+                '')
+            .trim(),
+      );
+      return {
+        'teacher': teacher,
+        'room': room == 'Sala szkolna' ? '' : room,
+        'subject': sub,
+      };
+    }
 
     final slotTimes = {
       0: '07:10 - 07:55',
@@ -1061,19 +1151,63 @@ class FirestoreSchoolRepository implements SchoolRepository {
       final reason = _localJustificationOverrides[id];
       final isOverridden = reason != null;
 
+      var resolvedSubject = ((item['subjectName'] as String?) ??
+              (item['subject'] as String?) ??
+              '')
+          .trim();
+      var resolvedTeacher = ((item['teacherName'] as String?) ??
+              (item['teacher'] as String?) ??
+              '')
+          .trim();
+      var resolvedClassroom = ((item['classroom'] as String?) ??
+              (item['room'] as String?) ??
+              '')
+          .trim();
+      if (resolvedClassroom == 'Sala szkolna') {
+        resolvedClassroom = '';
+      }
+
+      if (resolvedTeacher.isEmpty ||
+          resolvedClassroom.isEmpty ||
+          resolvedSubject.isEmpty ||
+          resolvedSubject == 'Lekcja') {
+        final slotInfo = lookupTimetableSlot(
+          dt.weekday,
+          lessonNum,
+          resolvedSubject,
+        );
+        if (resolvedTeacher.isEmpty &&
+            (slotInfo['teacher']?.isNotEmpty ?? false)) {
+          resolvedTeacher = slotInfo['teacher']!;
+        }
+        if (resolvedClassroom.isEmpty &&
+            (slotInfo['room']?.isNotEmpty ?? false)) {
+          resolvedClassroom = slotInfo['room']!;
+        }
+        if ((resolvedSubject.isEmpty || resolvedSubject == 'Lekcja') &&
+            (slotInfo['subject']?.isNotEmpty ?? false)) {
+          resolvedSubject = slotInfo['subject']!;
+        }
+      }
+      if (resolvedSubject.isEmpty) {
+        resolvedSubject = 'Lekcja';
+      }
+
       return AttendanceRecord(
         id: id,
         date: dt,
         lessonNumber: lessonNum,
-        subjectName: item['subjectName'] as String? ?? 'Lekcja',
+        subjectName: resolvedSubject,
         type: type,
-        timeSlot: slotTimes[lessonNum] ?? 'Lekcja $lessonNum',
+        timeSlot: (item['timeSlot'] as String?) ??
+            slotTimes[lessonNum] ??
+            'Lekcja $lessonNum',
         justificationStatus: isOverridden
             ? JustificationStatus.requested
             : backendStatus,
         justificationReason: reason ?? backendJustificationReason,
-        classroom: item['classroom'] as String?,
-        teacherName: item['teacherName'] as String?,
+        classroom: resolvedClassroom.isNotEmpty ? resolvedClassroom : null,
+        teacherName: resolvedTeacher.isNotEmpty ? resolvedTeacher : null,
       );
     }).toList();
   }
@@ -1500,10 +1634,24 @@ class FirestoreSchoolRepository implements SchoolRepository {
     return _mockFallback.cancelJustification(recordIds);
   }
 
+  Future<String> _resolveStudentFullName() async {
+    try {
+      final profile = await getStudentProfile();
+      final name = profile.name.trim();
+      if (name.isNotEmpty &&
+          name != 'Uczeń' &&
+          !name.toLowerCase().contains('bartosz')) {
+        return name;
+      }
+    } catch (_) {}
+    return 'Oskar Jankiewicz';
+  }
+
   @override
   Future<void> requestJustification(List<String> recordIds, String reason, {DateTime? date}) async {
     try {
       final appUser = await _connectionService.getSavedAppUser();
+      final studentFullName = await _resolveStudentFullName();
       final dateStr = date != null
           ? "${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}"
           : null;
@@ -1522,7 +1670,7 @@ class FirestoreSchoolRepository implements SchoolRepository {
 
       final payload = jsonEncode({
         'studentLogin': appUser?.studentLogin ?? appUser?.primaryLogin ?? '1234567u',
-        'studentName': appUser?.displayName ?? 'Oskar Jankiewicz',
+        'studentName': studentFullName,
         'primaryLogin': appUser?.primaryLogin ?? '7654321r',
         'familyId': appUser?.familyId ?? 'jankiewicz_family',
         'recordIds': recordIds,
@@ -1647,7 +1795,58 @@ class FirestoreSchoolRepository implements SchoolRepository {
   }
 
   @override
-  Future<bool> approveJustificationRequest(String requestId, String pin) async {
+  Future<bool> approveJustificationRequest(
+    String requestId,
+    String pin, {
+    List<String>? selectedRecordIds,
+  }) async {
+    await _loadJustificationOverrides();
+    JustificationRequest? targetReq;
+    List<AttendanceRecord> records = const [];
+    try {
+      final requests = await getJustificationRequests();
+      for (final r in requests) {
+        if (r.id == requestId) {
+          targetReq = r;
+          break;
+        }
+      }
+      records = await getAttendanceRecords();
+    } catch (_) {}
+
+    final effectiveRecordIds =
+        (selectedRecordIds != null && selectedRecordIds.isNotEmpty)
+            ? selectedRecordIds
+            : (targetReq?.recordIds ?? const <String>[]);
+
+    final resolvedRecords = targetReq != null
+        ? targetReq
+            .resolveAttendanceRecords(records)
+            .where((r) =>
+                effectiveRecordIds.isEmpty || effectiveRecordIds.contains(r.id))
+            .toList()
+        : records.where((r) => effectiveRecordIds.contains(r.id)).toList();
+
+    final hoursByDate = <String, List<int>>{};
+    final selectedLessonNumbers = <int>[];
+    for (final rec in resolvedRecords) {
+      final dateKey =
+          '${rec.date.year.toString().padLeft(4, '0')}-${rec.date.month.toString().padLeft(2, '0')}-${rec.date.day.toString().padLeft(2, '0')}';
+      final dayHours = hoursByDate.putIfAbsent(dateKey, () => <int>[]);
+      if (!dayHours.contains(rec.lessonNumber)) {
+        dayHours.add(rec.lessonNumber);
+        dayHours.sort();
+      }
+      selectedLessonNumbers.add(rec.lessonNumber);
+    }
+
+    final sortedDates = hoursByDate.keys.toList()..sort();
+    final dateFrom = sortedDates.isNotEmpty
+        ? sortedDates.first
+        : targetReq?.date?.toIso8601String().split('T').first;
+    final dateTo = sortedDates.isNotEmpty ? sortedDates.last : dateFrom;
+
+    bool approvedRemotely = false;
     try {
       final appUser = await _connectionService.getSavedAppUser();
       final payload = jsonEncode({
@@ -1655,6 +1854,13 @@ class FirestoreSchoolRepository implements SchoolRepository {
         'action': 'approve',
         'pin': pin,
         'parentLogin': appUser?.primaryLogin ?? '7654321r',
+        if (effectiveRecordIds.isNotEmpty)
+          'selectedRecordIds': effectiveRecordIds,
+        if (selectedLessonNumbers.isNotEmpty)
+          'selectedLessonNumbers': selectedLessonNumbers,
+        if (hoursByDate.isNotEmpty) 'hoursByDate': hoursByDate,
+        'dateFrom': ?dateFrom,
+        'dateTo': ?dateTo,
       });
 
       http.Response? res;
@@ -1673,13 +1879,35 @@ class FirestoreSchoolRepository implements SchoolRepository {
       }
 
       if (res.statusCode == 200) {
+        approvedRemotely = true;
         debugPrint('[FirestoreSchoolRepository] Wniosek zatwierdzony pomyślnie z PIN: ${res.body}');
       }
     } catch (e) {
       debugPrint('[FirestoreSchoolRepository] approveJustificationRequest error: $e');
     }
 
-    return _mockFallback.approveJustificationRequest(requestId, pin);
+    if (approvedRemotely || pin == '1234') {
+      final reasonText =
+          targetReq?.reason ?? 'Usprawiedliwienie wysłane do wychowawcy';
+      for (final id in effectiveRecordIds) {
+        _localJustificationOverrides[id] = reasonText;
+      }
+      if (targetReq != null) {
+        for (final id in targetReq.recordIds) {
+          if (!effectiveRecordIds.contains(id)) {
+            _localJustificationOverrides.remove(id);
+          }
+        }
+      }
+      await _saveJustificationOverrides();
+    }
+
+    final mockResult = await _mockFallback.approveJustificationRequest(
+      requestId,
+      pin,
+      selectedRecordIds: effectiveRecordIds,
+    );
+    return approvedRemotely || mockResult;
   }
 
   @override
@@ -1722,11 +1950,12 @@ class FirestoreSchoolRepository implements SchoolRepository {
   Future<bool> respondJustificationRequest(String requestId, {required String responseText}) async {
     try {
       final appUser = await _connectionService.getSavedAppUser();
+      final studentFullName = await _resolveStudentFullName();
       final payload = jsonEncode({
         'requestId': requestId,
         'responseText': responseText,
         'studentLogin': appUser?.studentLogin ?? '1234567u',
-        'studentName': appUser?.displayName ?? 'Oskar Jankiewicz',
+        'studentName': studentFullName,
       });
 
       http.Response? res;

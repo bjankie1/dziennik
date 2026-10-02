@@ -292,7 +292,11 @@ class MockSchoolRepository implements SchoolRepository {
   }
 
   @override
-  Future<bool> approveJustificationRequest(String requestId, String pin) async {
+  Future<bool> approveJustificationRequest(
+    String requestId,
+    String pin, {
+    List<String>? selectedRecordIds,
+  }) async {
     await Future.delayed(const Duration(milliseconds: 150));
     if (pin != '1234') {
       return false;
@@ -301,14 +305,31 @@ class MockSchoolRepository implements SchoolRepository {
     if (index == -1) return false;
 
     final existing = _justificationRequests[index];
+    final hasExplicitSelection =
+        selectedRecordIds != null && selectedRecordIds.isNotEmpty;
+    final effectiveIds =
+        hasExplicitSelection ? selectedRecordIds : existing.recordIds;
+    final deselectedIds = existing.recordIds
+        .where((id) => !effectiveIds.contains(id))
+        .toSet();
+
+    if (deselectedIds.isNotEmpty) {
+      await cancelJustification(deselectedIds.toList());
+    }
+
     final updated = existing.copyWith(
       status: JustificationRequestStatus.approved,
+      recordIds: effectiveIds,
       reviewedAt: DateTime.now(),
       reviewedBy: 'parent',
     );
     _justificationRequests[index] = updated;
 
-    await submitJustification(existing.recordIds, existing.reason, date: existing.date);
+    await submitJustification(
+      effectiveIds,
+      existing.reason,
+      date: hasExplicitSelection ? null : existing.date,
+    );
     return true;
   }
 

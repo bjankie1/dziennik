@@ -23,7 +23,11 @@ abstract class SchoolRepository {
   Future<void> cancelJustification(List<String> recordIds);
   Future<void> requestJustification(List<String> recordIds, String reason, {DateTime? date});
   Future<List<JustificationRequest>> getJustificationRequests();
-  Future<bool> approveJustificationRequest(String requestId, String pin);
+  Future<bool> approveJustificationRequest(
+    String requestId,
+    String pin, {
+    List<String>? selectedRecordIds,
+  });
   Future<bool> rejectJustificationRequest(String requestId, {String? reason});
   Future<bool> respondJustificationRequest(String requestId, {required String responseText});
   Future<List<TeacherContact>> getTeachers();

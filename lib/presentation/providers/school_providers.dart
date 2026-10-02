@@ -253,9 +253,17 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
     state = AsyncValue.data(await repo.getAttendanceRecords());
   }
 
-  Future<bool> approveJustification(String requestId, String pin) async {
+  Future<bool> approveJustification(
+    String requestId,
+    String pin, {
+    List<String>? selectedRecordIds,
+  }) async {
     final repo = ref.read(schoolRepositoryProvider);
-    final success = await repo.approveJustificationRequest(requestId, pin);
+    final success = await repo.approveJustificationRequest(
+      requestId,
+      pin,
+      selectedRecordIds: selectedRecordIds,
+    );
     ref.invalidate(justificationRequestsProvider);
     state = AsyncValue.data(await repo.getAttendanceRecords());
     return success;
