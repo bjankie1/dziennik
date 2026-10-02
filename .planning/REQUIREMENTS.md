@@ -104,6 +104,10 @@
 - [x] **REQ-AI-01**: Konwersacyjny czat z Asystentem AI dziennika szkolnego w aplikacji (i opcjonalnie przez Telegram), odpowiadający w języku polskim na pytania o sprawdziany, plan lekcji, oceny, nieobecności, wiadomości i ogłoszenia (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”).
 - [x] **REQ-AI-02**: Kontekstowe uziemienie odpowiedzi (RAG / Context Grounding) w rzeczywistych danych Firestore (w tym pełnych treściach wiadomości `body` i ogłoszeń) z cytowaniem źródeł i bezpośrednimi odnośnikami (deep linkami) do wiadomości, lekcji lub ocen.
 
+### Attendance Request Details & Pending Applications (Phase 23)
+- [x] **REQ-ATT-01**: Interaktywny podgląd szczegółów prośby o usprawiedliwienie (zgrupowana po dniach lista lekcji, przedmiotów, godzin, nauczycieli i historii Q&A) z możliwością częściowego zatwierdzania wybranych godzin (checkboxy) na Pulpicie i we Frekwencji.
+- [x] **REQ-ATT-02**: Rozwijany akordeon „X wnioski czekają na wychowawcę” z możliwością wycofania pojedynczej lekcji (`Cofnij`) lub wszystkich wniosków (`Cofnij wszystkie`) oraz 4. pigułka filtra `Oczekujące (Y)`.
+
 ## Traceability
 
 | Requirement | Phase | Status |
@@ -126,4 +130,7 @@
 | REQ-REPORT-02 | Phase 19 | Pending |
 | REQ-AI-01 | Phase 20 | Complete |
 | REQ-AI-02 | Phase 20 | Complete |
+| REQ-ATT-01 | Phase 23 | Complete |
+| REQ-ATT-02 | Phase 23 | Complete |
+
 

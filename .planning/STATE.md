@@ -4,10 +4,10 @@ milestone: v3.0
 current_phase: 23
 current_phase_name: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków
 status: executing
-stopped_at: Completed 23-01-PLAN.md
-last_updated: "2026-10-02T08:38:38.062Z"
+stopped_at: Completed 23-podgl-d-szczeg-w-pr-b-o-usprawiedliwienie-i-oczekuj-cych-wni-02-PLAN.md
+last_updated: "2026-10-02T09:05:27.317Z"
 last_activity: 2026-10-02
-state_head: 0001c3bfc764d56577ca47ea8d0b5a9120ac20d5
+state_head: c5fe67608787d2ef70241a7d4a60f4b65f656fb7
 progress:
   total_phases: 12
   completed_phases: 8
@@ -20,9 +20,9 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 # Project State
 
 **Current Milestone:** Milestone v3.0 (Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia)  
-**Active Phase:** Phase 20: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A) — COMPLETED  
-**Status:** Executing Phase 23
-**Last Updated:** 2026-09-26  
+**Active Phase:** Phase 23: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków — COMPLETED  
+**Status:** Phase 23 Complete
+**Last Updated:** 2026-10-02  
 
 ## Milestone v3.0 Roadmap
 
@@ -35,6 +35,8 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - [x] **Phase 18**: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push (completed 2026-09-25)
 - [ ] **Phase 19**: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
 - [x] **Phase 20**: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A) (completed 2026-09-26)
+- [x] **Phase 22**: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail (completed 2026-10-01)
+- [x] **Phase 23**: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków (completed 2026-10-02)
 
 ## Completed in Previous Milestones
 
@@ -94,8 +96,8 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 ## Session
 
-**Last session:** 2026-10-02T08:38:37.786Z
-**Stopped at:** Completed 23-01-PLAN.md
+**Last session:** 2026-10-02T09:05:27.201Z
+**Stopped at:** Completed 23-podgl-d-szczeg-w-pr-b-o-usprawiedliwienie-i-oczekuj-cych-wni-02-PLAN.md
 **Resume file:** None
 Last activity: 2026-10-02
 
@@ -111,3 +113,8 @@ Last activity: 2026-10-02 — Phase 23 execution started
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 23 P01 | 9 min | 2 tasks | 8 files |
+| Phase 23-podgl-d-szczeg-w-pr-b-o-usprawiedliwienie-i-oczekuj-cych-wni P02 | 18min | 2 tasks | 8 files |
+
+## Decisions
+
+- [Phase 23-podgl-d-szczeg-w-pr-b-o-usprawiedliwienie-i-oczekuj-cych-wni]: Upgraded ParentApprovalModal with day-grouped lesson breakdowns, teacher/classroom metadata, Q&A history, and per-lesson checkboxes for partial PIN approval; made justification banners interactive with 'Zobacz szczegóły →' and effectiveStudentName across Dashboard and AttendanceScreen; and added the expandable 'X wnioski czekają na wychowawcę' accordion with per-lesson 'Cofnij' plus the 4th 'Oczekujące (Y)' filter pill
