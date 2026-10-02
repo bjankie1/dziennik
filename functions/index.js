@@ -955,7 +955,18 @@ exports.reviewJustificationRequest = onRequest(
       const { processParentReview, formatLibrusJustificationPayload } = require("./src/justification_service");
       const { LibrusClient } = require("./src/librus_client");
 
-      const { requestId, action, pin, rejectionReason, parentLogin } = req.body || {};
+      const {
+        requestId,
+        action,
+        pin,
+        rejectionReason,
+        parentLogin,
+        selectedRecordIds,
+        selectedLessonNumbers,
+        hoursByDate,
+        dateFrom,
+        dateTo
+      } = req.body || {};
 
       if (!requestId) {
         return res.status(400).json({ error: "Brak identyfikatora wniosku (requestId)." });
@@ -973,7 +984,12 @@ exports.reviewJustificationRequest = onRequest(
         action,
         pin,
         rejectionReason,
-        parentLogin
+        parentLogin,
+        selectedRecordIds,
+        selectedLessonNumbers,
+        hoursByDate,
+        dateFrom,
+        dateTo
       });
 
       if (!reviewResult.success) {
@@ -987,7 +1003,7 @@ exports.reviewJustificationRequest = onRequest(
 
         if (parentLog && parentPass) {
           try {
-            const librusPayload = formatLibrusJustificationPayload(existingData);
+            const librusPayload = formatLibrusJustificationPayload(reviewResult.updatedRequest);
             const client = new LibrusClient(parentLog, parentPass);
             await client.submitJustification(librusPayload);
           } catch (librusErr) {

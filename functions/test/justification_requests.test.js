@@ -184,6 +184,54 @@ describe("Justification Requests Flow (justification_requests.test.js)", () => {
       assert.strictEqual(result.statusCode, 409);
       assert.match(result.error, /Wniosek został już rozpatrzony/i);
     });
+
+    it("should update recordIds, approvedRecordIds, lessonNumbers, and hoursByDate on partial approval (D-06)", () => {
+      const multiLessonRequest = {
+        ...baseRequest,
+        recordIds: ["rec_001", "rec_002", "rec_003"],
+        lessonNumbers: [1, 2, 3],
+        subjectNames: ["Matematyka", "Fizyka", "Język polski"],
+        date: "2026-09-28"
+      };
+
+      const reviewResult = processParentReview(multiLessonRequest, {
+        action: "approve",
+        pin: VALID_DEFAULT_PIN,
+        parentLogin: "7654321r",
+        selectedRecordIds: ["rec_001", "rec_003"],
+        selectedLessonNumbers: [1, 3],
+        hoursByDate: {
+          "2026-09-28": [1],
+          "2026-09-29": [3]
+        },
+        dateFrom: "2026-09-28",
+        dateTo: "2026-09-29"
+      });
+
+      assert.strictEqual(reviewResult.success, true);
+      assert.strictEqual(reviewResult.statusCode, 200);
+      assert.deepStrictEqual(reviewResult.updatedRequest.recordIds, ["rec_001", "rec_003"]);
+      assert.deepStrictEqual(reviewResult.updatedRequest.approvedRecordIds, ["rec_001", "rec_003"]);
+      assert.deepStrictEqual(reviewResult.updatedRequest.lessonNumbers, [1, 3]);
+      assert.deepStrictEqual(reviewResult.updatedRequest.hoursByDate, {
+        "2026-09-28": [1],
+        "2026-09-29": [3]
+      });
+      assert.strictEqual(reviewResult.updatedRequest.dateFrom, "2026-09-28");
+      assert.strictEqual(reviewResult.updatedRequest.dateTo, "2026-09-29");
+    });
+
+    it("should reject approval with 400 when selectedRecordIds is explicitly passed as empty array (D-06)", () => {
+      const reviewResult = processParentReview(baseRequest, {
+        action: "approve",
+        pin: VALID_DEFAULT_PIN,
+        selectedRecordIds: []
+      });
+
+      assert.strictEqual(reviewResult.success, false);
+      assert.strictEqual(reviewResult.statusCode, 400);
+      assert.match(reviewResult.error, /co najmniej jedną lekcję/i);
+    });
   });
 
   describe("Librus justification formatting", () => {
@@ -201,6 +249,31 @@ describe("Justification Requests Flow (justification_requests.test.js)", () => {
       assert.strictEqual(payload.isByHours, true);
       assert.deepStrictEqual(payload.hoursByDate, {
         "2026-09-22": [1, 2]
+      });
+      assert.strictEqual(payload.notifyOthers, true);
+    });
+
+    it("should preserve multi-day hoursByDate, dateFrom, and dateTo when present on requestDoc (D-06)", () => {
+      const req = {
+        reason: "Choroba",
+        date: "2026-09-28",
+        dateFrom: "2026-09-28",
+        dateTo: "2026-09-29",
+        lessonNumbers: [2, 3, 1],
+        hoursByDate: {
+          "2026-09-28": [2, 3],
+          "2026-09-29": [1]
+        }
+      };
+
+      const payload = formatLibrusJustificationPayload(req);
+      assert.strictEqual(payload.reason, "Choroba");
+      assert.strictEqual(payload.dateFrom, "2026-09-28");
+      assert.strictEqual(payload.dateTo, "2026-09-29");
+      assert.strictEqual(payload.isByHours, true);
+      assert.deepStrictEqual(payload.hoursByDate, {
+        "2026-09-28": [2, 3],
+        "2026-09-29": [1]
       });
       assert.strictEqual(payload.notifyOthers, true);
     });

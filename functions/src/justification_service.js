@@ -100,7 +100,17 @@ function processParentReview(requestDoc, reviewData) {
     };
   }
 
-  const { action, pin, rejectionReason, parentLogin } = reviewData || {};
+  const {
+    action,
+    pin,
+    rejectionReason,
+    parentLogin,
+    selectedRecordIds,
+    selectedLessonNumbers,
+    hoursByDate,
+    dateFrom,
+    dateTo
+  } = reviewData || {};
 
   if (action === "approve") {
     // T-14-03: Validate parental PIN
@@ -113,11 +123,49 @@ function processParentReview(requestDoc, reviewData) {
       };
     }
 
+    let effectiveRecordIds = requestDoc.recordIds;
+    if (selectedRecordIds !== undefined && selectedRecordIds !== null) {
+      const sanitizedSelected = Array.isArray(selectedRecordIds)
+        ? selectedRecordIds.map(id => String(id).trim()).filter(Boolean)
+        : [];
+      if (sanitizedSelected.length === 0) {
+        return {
+          success: false,
+          statusCode: 400,
+          error: "Należy wybrać co najmniej jedną lekcję do zatwierdzenia."
+        };
+      }
+      effectiveRecordIds = sanitizedSelected;
+    }
+
+    const sanitizedLessonNumbers = Array.isArray(selectedLessonNumbers)
+      ? selectedLessonNumbers.map(n => Number(n)).filter(n => Number.isInteger(n) && n >= 0 && n <= 15)
+      : [];
+    const effectiveLessonNumbers = sanitizedLessonNumbers.length > 0
+      ? sanitizedLessonNumbers
+      : requestDoc.lessonNumbers;
+
+    const hasHoursByDate =
+      hoursByDate &&
+      typeof hoursByDate === "object" &&
+      !Array.isArray(hoursByDate) &&
+      Object.keys(hoursByDate).length > 0;
+
     return {
       success: true,
       statusCode: 200,
       updatedRequest: {
         ...requestDoc,
+        recordIds: effectiveRecordIds,
+        approvedRecordIds: effectiveRecordIds,
+        lessonNumbers: effectiveLessonNumbers,
+        ...(hasHoursByDate
+          ? {
+              hoursByDate,
+              dateFrom: dateFrom || requestDoc.date,
+              dateTo: dateTo || dateFrom || requestDoc.date
+            }
+          : {}),
         status: JUSTIFICATION_STATUS.APPROVED,
         reviewedAt: new Date().toISOString(),
         reviewedBy: (parentLogin && String(parentLogin).trim()) || "parent",
@@ -224,6 +272,25 @@ function processStudentResponse(requestDoc, responseData) {
  * Formats justification parameters for LibrusClient.submitJustification.
  */
 function formatLibrusJustificationPayload(requestDoc) {
+  if (
+    requestDoc.hoursByDate &&
+    typeof requestDoc.hoursByDate === "object" &&
+    !Array.isArray(requestDoc.hoursByDate) &&
+    Object.keys(requestDoc.hoursByDate).length > 0
+  ) {
+    const sortedDates = Object.keys(requestDoc.hoursByDate).sort();
+    const firstDate = sortedDates[0];
+    const lastDate = sortedDates[sortedDates.length - 1];
+    return {
+      reason: requestDoc.reason,
+      dateFrom: requestDoc.dateFrom || firstDate,
+      dateTo: requestDoc.dateTo || lastDate,
+      isByHours: true,
+      hoursByDate: requestDoc.hoursByDate,
+      notifyOthers: true
+    };
+  }
+
   const dateStr = requestDoc.date || new Date().toISOString().split("T")[0];
   const lessonNumbers = Array.isArray(requestDoc.lessonNumbers) && requestDoc.lessonNumbers.length > 0
     ? requestDoc.lessonNumbers
