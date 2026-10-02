@@ -24,6 +24,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   final Set<String> _selectedIds = {};
   late int _activeFilter = widget.initialFilter ?? 1; // 0=Wszystkie, 1=Do usprawiedliwienia (domyślny), 2=Usprawiedliwione, 3=Oczekujące
   bool _isPendingBannerExpanded = false;
+  bool _isCancellingPending = false;
   String _selectedQuickReason = 'Wizyta lekarska';
 
   final List<String> _quickReasons = const [
@@ -844,7 +845,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             isUnexcused
                                 ? 'Nieobecność nieusprawiedliwiona'
                                 : (isRequested
-                                    ? 'Oczekuje na akceptację rodzica'
+                                    ? 'Oczekuje na wychowawcę${record.justificationReason != null && record.justificationReason!.isNotEmpty ? " (${record.justificationReason})" : ""}'
                                     : (isExempted
                                         ? 'Zwolnienie z zajęć'
                                         : 'Usprawiedliwiona${record.justificationReason != null ? " (${record.justificationReason})" : ""}')),
@@ -856,32 +857,6 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                           ),
                         ],
                       ),
-                      if (isRequested) ...[
-                        const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFEF3C7),
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: const Color(0xFFFDE68A)),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.hourglass_bottom_rounded, size: 12, color: Color(0xFF92400E)),
-                              SizedBox(width: 4),
-                              Text(
-                                'Oczekuje na akceptację rodzica',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFF92400E),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -962,12 +937,15 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                 ),
                               ),
                               const SizedBox(width: 2),
-                              Icon(
-                                _isPendingBannerExpanded
-                                    ? Icons.keyboard_arrow_up_rounded
-                                    : Icons.keyboard_arrow_down_rounded,
-                                size: 16,
-                                color: const Color(0xFFB45309),
+                              AnimatedRotation(
+                                turns: _isPendingBannerExpanded ? 0.5 : 0.0,
+                                duration: const Duration(milliseconds: 220),
+                                curve: Curves.easeOutCubic,
+                                child: const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 16,
+                                  color: Color(0xFFB45309),
+                                ),
                               ),
                             ],
                           ),
@@ -976,22 +954,60 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                     ),
                     TextButton(
                       key: const ValueKey('cancel_all_pending_button'),
-                      onPressed: () async {
-                        final ids = pendingList.map((r) => r.id).toList();
-                        await ref
-                            .read(attendanceProvider.notifier)
-                            .cancelJustification(ids);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Przywrócono nieobecności do ponownego usprawiedliwienia.',
-                              ),
-                              backgroundColor: Color(0xFF3525CD),
-                            ),
-                          );
-                        }
-                      },
+                      onPressed: _isCancellingPending
+                          ? null
+                          : () async {
+                              final confirmed = await showDialog<bool>(
+                                context: context,
+                                useRootNavigator: true,
+                                builder: (dialogCtx) => AlertDialog(
+                                  title: const Text(
+                                    'Cofnąć wszystkie oczekujące wnioski?',
+                                  ),
+                                  content: Text(
+                                    'Czy na pewno chcesz cofnąć wszystkie oczekujące wnioski (${pendingList.length})? Nieobecności wrócą do puli do ponownego usprawiedliwienia.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.of(dialogCtx).pop(false),
+                                      child: const Text('Anuluj'),
+                                    ),
+                                    FilledButton(
+                                      key: const ValueKey(
+                                        'confirm_cancel_all_pending_button',
+                                      ),
+                                      onPressed: () =>
+                                          Navigator.of(dialogCtx).pop(true),
+                                      child: const Text('Cofnij wszystkie'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirmed != true || !mounted) return;
+                              setState(() => _isCancellingPending = true);
+                              try {
+                                final ids =
+                                    pendingList.map((r) => r.id).toList();
+                                await ref
+                                    .read(attendanceProvider.notifier)
+                                    .cancelJustification(ids);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Przywrócono nieobecności do ponownego usprawiedliwienia.',
+                                      ),
+                                      backgroundColor: Color(0xFF3525CD),
+                                    ),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _isCancellingPending = false);
+                                }
+                              }
+                            },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -1014,171 +1030,214 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               ),
             ),
           ),
-          if (_isPendingBannerExpanded) ...[
-            const Divider(height: 1, color: Color(0xFFFDE68A)),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: groupedByDay.entries.map((entry) {
-                  final dayRecords = entry.value;
-                  final dayHeader = _formatDayHeader(dayRecords.first.date);
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.calendar_today_rounded,
-                              size: 13,
-                              color: Color(0xFF92400E),
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                dayHeader,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: Color(0xFF78350F),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        ...dayRecords.map((rec) {
-                          final hasTeacherOrRoom =
-                              (rec.teacherName != null &&
-                                      rec.teacherName!.isNotEmpty) ||
-                                  (rec.classroom != null &&
-                                      rec.classroom!.isNotEmpty);
-                          final teacherRoomSubtitle = hasTeacherOrRoom
-                              ? '${rec.teacherName ?? "Nauczyciel"}${rec.classroom != null && rec.classroom!.isNotEmpty ? " • Sala ${rec.classroom}" : ""}'
-                              : null;
-                          final sentReason =
-                              (rec.justificationReason != null &&
-                                      rec.justificationReason!.isNotEmpty)
-                                  ? rec.justificationReason!
-                                  : 'Usprawiedliwienie wysłane do wychowawcy';
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 6),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: const Color(0xFFFDE68A),
-                              ),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: _isPendingBannerExpanded
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Divider(height: 1, color: Color(0xFFFDE68A)),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: groupedByDay.entries.map((entry) {
+                            final dayRecords = entry.value;
+                            final dayHeader =
+                                _formatDayHeader(dayRecords.first.date);
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
                                     children: [
-                                      Text(
-                                        'Lekcja ${rec.lessonNumber} • ${rec.timeSlot}',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFFB45309),
-                                        ),
+                                      const Icon(
+                                        Icons.calendar_today_rounded,
+                                        size: 13,
+                                        color: Color(0xFF92400E),
                                       ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        rec.subjectName,
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w800,
-                                          color: Color(0xFF0F172A),
-                                        ),
-                                      ),
-                                      if (teacherRoomSubtitle != null) ...[
-                                        const SizedBox(height: 1),
-                                        Text(
-                                          teacherRoomSubtitle,
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          dayHeader,
                                           style: const TextStyle(
-                                            fontSize: 11,
-                                            color: Color(0xFF64748B),
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFF78350F),
                                           ),
-                                        ),
-                                      ],
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        'Powód: $sentReason',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w600,
-                                          color: Color(0xFF92400E),
                                         ),
                                       ),
                                     ],
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                OutlinedButton(
-                                  key: ValueKey('cancel_pending_${rec.id}'),
-                                  onPressed: () async {
-                                    await ref
-                                        .read(attendanceProvider.notifier)
-                                        .cancelJustification([rec.id]);
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                            'Cofnięto wniosek dla przedmiotu ${rec.subjectName}.',
-                                          ),
-                                          backgroundColor:
-                                              const Color(0xFF3525CD),
+                                  const SizedBox(height: 6),
+                                  ...dayRecords.map((rec) {
+                                    final hasTeacherOrRoom =
+                                        (rec.teacherName != null &&
+                                                rec.teacherName!.isNotEmpty) ||
+                                            (rec.classroom != null &&
+                                                rec.classroom!.isNotEmpty);
+                                    final teacherRoomSubtitle = hasTeacherOrRoom
+                                        ? '${rec.teacherName ?? "Nauczyciel"}${rec.classroom != null && rec.classroom!.isNotEmpty ? " • Sala ${rec.classroom}" : ""}'
+                                        : null;
+                                    final sentReason =
+                                        (rec.justificationReason != null &&
+                                                rec.justificationReason!
+                                                    .isNotEmpty)
+                                            ? rec.justificationReason!
+                                            : 'Usprawiedliwienie wysłane do wychowawcy';
+
+                                    return Container(
+                                      margin: const EdgeInsets.only(bottom: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: const Color(0xFFFDE68A),
                                         ),
-                                      );
-                                    }
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(
-                                      color: Color(0xFFF59E0B),
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
-                                    ),
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Cofnij',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFFB45309),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Lekcja ${rec.lessonNumber} • ${rec.timeSlot}',
+                                                  style: const TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Color(0xFFB45309),
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  rec.subjectName,
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Color(0xFF0F172A),
+                                                  ),
+                                                ),
+                                                if (teacherRoomSubtitle !=
+                                                    null) ...[
+                                                  const SizedBox(height: 1),
+                                                  Text(
+                                                    teacherRoomSubtitle,
+                                                    style: const TextStyle(
+                                                      fontSize: 11,
+                                                      color: Color(0xFF64748B),
+                                                    ),
+                                                  ),
+                                                ],
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  'Powód: $sentReason',
+                                                  style: const TextStyle(
+                                                    fontSize: 11,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Color(0xFF92400E),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          OutlinedButton(
+                                            key: ValueKey(
+                                              'cancel_pending_${rec.id}',
+                                            ),
+                                            onPressed: _isCancellingPending
+                                                ? null
+                                                : () async {
+                                                    setState(
+                                                      () => _isCancellingPending =
+                                                          true,
+                                                    );
+                                                    try {
+                                                      await ref
+                                                          .read(
+                                                            attendanceProvider
+                                                                .notifier,
+                                                          )
+                                                          .cancelJustification([
+                                                            rec.id,
+                                                          ]);
+                                                      if (context.mounted) {
+                                                        ScaffoldMessenger.of(
+                                                          context,
+                                                        ).showSnackBar(
+                                                          SnackBar(
+                                                            content: Text(
+                                                              'Cofnięto wniosek dla przedmiotu ${rec.subjectName}.',
+                                                            ),
+                                                            backgroundColor:
+                                                                const Color(
+                                                                  0xFF3525CD,
+                                                                ),
+                                                          ),
+                                                        );
+                                                      }
+                                                    } finally {
+                                                      if (mounted) {
+                                                        setState(
+                                                          () =>
+                                                              _isCancellingPending =
+                                                                  false,
+                                                        );
+                                                      }
+                                                    }
+                                                  },
+                                            style: OutlinedButton.styleFrom(
+                                              side: const BorderSide(
+                                                color: Color(0xFFF59E0B),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 6,
+                                                  ),
+                                              minimumSize: Size.zero,
+                                              tapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                            child: const Text(
+                                              'Cofnij',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w800,
+                                                color: Color(0xFFB45309),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
@@ -1187,9 +1246,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
   Widget _buildParentPendingBanner(BuildContext context, List<JustificationRequest> pendingList) {
     final firstReq = pendingList.first;
     final attendanceRecords =
-        ref.read(attendanceProvider).value ?? const <AttendanceRecord>[];
-    final studentProfile = ref.read(studentProfileProvider).value;
-    final user = ref.read(appUserProvider);
+        ref.watch(attendanceProvider).value ?? const <AttendanceRecord>[];
+    final studentProfile = ref.watch(studentProfileProvider).value;
+    final user = ref.watch(appUserProvider);
     final studentName = firstReq.effectiveStudentName(
       profileStudentName: studentProfile?.name,
       currentParentName: user?.displayName,
@@ -1763,7 +1822,31 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: const Color(0xFFFDE68A)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.hourglass_bottom_rounded, size: 14, color: Color(0xFF92400E)),
+                      SizedBox(width: 6),
+                      Text(
+                        'Oczekuje na wychowawcę w Librusie',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF92400E),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
@@ -1794,18 +1877,31 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () async {
-                          Navigator.pop(ctx);
-                          await ref.read(attendanceProvider.notifier).cancelJustification([record.id]);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Cofnięto wniosek. Możesz teraz zaznaczyć i edytować.'),
-                                backgroundColor: Color(0xFF3525CD),
-                              ),
-                            );
-                          }
-                        },
+                        onPressed: _isCancellingPending
+                            ? null
+                            : () async {
+                                Navigator.pop(ctx);
+                                setState(() => _isCancellingPending = true);
+                                try {
+                                  await ref
+                                      .read(attendanceProvider.notifier)
+                                      .cancelJustification([record.id]);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Cofnięto wniosek. Możesz teraz zaznaczyć i edytować.',
+                                        ),
+                                        backgroundColor: Color(0xFF3525CD),
+                                      ),
+                                    );
+                                  }
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _isCancellingPending = false);
+                                  }
+                                }
+                              },
                         icon: const Icon(Icons.undo_rounded, size: 18),
                         label: const Text('Cofnij wniosek'),
                         style: OutlinedButton.styleFrom(
@@ -1818,28 +1914,17 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: FilledButton.icon(
-                        onPressed: () async {
-                          Navigator.pop(ctx);
-                          await ref.read(attendanceProvider.notifier).submitJustification(
-                                [record.id],
-                                record.justificationReason ?? 'Usprawiedliwienie od rodzica',
-                              );
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Wysłano wniosek bezpośrednio do Librus Synergia!'),
-                                backgroundColor: Color(0xFF059669),
-                              ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.send_rounded, size: 18),
-                        label: const Text('Wyślij do Librusa'),
+                      child: FilledButton(
+                        key: const ValueKey('close_requested_details_modal_button'),
+                        onPressed: () => Navigator.pop(ctx),
                         style: FilledButton.styleFrom(
                           backgroundColor: const Color(0xFF3525CD),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text(
+                          'Zamknij',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
