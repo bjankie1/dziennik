@@ -277,9 +277,14 @@ Plans:
 3. Na ekranie Frekwencji baner „X wnioski czekają na wychowawcę” udostępnia interaktywny podgląd (rozwijana lista lub modal) wszystkich lekcji ze statusem oczekującego wniosku (data, numer lekcji, przedmiot, godzina, powód/data wysłania) wraz z możliwością cofnięcia wybranych lub wszystkich wniosków.
 4. Wszystkie widoki (Pulpit desktop/mobile oraz Frekwencja) działają spójnie na rzeczywistych danych z Firestore (`justification_requests` oraz `attendances`).
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
+**Wave 1**
 
-- [ ] TBD (run `/gsd-plan-phase 23` to break down)
+- [ ] 23-01-PLAN.md: Backend Partial Approval & Multi-Day `hoursByDate` (`justification_service.js`, `index.js`), Student Profile Name Resolution (`Oskar Jankiewicz`), Timetable Teacher/Classroom Enrichment in `getAttendanceRecords`, `JustificationRequest` Day-Grouping Helpers & Repository/Notifier `selectedRecordIds` Support
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 23-02-PLAN.md: Day-Grouped Lesson Breakdown & Per-Lesson Checkboxes in `ParentApprovalModal` & `ParentRejectionModal`, Interactive Justification Banners with `'Zobacz szczegóły →'` on Dashboard & `AttendanceScreen`, Expandable `"X wnioski czekają na wychowawcę"` Accordion with Per-Lesson `Cofnij`, 4th Filter Pill `Oczekujące (Y)` & Widget Tests
 
