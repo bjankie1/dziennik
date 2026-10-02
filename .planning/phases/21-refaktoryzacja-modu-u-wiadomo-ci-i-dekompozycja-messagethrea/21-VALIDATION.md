@@ -1,9 +1,9 @@
 ---
 phase: "21"
 slug: "refaktoryzacja-modu-u-wiadomo-ci-i-dekompozycja-messagethrea"
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: ready
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-10-02"
 ---
 
