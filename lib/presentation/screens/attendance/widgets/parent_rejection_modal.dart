@@ -1,23 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../../domain/models/attendance_record.dart';
 import '../../../../domain/models/justification_request.dart';
 
 /// Modal bottom sheet allowing a parent to reject a student's justification request
-/// with a dedicated question or comment (REQ-ROLE-04, D-02, D-03).
+/// with a dedicated question or comment (REQ-ROLE-04, D-02, D-03, D-05).
 class ParentRejectionModal extends StatefulWidget {
   final JustificationRequest request;
   final Future<bool> Function(String reason) onReject;
+  final List<AttendanceRecord> availableRecords;
+  final String? studentDisplayName;
 
   const ParentRejectionModal({
     super.key,
     required this.request,
     required this.onReject,
+    this.availableRecords = const [],
+    this.studentDisplayName,
   });
 
   static void show(
     BuildContext context,
     JustificationRequest request, {
     required Future<bool> Function(String reason) onReject,
+    List<AttendanceRecord> availableRecords = const [],
+    String? studentDisplayName,
   }) {
     showModalBottomSheet(
       context: context,
@@ -27,6 +34,8 @@ class ParentRejectionModal extends StatefulWidget {
       builder: (context) => ParentRejectionModal(
         request: request,
         onReject: onReject,
+        availableRecords: availableRecords,
+        studentDisplayName: studentDisplayName,
       ),
     );
   }
@@ -99,9 +108,9 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final bottomInset = mediaQuery.viewInsets.bottom;
-    final lessonsCount = widget.request.lessonNumbers.isNotEmpty
-        ? widget.request.lessonNumbers.length
-        : widget.request.recordIds.length;
+    final resolvedRecords = widget.request.resolveAttendanceRecords(widget.availableRecords);
+    final groupedByDay = JustificationRequest.groupRecordsByDay(resolvedRecords);
+    final studentName = widget.studentDisplayName ?? widget.request.effectiveStudentName();
 
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -202,7 +211,7 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  widget.request.studentName,
+                                  studentName,
                                   style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
@@ -219,15 +228,46 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '$lessonsCount lekcji: ${widget.request.subjectNames.isNotEmpty ? widget.request.subjectNames.join(', ') : 'Zajęcia lekcyjne'}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF475569),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 8),
+                            ...groupedByDay.entries.map((entry) {
+                              final dayRecords = entry.value;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      JustificationRequest.formatPolishDayHeader(dayRecords.first.date),
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF334155),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    ...dayRecords.map((rec) {
+                                      final hasTeacherOrRoom =
+                                          (rec.teacherName != null && rec.teacherName!.isNotEmpty) ||
+                                          (rec.classroom != null && rec.classroom!.isNotEmpty);
+                                      final teacherRoomText = hasTeacherOrRoom
+                                          ? '${rec.teacherName ?? "Nauczyciel"}${rec.classroom != null && rec.classroom!.isNotEmpty ? " • Sala ${rec.classroom}" : ""}'
+                                          : null;
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 3),
+                                        child: Text(
+                                          '• Lekcja ${rec.lessonNumber} • ${rec.timeSlot} — ${rec.subjectName}${teacherRoomText != null ? " ($teacherRoomText)" : ""}',
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            color: Color(0xFF475569),
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                ),
+                              );
+                            }),
+                            const SizedBox(height: 4),
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(8),
@@ -245,6 +285,28 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                                 ),
                               ),
                             ),
+                            if (widget.request.dialogHistory.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Historia rozmowy z uczniem:',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              ...widget.request.dialogHistory.map((entry) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 2),
+                                    child: Text(
+                                      '${entry.senderName}: ${entry.message}',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFF475569),
+                                      ),
+                                    ),
+                                  )),
+                            ],
                           ],
                         ),
                       ),

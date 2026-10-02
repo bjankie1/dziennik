@@ -1,28 +1,37 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../domain/models/attendance_record.dart';
 import '../../../../domain/models/justification_request.dart';
 import 'parent_rejection_modal.dart';
 
 /// Modal bottom sheet allowing a parent to review, approve with 4-digit PIN,
-/// or reject an excuse request submitted by a student (REQ-ROLE-02, D-04, T-14-03).
+/// or reject an excuse request submitted by a student (REQ-ROLE-02, D-03, D-04, D-05, D-06, T-14-03).
 class ParentApprovalModal extends StatefulWidget {
   final JustificationRequest request;
   final Future<bool> Function(String pin) onApprove;
+  final Future<bool> Function(String pin, List<String> selectedRecordIds)? onApproveSelected;
   final Future<bool> Function(String? reason) onReject;
+  final List<AttendanceRecord> availableRecords;
+  final String? studentDisplayName;
 
   const ParentApprovalModal({
     super.key,
     required this.request,
     required this.onApprove,
+    this.onApproveSelected,
     required this.onReject,
+    this.availableRecords = const [],
+    this.studentDisplayName,
   });
 
   static void show(
     BuildContext context,
     JustificationRequest request, {
     required Future<bool> Function(String pin) onApprove,
+    Future<bool> Function(String pin, List<String> selectedRecordIds)? onApproveSelected,
     required Future<bool> Function(String? reason) onReject,
+    List<AttendanceRecord> availableRecords = const [],
+    String? studentDisplayName,
   }) {
     showModalBottomSheet(
       context: context,
@@ -32,7 +41,10 @@ class ParentApprovalModal extends StatefulWidget {
       builder: (context) => ParentApprovalModal(
         request: request,
         onApprove: onApprove,
+        onApproveSelected: onApproveSelected,
         onReject: onReject,
+        availableRecords: availableRecords,
+        studentDisplayName: studentDisplayName,
       ),
     );
   }
@@ -46,6 +58,15 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
   bool _pinError = false;
   String? _pinErrorMessage;
   bool _isProcessing = false;
+  late final List<AttendanceRecord> _resolvedRecords;
+  late final Set<String> _selectedRecordIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolvedRecords = widget.request.resolveAttendanceRecords(widget.availableRecords);
+    _selectedRecordIds = _resolvedRecords.map((r) => r.id).toSet();
+  }
 
   @override
   void dispose() {
@@ -53,16 +74,45 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
     super.dispose();
   }
 
-  String _formatDate(DateTime? dt) {
-    if (dt == null) return 'Wybrane lekcje';
-    final now = DateTime.now();
-    if (dt.year == now.year && dt.month == now.month && dt.day == now.day) {
-      return 'Dzisiaj (${DateFormat('dd.MM.yyyy').format(dt)})';
-    }
-    return DateFormat('dd.MM.yyyy').format(dt);
+  void _toggleRecord(String recordId) {
+    if (_isProcessing) return;
+    setState(() {
+      if (_selectedRecordIds.contains(recordId)) {
+        _selectedRecordIds.remove(recordId);
+      } else {
+        _selectedRecordIds.add(recordId);
+      }
+      if (_selectedRecordIds.isNotEmpty && _pinError) {
+        _pinError = false;
+        _pinErrorMessage = null;
+      }
+    });
+  }
+
+  void _toggleAll() {
+    if (_isProcessing) return;
+    setState(() {
+      if (_selectedRecordIds.length == _resolvedRecords.length) {
+        _selectedRecordIds.clear();
+      } else {
+        _selectedRecordIds
+          ..clear()
+          ..addAll(_resolvedRecords.map((r) => r.id));
+        _pinError = false;
+        _pinErrorMessage = null;
+      }
+    });
   }
 
   Future<void> _handleApprove() async {
+    if (_selectedRecordIds.isEmpty) {
+      setState(() {
+        _pinError = true;
+        _pinErrorMessage = 'Wybierz co najmniej jedną lekcję do usprawiedliwienia.';
+      });
+      return;
+    }
+
     final pin = _pinController.text.trim();
     if (pin.length < 4) {
       setState(() {
@@ -78,7 +128,14 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
       _pinErrorMessage = null;
     });
 
-    final success = await widget.onApprove(pin);
+    final selectedList = _resolvedRecords
+        .where((r) => _selectedRecordIds.contains(r.id))
+        .map((r) => r.id)
+        .toList();
+
+    final success = widget.onApproveSelected != null
+        ? await widget.onApproveSelected!(pin, selectedList)
+        : await widget.onApprove(pin);
     if (!mounted) return;
 
     if (success) {
@@ -97,6 +154,8 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
     ParentRejectionModal.show(
       context,
       widget.request,
+      availableRecords: widget.availableRecords,
+      studentDisplayName: widget.studentDisplayName,
       onReject: (reason) => widget.onReject(reason),
     );
   }
@@ -105,9 +164,9 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
   Widget build(BuildContext context) {
     final req = widget.request;
     final mediaQuery = MediaQuery.of(context);
-    final lessonText = req.lessonNumbers.isNotEmpty
-        ? 'Lekcje: ${req.lessonNumbers.join(", ")}'
-        : '${req.recordIds.length} wybrane godziny';
+    final studentName = widget.studentDisplayName ?? req.effectiveStudentName();
+    final groupedByDay = JustificationRequest.groupRecordsByDay(_resolvedRecords);
+    final allSelected = _selectedRecordIds.length == _resolvedRecords.length;
 
     return ConstrainedBox(
       constraints: BoxConstraints(
@@ -163,10 +222,21 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                         ),
                         Text(
-                          'Wniosek od: ${req.studentName}',
+                          'Wniosek od: $studentName',
                           style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                         ),
                       ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Oczekuje',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
                     ),
                   ),
                 ],
@@ -180,7 +250,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Podsumowanie wniosku
+                      // Uzasadnienie ucznia + historia Q&A
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
@@ -192,63 +262,9 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
-                              children: [
-                                const Icon(Icons.calendar_today_outlined, size: 15, color: Color(0xFF64748B)),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _formatDate(req.date),
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1E293B)),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFEF3C7),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Text(
-                                    'Oczekuje',
-                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                const Icon(Icons.schedule_outlined, size: 15, color: Color(0xFF64748B)),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    lessonText,
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569)),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (req.subjectNames.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Icon(Icons.menu_book_outlined, size: 15, color: Color(0xFF64748B)),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Przedmioty: ${req.subjectNames.join(", ")}',
-                                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                            const Divider(height: 16, color: Color(0xFFE2E8F0)),
-                            Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.comment_outlined, size: 15, color: Color(0xFF3525CD)),
+                                const Icon(Icons.comment_outlined, size: 16, color: Color(0xFF3525CD)),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
@@ -273,10 +289,215 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                                 ),
                               ],
                             ),
+                            if (req.dialogHistory.isNotEmpty) ...[
+                              const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                              const Text(
+                                'Historia rozmowy z uczniem:',
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                              ),
+                              const SizedBox(height: 6),
+                              ...req.dialogHistory.map((entry) {
+                                final isParent = entry.isParent;
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: isParent ? Colors.white : const Color(0xFFEFF6FF),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: isParent ? const Color(0xFFE2E8F0) : const Color(0xFFBFDBFE),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '${entry.senderName}: ',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: isParent ? const Color(0xFF475569) : const Color(0xFF1D4ED8),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          entry.message,
+                                          style: const TextStyle(fontSize: 11, color: Color(0xFF1E293B)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ],
                           ],
                         ),
                       ),
                       const SizedBox(height: 12),
+
+                      // Nagłówek sekcji lekcji + przełącznik zaznaczenia
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Objęte lekcje (${_selectedRecordIds.length} z ${_resolvedRecords.length})',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                          ),
+                          if (_resolvedRecords.length > 1)
+                            InkWell(
+                              borderRadius: BorderRadius.circular(6),
+                              onTap: _toggleAll,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                child: Text(
+                                  allSelected ? 'Odznacz wszystkie' : 'Zaznacz wszystkie',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF3525CD),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Lista lekcji pogrupowana dniami
+                      ...groupedByDay.entries.map((entry) {
+                        final dayRecords = entry.value;
+                        final dayHeader = JustificationRequest.formatPolishDayHeader(dayRecords.first.date);
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(11)),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFF3525CD)),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        dayHeader,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ...dayRecords.map((rec) {
+                                final isChecked = _selectedRecordIds.contains(rec.id);
+                                final hasTeacherOrRoom =
+                                    (rec.teacherName != null && rec.teacherName!.isNotEmpty) ||
+                                    (rec.classroom != null && rec.classroom!.isNotEmpty);
+                                final teacherRoomSubtitle = hasTeacherOrRoom
+                                    ? '${rec.teacherName ?? "Nauczyciel"}${rec.classroom != null && rec.classroom!.isNotEmpty ? " • Sala ${rec.classroom}" : ""}'
+                                    : null;
+
+                                return InkWell(
+                                  key: ValueKey('approval_lesson_row_${rec.id}'),
+                                  onTap: () => _toggleRecord(rec.id),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      children: [
+                                        Checkbox(
+                                          key: ValueKey('approval_checkbox_${rec.id}'),
+                                          value: isChecked,
+                                          activeColor: AppColors.primary,
+                                          visualDensity: VisualDensity.compact,
+                                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          onChanged: _isProcessing ? null : (_) => _toggleRecord(rec.id),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Flexible(
+                                                    child: Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                                      decoration: BoxDecoration(
+                                                        color: isChecked
+                                                            ? const Color(0xFFEEF2FF)
+                                                            : const Color(0xFFE2E8F0),
+                                                        borderRadius: BorderRadius.circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        'Lekcja ${rec.lessonNumber} • ${rec.timeSlot}',
+                                                        style: TextStyle(
+                                                          fontSize: 11,
+                                                          fontWeight: FontWeight.w700,
+                                                          color: isChecked
+                                                              ? const Color(0xFF3525CD)
+                                                              : const Color(0xFF64748B),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 3),
+                                              Text(
+                                                rec.subjectName,
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: isChecked
+                                                      ? const Color(0xFF0F172A)
+                                                      : const Color(0xFF94A3B8),
+                                                  decoration: isChecked ? null : TextDecoration.lineThrough,
+                                                ),
+                                              ),
+                                              if (teacherRoomSubtitle != null) ...[
+                                                const SizedBox(height: 1),
+                                                Text(
+                                                  teacherRoomSubtitle,
+                                                  style: const TextStyle(
+                                                    fontSize: 11,
+                                                    color: Color(0xFF64748B),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        );
+                      }),
+
+                      const SizedBox(height: 4),
 
                       // Sekcja kodu PIN rodzica
                       Row(
@@ -342,7 +563,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                 width: double.infinity,
                 height: 46,
                 child: FilledButton.icon(
-                  onPressed: _isProcessing ? null : _handleApprove,
+                  onPressed: (_isProcessing || _selectedRecordIds.isEmpty) ? null : _handleApprove,
                   icon: _isProcessing
                       ? const SizedBox(
                           width: 18,
@@ -351,7 +572,11 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                         )
                       : const Icon(Icons.check_circle_outline_rounded, size: 18),
                   label: Text(
-                    _isProcessing ? 'Wysyłanie do Librusa...' : 'Zatwierdź z PIN-em',
+                    _isProcessing
+                        ? 'Wysyłanie do Librusa...'
+                        : (_selectedRecordIds.isEmpty
+                            ? 'Wybierz co najmniej 1 lekcję'
+                            : 'Zatwierdź z PIN-em (${_selectedRecordIds.length} z ${_resolvedRecords.length} lekcji)'),
                     style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                   ),
                   style: FilledButton.styleFrom(
