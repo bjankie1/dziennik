@@ -51,4 +51,52 @@ class AppColors {
   static const Color onError = Color(0xFFFFFFFF);
   static const Color errorContainer = Color(0xFFFFDAD6);
   static const Color onErrorContainer = Color(0xFF93000A);
+
+  // Warning / Amber (Pending Requests & Alerts)
+  static const Color warning = Color(0xFFD97706);
+  static const Color warningIcon = Color(0xFFD97706);
+  static const Color warningDark = Color(0xFFB45309);
+  static const Color warningText = Color(0xFF92400E);
+  static const Color warningTitle = Color(0xFF92400E);
+  static const Color warningDeep = Color(0xFF78350F);
+  static const Color warningSurface = Color(0xFFFEF3C7);
+  static const Color warningSurfaceAlt = Color(0xFFFEF3C7);
+  static const Color warningSurfaceLight = Color(0xFFFFFBEB);
+  static const Color warningBorder = Color(0xFFFDE68A);
+  static const Color warningAccent = Color(0xFFF59E0B);
+  static const Color warningAccentBorder = Color(0xFFF59E0B);
+
+  // Danger / Red (Unexcused Absences & Rejections)
+  static const Color danger = Color(0xFFDC2626);
+  static const Color dangerDark = Color(0xFF991B1B);
+  static const Color dangerTitle = Color(0xFF991B1B);
+  static const Color dangerDeep = Color(0xFF7F1D1D);
+  static const Color dangerSurface = Color(0xFFFEF2F2);
+  static const Color dangerSurfaceAlt = Color(0xFFFEE2E2);
+  static const Color dangerContainer = Color(0xFFFEE2E2);
+  static const Color dangerBorder = Color(0xFFFCA5A5);
+  static const Color dangerBorderStrong = Color(0xFFFCA5A5);
+  static const Color dangerSoftBorder = Color(0xFFFECACA);
+
+  // Success / Emerald (Excused Absences)
+  static const Color success = Color(0xFF059669);
+  static const Color successDark = Color(0xFF15803D);
+  static const Color successSurface = Color(0xFFDCFCE7);
+  static const Color successBorder = Color(0xFFBBF7D0);
+
+  // Neutral Slate (Backgrounds, Borders & Supporting Copy)
+  static const Color slate50 = Color(0xFFF8FAFC);
+  static const Color slate100 = Color(0xFFF1F5F9);
+  static const Color slate200 = Color(0xFFE2E8F0);
+  static const Color slate300 = Color(0xFFCBD5E1);
+  static const Color slate400 = Color(0xFF94A3B8);
+  static const Color slate500 = Color(0xFF64748B);
+  static const Color slate600 = Color(0xFF475569);
+  static const Color slate700 = Color(0xFF334155);
+  static const Color slate800 = Color(0xFF1E293B);
+  static const Color slate900 = Color(0xFF0F172A);
+
+  // Indigo Tints
+  static const Color indigoSurface = Color(0xFFEEF2FF);
+  static const Color indigoBorder = Color(0xFFC7D2FE);
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/attendance_record.dart';
 import '../../../../domain/models/justification_request.dart';
 
@@ -135,7 +136,7 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: AppColors.slate300,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -145,44 +146,45 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(9),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEE2E2),
+                      color: AppColors.dangerContainer,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.cancel_outlined,
-                      color: Color(0xFFDC2626),
+                      color: AppColors.danger,
                       size: 22,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Odrzucenie prośby',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF1E293B),
+                            color: AppColors.slate800,
                             letterSpacing: -0.3,
                           ),
                         ),
                         Text(
-                          'Wyjaśnij Oskarowi powód odmowy lub zadaj pytanie',
-                          style: TextStyle(
+                          'Wyjaśnij uczniowi ($studentName) powód odmowy lub zadaj pytanie',
+                          style: const TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF64748B),
+                            color: AppColors.slate500,
                           ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
+                    tooltip: 'Zamknij',
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                    icon: const Icon(Icons.close_rounded, color: AppColors.slate500),
                   ),
                 ],
               ),
@@ -200,9 +202,9 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: AppColors.slate50,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(color: AppColors.slate200),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,14 +217,16 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                                   style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF0F172A),
+                                    color: AppColors.slate900,
                                   ),
                                 ),
                                 Text(
-                                  _formatDate(widget.request.date),
+                                  groupedByDay.length > 1
+                                      ? widget.request.formatDateRangeSummary(widget.availableRecords)
+                                      : _formatDate(widget.request.date),
                                   style: const TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF64748B),
+                                    color: AppColors.slate500,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -241,7 +245,7 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                                       style: const TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFF334155),
+                                        color: AppColors.slate700,
                                       ),
                                     ),
                                     const SizedBox(height: 4),
@@ -253,12 +257,12 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                                           ? '${rec.teacherName ?? "Nauczyciel"}${rec.classroom != null && rec.classroom!.isNotEmpty ? " • Sala ${rec.classroom}" : ""}'
                                           : null;
                                       return Padding(
-                                        padding: const EdgeInsets.only(bottom: 3),
+                                        padding: const EdgeInsets.only(bottom: 4),
                                         child: Text(
                                           '• Lekcja ${rec.lessonNumber} • ${rec.timeSlot} — ${rec.subjectName}${teacherRoomText != null ? " ($teacherRoomText)" : ""}',
                                           style: const TextStyle(
-                                            fontSize: 11.5,
-                                            color: Color(0xFF475569),
+                                            fontSize: 12,
+                                            color: AppColors.slate600,
                                           ),
                                         ),
                                       );
@@ -274,14 +278,14 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: const Color(0xFFE2E8F0)),
+                                border: Border.all(color: AppColors.slate200),
                               ),
                               child: Text(
                                 'Powód ucznia: „${widget.request.reason}”',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   fontStyle: FontStyle.italic,
-                                  color: Color(0xFF334155),
+                                  color: AppColors.slate700,
                                 ),
                               ),
                             ),
@@ -292,7 +296,7 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF64748B),
+                                  color: AppColors.slate500,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -302,7 +306,7 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                                       '${entry.senderName}: ${entry.message}',
                                       style: const TextStyle(
                                         fontSize: 11,
-                                        color: Color(0xFF475569),
+                                        color: AppColors.slate600,
                                       ),
                                     ),
                                   )),
@@ -318,7 +322,7 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF475569),
+                          color: AppColors.slate600,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -343,14 +347,14 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                             labelStyle: TextStyle(
                               fontSize: 12,
                               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                              color: isSelected ? const Color(0xFF991B1B) : const Color(0xFF475569),
+                              color: isSelected ? AppColors.dangerDark : AppColors.slate600,
                             ),
-                            selectedColor: const Color(0xFFFEE2E2),
-                            backgroundColor: const Color(0xFFF1F5F9),
+                            selectedColor: AppColors.dangerContainer,
+                            backgroundColor: AppColors.slate100,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                               side: BorderSide(
-                                color: isSelected ? const Color(0xFFF87171) : Colors.transparent,
+                                color: isSelected ? AppColors.dangerBorder : Colors.transparent,
                               ),
                             ),
                           );
@@ -365,22 +369,22 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                         maxLines: 3,
                         maxLength: 250,
                         decoration: InputDecoration(
-                          labelText: 'Komentarz rodzica (widoczny dla Oskara)',
+                          labelText: 'Komentarz rodzica (widoczny dla: $studentName)',
                           hintText: 'Wpisz treść wiadomości lub pytania...',
                           alignLabelWithHint: true,
                           filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
+                          fillColor: AppColors.slate50,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                            borderSide: const BorderSide(color: AppColors.slate300),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                            borderSide: const BorderSide(color: AppColors.slate200),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFFDC2626), width: 1.5),
+                            borderSide: const BorderSide(color: AppColors.danger, width: 1.5),
                           ),
                         ),
                       ),
@@ -389,7 +393,7 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                         const SizedBox(height: 4),
                         Text(
                           _errorMessage!,
-                          style: const TextStyle(color: Color(0xFFDC2626), fontSize: 12),
+                          style: const TextStyle(color: AppColors.danger, fontSize: 12),
                         ),
                       ],
                     ],
@@ -406,15 +410,15 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                     child: OutlinedButton(
                       onPressed: _isProcessing ? null : () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        side: const BorderSide(color: AppColors.slate300),
                       ),
                       child: const Text(
                         'Anuluj',
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF475569),
+                          color: AppColors.slate600,
                         ),
                       ),
                     ),
@@ -432,13 +436,13 @@ class _ParentRejectionModalState extends State<ParentRejectionModal> {
                             )
                           : const Icon(Icons.send_rounded, size: 16),
                       label: Text(
-                        _isProcessing ? 'Zapisywanie...' : 'Przekaż odmowę Oskarowi',
+                        _isProcessing ? 'Zapisywanie...' : 'Przekaż odmowę ($studentName)',
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFDC2626),
+                        backgroundColor: AppColors.danger,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),

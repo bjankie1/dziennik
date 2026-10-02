@@ -353,8 +353,17 @@ void main() {
       findsOneWidget,
     );
 
-    // Tap 'Cofnij wszystkie' for remaining pending lesson
+    // Tap 'Cofnij wszystkie' for remaining pending lesson -> opens confirmation dialog
     await tester.tap(find.byKey(const ValueKey('cancel_all_pending_button')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Cofnąć wszystkie oczekujące wnioski?'),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const ValueKey('confirm_cancel_all_pending_button')),
+    );
     await tester.pumpAndSettle();
 
     expect(repo.cancelledBatches.last, equals(['att_req_2']));
@@ -418,7 +427,19 @@ void main() {
 
     // Only Biologia (JustificationStatus.requested) should be shown in the attendance list
     expect(find.text('Lekcja 2: Biologia'), findsOneWidget);
+    expect(find.text('Oczekuje na wychowawcę (Choroba)'), findsOneWidget);
     expect(find.text('Lekcja 1: Chemia'), findsNothing);
     expect(find.text('Lekcja 3: Fizyka'), findsNothing);
+
+    // Tap the requested lesson row to open read-only details modal
+    await tester.tap(find.text('Lekcja 2: Biologia'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Oczekuje na wychowawcę w Librusie'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('close_requested_details_modal_button')),
+      findsOneWidget,
+    );
+    expect(find.text('Wyślij do Librusa'), findsNothing);
   });
 }

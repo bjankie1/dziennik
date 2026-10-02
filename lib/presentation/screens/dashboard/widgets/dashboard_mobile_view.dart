@@ -322,7 +322,7 @@ class DashboardMobileView extends ConsumerWidget {
                               content: Text(
                                 'Usprawiedliwienie dla $studentName zostało wysłane.',
                               ),
-                              backgroundColor: const Color(0xFF006C4A),
+                              backgroundColor: AppColors.secondary,
                             ),
                           );
                         }
@@ -342,7 +342,7 @@ class DashboardMobileView extends ConsumerWidget {
                               content: Text(
                                 'Usprawiedliwienie dla $studentName zostało wysłane.',
                               ),
-                              backgroundColor: const Color(0xFF006C4A),
+                              backgroundColor: AppColors.secondary,
                             ),
                           );
                         }
@@ -356,7 +356,7 @@ class DashboardMobileView extends ConsumerWidget {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Wniosek ucznia został odrzucony.'),
-                              backgroundColor: Color(0xFFDC2626),
+                              backgroundColor: AppColors.danger,
                             ),
                           );
                         }
@@ -373,9 +373,9 @@ class DashboardMobileView extends ConsumerWidget {
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEF3C7),
+                          color: AppColors.warningSurface,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFFFDE68A)),
+                          border: Border.all(color: AppColors.warningBorder),
                         ),
                         child: Row(
                           children: [
@@ -387,7 +387,7 @@ class DashboardMobileView extends ConsumerWidget {
                               ),
                               child: const Icon(
                                 Icons.family_restroom_rounded,
-                                color: Color(0xFFB45309),
+                                color: AppColors.warningDark,
                                 size: 20,
                               ),
                             ),
@@ -401,7 +401,7 @@ class DashboardMobileView extends ConsumerWidget {
                                     style: const TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFF78350F),
+                                      color: AppColors.warningDeep,
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -410,16 +410,16 @@ class DashboardMobileView extends ConsumerWidget {
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w500,
-                                      color: Color(0xFF92400E),
+                                      color: AppColors.warningText,
                                     ),
                                   ),
-                                  const SizedBox(height: 3),
+                                  const SizedBox(height: 4),
                                   const Text(
                                     'Zobacz szczegóły →',
                                     style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFFB45309),
+                                      color: AppColors.warningDark,
                                     ),
                                   ),
                                 ],
@@ -433,22 +433,22 @@ class DashboardMobileView extends ConsumerWidget {
                                   onPressed: openApprovalModal,
                                   icon: const Icon(Icons.pin, size: 12),
                                   label: const Text(
-                                    'Zatwierdź',
+                                    'Zatwierdź (PIN)',
                                     style: TextStyle(
-                                      fontSize: 10,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   style: FilledButton.styleFrom(
-                                    backgroundColor: const Color(0xFF3525CD),
+                                    backgroundColor: AppColors.primary,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
+                                      horizontal: 10,
+                                      vertical: 8,
                                     ),
-                                    minimumSize: const Size(0, 28),
+                                    minimumSize: const Size(0, 36),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
                                 ),
@@ -475,7 +475,7 @@ class DashboardMobileView extends ConsumerWidget {
                                                 'Wniosek ucznia został odrzucony z komentarzem.',
                                               ),
                                               backgroundColor:
-                                                  Color(0xFFDC2626),
+                                                  AppColors.danger,
                                             ),
                                           );
                                         }
@@ -486,27 +486,27 @@ class DashboardMobileView extends ConsumerWidget {
                                   icon: const Icon(
                                     Icons.close_rounded,
                                     size: 12,
-                                    color: Color(0xFFDC2626),
+                                    color: AppColors.danger,
                                   ),
                                   label: const Text(
                                     'Odrzuć',
                                     style: TextStyle(
-                                      fontSize: 10,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFFDC2626),
+                                      color: AppColors.danger,
                                     ),
                                   ),
                                   style: OutlinedButton.styleFrom(
                                     side: const BorderSide(
-                                      color: Color(0xFFFCA5A5),
+                                      color: AppColors.dangerBorder,
                                     ),
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
+                                      horizontal: 10,
+                                      vertical: 8,
                                     ),
-                                    minimumSize: const Size(0, 28),
+                                    minimumSize: const Size(0, 36),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(6),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
                                 ),
@@ -526,9 +526,9 @@ class DashboardMobileView extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFEF2F2),
+                  color: AppColors.dangerSurface,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFFECACA)),
+                  border: Border.all(color: AppColors.dangerSoftBorder),
                 ),
                 child: Row(
                   children: [
@@ -540,7 +540,7 @@ class DashboardMobileView extends ConsumerWidget {
                       ),
                       child: const Icon(
                         Icons.info_outline_rounded,
-                        color: Color(0xFFDC2626),
+                        color: AppColors.danger,
                         size: 20,
                       ),
                     ),
@@ -554,7 +554,7 @@ class DashboardMobileView extends ConsumerWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF991B1B),
+                              color: AppColors.dangerDark,
                             ),
                           ),
                           Text(
@@ -562,7 +562,7 @@ class DashboardMobileView extends ConsumerWidget {
                             style: const TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
-                              color: Color(0xFF7F1D1D),
+                              color: AppColors.dangerDeep,
                             ),
                           ),
                         ],
@@ -585,7 +585,7 @@ class DashboardMobileView extends ConsumerWidget {
                                   content: Text(
                                     'Twoje wyjaśnienie zostało przekazane rodzicowi.',
                                   ),
-                                  backgroundColor: Color(0xFF2563EB),
+                                  backgroundColor: AppColors.primary,
                                 ),
                               );
                             }
@@ -594,13 +594,13 @@ class DashboardMobileView extends ConsumerWidget {
                         );
                       },
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
+                        backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
-                          vertical: 6,
+                          vertical: 8,
                         ),
-                        minimumSize: const Size(0, 32),
+                        minimumSize: const Size(0, 36),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -608,7 +608,7 @@ class DashboardMobileView extends ConsumerWidget {
                       child: const Text(
                         'Odpowiedz',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -656,7 +656,7 @@ class DashboardMobileView extends ConsumerWidget {
                         child: Text(
                           statusNoteStr,
                           style: const TextStyle(
-                            fontSize: 10,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primary,
                           ),
@@ -851,7 +851,7 @@ class DashboardMobileView extends ConsumerWidget {
                                 '$unreadMessagesCount ${unreadMessagesCount == 1 ? 'nowa' : 'nowe'}',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 10,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -1020,7 +1020,7 @@ class DashboardMobileView extends ConsumerWidget {
                       Text(
                         timeStr,
                         style: const TextStyle(
-                          fontSize: 10,
+                          fontSize: 11,
                           color: AppColors.onSurfaceVariant,
                         ),
                       ),

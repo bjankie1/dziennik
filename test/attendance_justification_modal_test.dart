@@ -4,6 +4,7 @@ import 'package:edusync/domain/models/attendance_record.dart';
 import 'package:edusync/domain/models/justification_request.dart';
 import 'package:edusync/presentation/screens/attendance/justification_modal.dart';
 import 'package:edusync/presentation/screens/attendance/widgets/parent_approval_modal.dart';
+import 'package:edusync/presentation/screens/attendance/widgets/parent_rejection_modal.dart';
 import 'package:edusync/presentation/screens/attendance/widgets/student_justification_modal.dart';
 
 void main() {
@@ -377,6 +378,99 @@ void main() {
 
       expect(approvedPin, equals('1234'));
       expect(approvedRecordIds, equals(['att-2026-09-29-1', 'att-2026-09-29-3']));
+    },
+  );
+
+  testWidgets(
+    'ParentRejectionModal renders dynamic studentName in subtitle, label, and submit button, plus multi-day date range summary',
+    (WidgetTester tester) async {
+      await tester.binding.setSurfaceSize(const Size(600, 900));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      String? rejectedReason;
+      final availableRecords = <AttendanceRecord>[
+        AttendanceRecord(
+          id: 'att-2026-09-28-1',
+          date: DateTime(2026, 9, 28),
+          lessonNumber: 1,
+          subjectName: 'Język polski',
+          type: AttendanceType.absent,
+          timeSlot: '08:00 - 08:45',
+        ),
+        AttendanceRecord(
+          id: 'att-2026-09-29-3',
+          date: DateTime(2026, 9, 29),
+          lessonNumber: 3,
+          subjectName: 'Matematyka',
+          type: AttendanceType.absent,
+          timeSlot: '09:50 - 10:35',
+        ),
+      ];
+
+      final request = JustificationRequest(
+        id: 'req_reject_multi',
+        studentLogin: '11010033',
+        studentName: 'Bartosz Jankiewicz', // legacy parent name resolves to Oskar Jankiewicz
+        recordIds: const ['att-2026-09-28-1', 'att-2026-09-29-3'],
+        lessonNumbers: const [1, 3],
+        subjectNames: const ['Język polski', 'Matematyka'],
+        date: DateTime(2026, 9, 28),
+        reason: 'Wyjazd',
+        status: JustificationRequestStatus.pendingParentApproval,
+        requestedAt: DateTime(2026, 9, 29, 12, 0),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    ParentRejectionModal.show(
+                      context,
+                      request,
+                      availableRecords: availableRecords,
+                      onReject: (reason) async {
+                        rejectedReason = reason;
+                        return true;
+                      },
+                    );
+                  },
+                  child: const Text('Otwórz odrzucenie'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Otwórz odrzucenie'));
+      await tester.pumpAndSettle();
+
+      // Dynamic studentName instead of hardcoded Oskarowi
+      expect(
+        find.text(
+          'Wyjaśnij uczniowi (Oskar Jankiewicz) powód odmowy lub zadaj pytanie',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Komentarz rodzica (widoczny dla: Oskar Jankiewicz)'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Przekaż odmowę (Oskar Jankiewicz)'),
+        findsOneWidget,
+      );
+
+      // Multi-day date range summary (28.09–29.09)
+      expect(find.text('28.09–29.09'), findsOneWidget);
+
+      await tester.tap(find.text('Przekaż odmowę (Oskar Jankiewicz)'));
+      await tester.pumpAndSettle();
+
+      expect(rejectedReason, isNotNull);
     },
   );
 }

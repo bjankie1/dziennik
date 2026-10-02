@@ -196,7 +196,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFCBD5E1),
+                    color: AppColors.slate300,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -204,13 +204,13 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(9),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEEF2FF),
+                      color: AppColors.indigoSurface,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFC7D2FE)),
+                      border: Border.all(color: AppColors.indigoBorder),
                     ),
-                    child: const Icon(Icons.verified_user_rounded, color: Color(0xFF3525CD), size: 22),
+                    child: const Icon(Icons.verified_user_rounded, color: AppColors.primary, size: 22),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -219,11 +219,11 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                       children: [
                         const Text(
                           'Autoryzacja wniosku ucznia',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.slate900),
                         ),
                         Text(
                           'Wniosek od: $studentName',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          style: const TextStyle(fontSize: 12, color: AppColors.slate500),
                         ),
                       ],
                     ),
@@ -231,12 +231,12 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF3C7),
+                      color: AppColors.warningSurface,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Text(
                       'Oczekuje',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF92400E)),
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.warningText),
                     ),
                   ),
                 ],
@@ -254,9 +254,9 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
+                          color: AppColors.slate50,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(color: AppColors.slate200),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,7 +264,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.comment_outlined, size: 16, color: Color(0xFF3525CD)),
+                                const Icon(Icons.comment_outlined, size: 16, color: AppColors.primary),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
@@ -272,7 +272,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                                     children: [
                                       const Text(
                                         'Uzasadnienie ucznia:',
-                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.slate500),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
@@ -280,7 +280,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                                         style: const TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w700,
-                                          color: Color(0xFF0F172A),
+                                          color: AppColors.slate900,
                                           fontStyle: FontStyle.italic,
                                         ),
                                       ),
@@ -290,10 +290,10 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                               ],
                             ),
                             if (req.dialogHistory.isNotEmpty) ...[
-                              const Divider(height: 16, color: Color(0xFFE2E8F0)),
+                              const Divider(height: 16, color: AppColors.slate200),
                               const Text(
                                 'Historia rozmowy z uczniem:',
-                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.slate500),
                               ),
                               const SizedBox(height: 6),
                               ...req.dialogHistory.map((entry) {
@@ -305,7 +305,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                                     color: isParent ? Colors.white : const Color(0xFFEFF6FF),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                      color: isParent ? const Color(0xFFE2E8F0) : const Color(0xFFBFDBFE),
+                                      color: isParent ? AppColors.slate200 : const Color(0xFFBFDBFE),
                                     ),
                                   ),
                                   child: Row(
@@ -316,13 +316,13 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w700,
-                                          color: isParent ? const Color(0xFF475569) : const Color(0xFF1D4ED8),
+                                          color: isParent ? AppColors.slate600 : const Color(0xFF1D4ED8),
                                         ),
                                       ),
                                       Expanded(
                                         child: Text(
                                           entry.message,
-                                          style: const TextStyle(fontSize: 11, color: Color(0xFF1E293B)),
+                                          style: const TextStyle(fontSize: 11, color: AppColors.slate800),
                                         ),
                                       ),
                                     ],
@@ -345,7 +345,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w800,
-                                color: Color(0xFF1E293B),
+                                color: AppColors.slate800,
                               ),
                             ),
                           ),
@@ -360,7 +360,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF3525CD),
+                                    color: AppColors.primary,
                                   ),
                                 ),
                               ),
@@ -376,9 +376,9 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                         return Container(
                           margin: const EdgeInsets.only(bottom: 10),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF8FAFC),
+                            color: AppColors.slate50,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            border: Border.all(color: AppColors.slate200),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -387,12 +387,12 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 decoration: const BoxDecoration(
-                                  color: Color(0xFFF1F5F9),
+                                  color: AppColors.slate100,
                                   borderRadius: BorderRadius.vertical(top: Radius.circular(11)),
                                 ),
                                 child: Row(
                                   children: [
-                                    const Icon(Icons.calendar_today_rounded, size: 14, color: Color(0xFF3525CD)),
+                                    const Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.primary),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: Text(
@@ -400,7 +400,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                                         style: const TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w800,
-                                          color: Color(0xFF0F172A),
+                                          color: AppColors.slate900,
                                         ),
                                       ),
                                     ),
@@ -444,8 +444,8 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                                                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                       decoration: BoxDecoration(
                                                         color: isChecked
-                                                            ? const Color(0xFFEEF2FF)
-                                                            : const Color(0xFFE2E8F0),
+                                                            ? AppColors.indigoSurface
+                                                            : AppColors.slate200,
                                                         borderRadius: BorderRadius.circular(6),
                                                       ),
                                                       child: Text(
@@ -454,33 +454,33 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                                                           fontSize: 11,
                                                           fontWeight: FontWeight.w700,
                                                           color: isChecked
-                                                              ? const Color(0xFF3525CD)
-                                                              : const Color(0xFF64748B),
+                                                              ? AppColors.primary
+                                                              : AppColors.slate500,
                                                         ),
                                                       ),
                                                     ),
                                                   ),
                                                 ],
                                               ),
-                                              const SizedBox(height: 3),
+                                              const SizedBox(height: 4),
                                               Text(
                                                 rec.subjectName,
                                                 style: TextStyle(
                                                   fontSize: 13,
                                                   fontWeight: FontWeight.w700,
                                                   color: isChecked
-                                                      ? const Color(0xFF0F172A)
-                                                      : const Color(0xFF94A3B8),
+                                                      ? AppColors.slate900
+                                                      : AppColors.slate400,
                                                   decoration: isChecked ? null : TextDecoration.lineThrough,
                                                 ),
                                               ),
                                               if (teacherRoomSubtitle != null) ...[
-                                                const SizedBox(height: 1),
+                                                const SizedBox(height: 2),
                                                 Text(
                                                   teacherRoomSubtitle,
                                                   style: const TextStyle(
                                                     fontSize: 11,
-                                                    color: Color(0xFF64748B),
+                                                    color: AppColors.slate500,
                                                   ),
                                                 ),
                                               ],
@@ -506,19 +506,19 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                           const Expanded(
                             child: Text(
                               'Wprowadź kod PIN rodzica:',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.slate600),
                             ),
                           ),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
+                              color: AppColors.slate100,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Text(
                               'Domyślny PIN: 1234',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.slate500),
                             ),
                           ),
                         ],
@@ -532,21 +532,21 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                         enabled: !_isProcessing,
                         decoration: InputDecoration(
                           counterText: '',
-                          prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Color(0xFF64748B)),
+                          prefixIcon: const Icon(Icons.lock_outline, size: 20, color: AppColors.slate500),
                           filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
+                          fillColor: AppColors.slate50,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: _pinError ? const Color(0xFFDC2626) : const Color(0xFFE2E8F0)),
+                            borderSide: BorderSide(color: _pinError ? AppColors.danger : AppColors.slate200),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: _pinError ? const Color(0xFFDC2626) : const Color(0xFFE2E8F0)),
+                            borderSide: BorderSide(color: _pinError ? AppColors.danger : AppColors.slate200),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFF3525CD), width: 1.5),
+                            borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
                           ),
                           errorText: _pinError ? (_pinErrorMessage ?? 'Wymagany jest 4-cyfrowy kod PIN') : null,
                         ),
@@ -592,13 +592,13 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                 height: 42,
                 child: OutlinedButton.icon(
                   onPressed: _isProcessing ? null : _handleReject,
-                  icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFFDC2626)),
+                  icon: const Icon(Icons.close_rounded, size: 18, color: AppColors.danger),
                   label: const Text(
                     'Odrzuć wniosek',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFFDC2626)),
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: AppColors.danger),
                   ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFFCA5A5)),
+                    side: const BorderSide(color: AppColors.dangerBorder),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
@@ -612,7 +612,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                   ),
                   child: const Text(
                     'Anuluj',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.slate500),
                   ),
                 ),
               ),

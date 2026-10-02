@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../domain/models/attendance_record.dart';
 import '../../../domain/models/justification_request.dart';
 import '../../providers/school_providers.dart';
@@ -126,7 +127,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     final int totalAbsences = unexcusedCount + pendingCount + excusedCount;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.slate50,
       body: Stack(
         children: [
           ListView(
@@ -228,14 +229,14 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         children: [
                           const Row(
                             children: [
-                              Icon(Icons.tune, size: 18, color: Color(0xFF3525CD)),
+                              Icon(Icons.tune, size: 18, color: AppColors.primary),
                               SizedBox(width: 6),
                               Text(
                                 'Zgłoszenia nieobecności',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
-                                  color: Color(0xFF0F172A),
+                                  color: AppColors.slate900,
                                 ),
                               ),
                             ],
@@ -261,7 +262,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 13,
-                                  color: Color(0xFF3525CD),
+                                  color: AppColors.primary,
                                 ),
                               ),
                             ),
@@ -275,21 +276,21 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            border: Border.all(color: AppColors.slate200),
                           ),
                           alignment: Alignment.center,
                           child: const Column(
                             children: [
-                              Icon(Icons.check_circle_outline, size: 44, color: Color(0xFF10B981)),
+                              Icon(Icons.check_circle_outline, size: 44, color: AppColors.success),
                               SizedBox(height: 10),
                               Text(
                                 'Brak wpisów w tej kategorii',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.slate900),
                               ),
                               SizedBox(height: 4),
                               Text(
                                 'Wszystkie godziny w tym okresie są rozliczone!',
-                                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                style: TextStyle(fontSize: 12, color: AppColors.slate500),
                               ),
                             ],
                           ),
@@ -306,7 +307,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(color: AppColors.slate200),
                               boxShadow: const [
                                 BoxShadow(
                                   color: Color(0x04000000),
@@ -321,20 +322,20 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                 // Nagłówek dnia
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                  color: const Color(0xFFF8FAFC),
+                                  color: AppColors.slate50,
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Row(
                                         children: [
-                                          const Icon(Icons.calendar_today_outlined, size: 16, color: Color(0xFF64748B)),
+                                          const Icon(Icons.calendar_today_outlined, size: 16, color: AppColors.slate500),
                                           const SizedBox(width: 8),
                                           Text(
                                             dateTitle,
                                             style: const TextStyle(
                                               fontSize: 13,
                                               fontWeight: FontWeight.w700,
-                                              color: Color(0xFF0F172A),
+                                              color: AppColors.slate900,
                                             ),
                                           ),
                                         ],
@@ -343,15 +344,15 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFFEE2E2),
+                                            color: AppColors.dangerSurfaceAlt,
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: Text(
                                             '$unexcusedInDay DO DECYZJI',
                                             style: const TextStyle(
-                                              fontSize: 10,
+                                              fontSize: 11,
                                               fontWeight: FontWeight.w800,
-                                              color: Color(0xFFDC2626),
+                                              color: AppColors.danger,
                                               letterSpacing: 0.4,
                                             ),
                                           ),
@@ -360,15 +361,15 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFFDCFCE7),
+                                            color: AppColors.successSurface,
                                             borderRadius: BorderRadius.circular(8),
                                           ),
                                           child: const Text(
                                             'ROZLICZONE',
                                             style: TextStyle(
-                                              fontSize: 10,
+                                              fontSize: 11,
                                               fontWeight: FontWeight.w800,
-                                              color: Color(0xFF059669),
+                                              color: AppColors.success,
                                               letterSpacing: 0.4,
                                             ),
                                           ),
@@ -376,7 +377,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                     ],
                                   ),
                                 ),
-                                const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                                const Divider(height: 1, color: AppColors.slate100),
 
                                 // Wiersze lekcji w danym dniu
                                 Column(
@@ -396,7 +397,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 error: (err, _) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   child: Center(
-                    child: Text('Błąd: $err', style: const TextStyle(color: Color(0xFFDC2626))),
+                    child: Text('Błąd: $err', style: const TextStyle(color: AppColors.danger)),
                   ),
                 ),
               ),
@@ -431,7 +432,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.slate200),
         boxShadow: const [
           BoxShadow(
             color: Color(0x04000000),
@@ -466,20 +467,20 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
+                            color: AppColors.slate900,
                           ),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: unexcusedCount == 0
-                                ? const Color(0xFFDCFCE7)
-                                : const Color(0xFFFEF3C7),
+                                ? AppColors.successSurface
+                                : AppColors.warningSurfaceAlt,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: unexcusedCount == 0
-                                  ? const Color(0xFFBBF7D0)
-                                  : const Color(0xFFFDE68A),
+                                  ? AppColors.successBorder
+                                  : AppColors.warningBorder,
                             ),
                           ),
                           child: Row(
@@ -491,18 +492,18 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                     : Icons.info_outline_rounded,
                                 size: 12,
                                 color: unexcusedCount == 0
-                                    ? const Color(0xFF15803D)
-                                    : const Color(0xFFB45309),
+                                    ? AppColors.successDark
+                                    : AppColors.warningText,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 unexcusedCount == 0 ? 'Wszystko rozliczone' : '$unexcusedCount do usprawiedliwienia',
                                 style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   color: unexcusedCount == 0
-                                      ? const Color(0xFF15803D)
-                                      : const Color(0xFFB45309),
+                                      ? AppColors.successDark
+                                      : AppColors.warningText,
                                 ),
                               ),
                             ],
@@ -513,12 +514,12 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                     const SizedBox(height: 6),
                     RichText(
                       text: TextSpan(
-                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                        style: const TextStyle(fontSize: 11, color: AppColors.slate500),
                         children: [
                           const TextSpan(text: 'Ustawowe min.: '),
                           const TextSpan(
                             text: '50%',
-                            style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.slate900),
                           ),
                           const TextSpan(text: ' • Fizyczna obecność: '),
                           TextSpan(
@@ -545,17 +546,17 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             if (excused > 0)
                               Expanded(
                                 flex: excused,
-                                child: Container(color: const Color(0xFF059669)),
+                                child: Container(color: AppColors.success),
                               ),
                             if (lates > 0)
                               Expanded(
                                 flex: lates,
-                                child: Container(color: const Color(0xFFD97706)),
+                                child: Container(color: AppColors.warningIcon),
                               ),
                             if (unexcusedCount > 0)
                               Expanded(
                                 flex: unexcusedCount,
-                                child: Container(color: const Color(0xFFDC2626)),
+                                child: Container(color: AppColors.danger),
                               ),
                           ],
                         ),
@@ -568,7 +569,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                       spacing: 10,
                       runSpacing: 4,
                       children: [
-                        _buildLegendItem(const Color(0xFF059669), 'Ring zewn.: Rozliczona ${settledPercentage.toStringAsFixed(1)}%'),
+                        _buildLegendItem(AppColors.success, 'Ring zewn.: Rozliczona ${settledPercentage.toStringAsFixed(1)}%'),
                         _buildLegendItem(const Color(0xFF0284C7), 'Ring wewn.: Obecność ${physicalPercentage.toStringAsFixed(1)}%'),
                       ],
                     ),
@@ -583,9 +584,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
+              color: AppColors.slate50,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(color: AppColors.slate200),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -594,11 +595,11 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 _buildStatColumn(
                   '$unexcusedCount',
                   'Do uspraw.',
-                  unexcusedCount > 0 ? const Color(0xFFDC2626) : const Color(0xFF64748B),
+                  unexcusedCount > 0 ? AppColors.danger : AppColors.slate500,
                   subtitle: 'z $totalAbsences opuszczonych',
                 ),
-                _buildStatColumn('$excused', 'Usprawiedliwione', const Color(0xFF059669)),
-                _buildStatColumn('$lates', 'Spóźnienia', const Color(0xFFD97706)),
+                _buildStatColumn('$excused', 'Usprawiedliwione', AppColors.success),
+                _buildStatColumn('$lates', 'Spóźnienia', AppColors.warningIcon),
               ],
             ),
           ),
@@ -614,20 +615,20 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
           number,
           style: TextStyle(
             fontSize: 18,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w800,
             color: color,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.slate900),
         ),
         if (subtitle != null) ...[
-          const SizedBox(height: 1),
+          const SizedBox(height: 2),
           Text(
             subtitle,
-            style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w500, color: Color(0xFF64748B)),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.slate500),
           ),
         ],
       ],
@@ -650,9 +651,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF475569),
+            color: AppColors.slate600,
           ),
         ),
       ],
@@ -669,13 +670,13 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected
-                ? (isAlert ? const Color(0xFFFEE2E2) : const Color(0xFF3525CD))
+                ? (isAlert ? AppColors.dangerSurfaceAlt : AppColors.primary)
                 : Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isSelected
-                  ? (isAlert ? const Color(0xFFFECACA) : Colors.transparent)
-                  : const Color(0xFFE2E8F0),
+                  ? (isAlert ? AppColors.dangerBorder : Colors.transparent)
+                  : AppColors.slate200,
             ),
             boxShadow: isSelected
                 ? const [
@@ -695,7 +696,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   width: 6,
                   height: 6,
                   decoration: const BoxDecoration(
-                    color: Color(0xFFDC2626),
+                    color: AppColors.danger,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -707,8 +708,8 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                   color: isSelected
-                      ? (isAlert ? const Color(0xFFDC2626) : Colors.white)
-                      : (isAlert ? const Color(0xFFDC2626) : const Color(0xFF475569)),
+                      ? (isAlert ? AppColors.danger : Colors.white)
+                      : (isAlert ? AppColors.danger : AppColors.slate600),
                 ),
               ),
             ],
@@ -726,10 +727,10 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
         record.justificationStatus == JustificationStatus.none;
 
     final accentColor = isUnexcused
-        ? const Color(0xFFDC2626)
+        ? AppColors.danger
         : (isRequested
-            ? const Color(0xFFD97706)
-            : (isExempted ? const Color(0xFF2563EB) : const Color(0xFF059669)));
+            ? AppColors.warningIcon
+            : (isExempted ? const Color(0xFF2563EB) : AppColors.success));
 
     return InkWell(
       onTap: isUnexcused
@@ -745,7 +746,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
           : (isRequested ? () => _showRequestedDetailsModal(context, record) : null),
       child: Container(
         decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+          border: Border(bottom: BorderSide(color: AppColors.slate100)),
         ),
         child: IntrinsicHeight(
           child: Row(
@@ -773,13 +774,13 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             }
                           });
                         },
-                        activeColor: const Color(0xFF3525CD),
+                        activeColor: AppColors.primary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                       )
                     : (isRequested
                         ? const Padding(
                             padding: EdgeInsets.all(12.0),
-                            child: Icon(Icons.hourglass_empty_rounded, size: 20, color: Color(0xFFD97706)),
+                            child: Icon(Icons.hourglass_empty_rounded, size: 20, color: AppColors.warningIcon),
                           )
                         : (isExempted
                             ? const Padding(
@@ -788,7 +789,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                               )
                             : const Padding(
                                 padding: EdgeInsets.all(12.0),
-                                child: Icon(Icons.check_circle_outline_rounded, size: 20, color: Color(0xFF059669)),
+                                child: Icon(Icons.check_circle_outline_rounded, size: 20, color: AppColors.success),
                               ))),
               ),
               const SizedBox(width: 4),
@@ -808,7 +809,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
+                              color: AppColors.slate900,
                             ),
                           ),
                           Text(
@@ -816,7 +817,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF475569),
+                              color: AppColors.slate600,
                             ),
                           ),
                         ],
@@ -826,7 +827,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         '${record.classroom ?? "Sala lekcyjna"} • ${record.teacherName ?? "Nauczyciel"}',
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF64748B),
+                          color: AppColors.slate500,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -881,9 +882,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
+        color: AppColors.warningSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFDE68A)),
+        border: Border.all(color: AppColors.warningBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -904,7 +905,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   children: [
                     const Icon(
                       Icons.hourglass_empty_rounded,
-                      color: Color(0xFFD97706),
+                      color: AppColors.warningIcon,
                       size: 20,
                     ),
                     const SizedBox(width: 10),
@@ -917,7 +918,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
-                              color: Color(0xFF92400E),
+                              color: AppColors.warningTitle,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -932,7 +933,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFFB45309),
+                                    color: AppColors.warningText,
                                   ),
                                 ),
                               ),
@@ -944,7 +945,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                 child: const Icon(
                                   Icons.keyboard_arrow_down_rounded,
                                   size: 16,
-                                  color: Color(0xFFB45309),
+                                  color: AppColors.warningText,
                                 ),
                               ),
                             ],
@@ -998,7 +999,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                       content: Text(
                                         'Przywrócono nieobecności do ponownego usprawiedliwienia.',
                                       ),
-                                      backgroundColor: Color(0xFF3525CD),
+                                      backgroundColor: AppColors.primary,
                                     ),
                                   );
                                 }
@@ -1010,10 +1011,10 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 12,
+                          vertical: 8,
                         ),
-                        minimumSize: Size.zero,
+                        minimumSize: const Size(0, 36),
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
                       child: const Text(
@@ -1021,7 +1022,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFFB45309),
+                          color: AppColors.warningText,
                         ),
                       ),
                     ),
@@ -1038,7 +1039,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Divider(height: 1, color: Color(0xFFFDE68A)),
+                      const Divider(height: 1, color: AppColors.warningBorder),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                         child: Column(
@@ -1057,7 +1058,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                       const Icon(
                                         Icons.calendar_today_rounded,
                                         size: 13,
-                                        color: Color(0xFF92400E),
+                                        color: AppColors.warningTitle,
                                       ),
                                       const SizedBox(width: 6),
                                       Expanded(
@@ -1066,7 +1067,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                           style: const TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w800,
-                                            color: Color(0xFF78350F),
+                                            color: AppColors.warningDark,
                                           ),
                                         ),
                                       ),
@@ -1099,7 +1100,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(10),
                                         border: Border.all(
-                                          color: const Color(0xFFFDE68A),
+                                          color: AppColors.warningBorder,
                                         ),
                                       ),
                                       child: Row(
@@ -1116,7 +1117,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                                   style: const TextStyle(
                                                     fontSize: 11,
                                                     fontWeight: FontWeight.w700,
-                                                    color: Color(0xFFB45309),
+                                                    color: AppColors.warningText,
                                                   ),
                                                 ),
                                                 const SizedBox(height: 2),
@@ -1125,17 +1126,17 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                                   style: const TextStyle(
                                                     fontSize: 13,
                                                     fontWeight: FontWeight.w800,
-                                                    color: Color(0xFF0F172A),
+                                                    color: AppColors.slate900,
                                                   ),
                                                 ),
                                                 if (teacherRoomSubtitle !=
                                                     null) ...[
-                                                  const SizedBox(height: 1),
+                                                  const SizedBox(height: 2),
                                                   Text(
                                                     teacherRoomSubtitle,
                                                     style: const TextStyle(
                                                       fontSize: 11,
-                                                      color: Color(0xFF64748B),
+                                                      color: AppColors.slate500,
                                                     ),
                                                   ),
                                                 ],
@@ -1145,7 +1146,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                                   style: const TextStyle(
                                                     fontSize: 11,
                                                     fontWeight: FontWeight.w600,
-                                                    color: Color(0xFF92400E),
+                                                    color: AppColors.warningTitle,
                                                   ),
                                                 ),
                                               ],
@@ -1181,9 +1182,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                                               'Cofnięto wniosek dla przedmiotu ${rec.subjectName}.',
                                                             ),
                                                             backgroundColor:
-                                                                const Color(
-                                                                  0xFF3525CD,
-                                                                ),
+                                                                AppColors.primary,
                                                           ),
                                                         );
                                                       }
@@ -1199,14 +1198,14 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                                   },
                                             style: OutlinedButton.styleFrom(
                                               side: const BorderSide(
-                                                color: Color(0xFFF59E0B),
+                                                color: AppColors.warningAccent,
                                               ),
                                               padding:
                                                   const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 6,
+                                                    horizontal: 12,
+                                                    vertical: 8,
                                                   ),
-                                              minimumSize: Size.zero,
+                                              minimumSize: const Size(0, 36),
                                               tapTargetSize:
                                                   MaterialTapTargetSize
                                                       .shrinkWrap,
@@ -1218,9 +1217,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                             child: const Text(
                                               'Cofnij',
                                               style: TextStyle(
-                                                fontSize: 11,
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.w800,
-                                                color: Color(0xFFB45309),
+                                                color: AppColors.warningText,
                                               ),
                                             ),
                                           ),
@@ -1278,7 +1277,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 content: Text(
                   'Usprawiedliwienie dla $studentName zostało wysłane do szkoły.',
                 ),
-                backgroundColor: const Color(0xFF006C4A),
+                backgroundColor: AppColors.successDark,
               ),
             );
           }
@@ -1298,7 +1297,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 content: Text(
                   'Usprawiedliwienie dla $studentName zostało wysłane do szkoły.',
                 ),
-                backgroundColor: const Color(0xFF006C4A),
+                backgroundColor: AppColors.successDark,
               ),
             );
           }
@@ -1312,7 +1311,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Wniosek ucznia został odrzucony.'),
-                backgroundColor: Color(0xFFDC2626),
+                backgroundColor: AppColors.danger,
               ),
             );
           }
@@ -1330,9 +1329,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFFFEF3C7),
+            color: AppColors.indigoSurface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFFDE68A)),
+            border: Border.all(color: AppColors.indigoBorder),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x08000000),
@@ -1341,101 +1340,112 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               ),
             ],
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.family_restroom_rounded, color: Color(0xFFB45309), size: 22),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '$studentName prosi o usprawiedliwienie',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF78350F),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${dateRange.isNotEmpty ? "$dateRange • " : ""}$count $lessonLabel • ${firstReq.reason}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF92400E),
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    const Text(
-                      'Zobacz szczegóły →',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFFB45309),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
               Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  FilledButton.icon(
-                    onPressed: openApprovalModal,
-                    icon: const Icon(Icons.pin, size: 14),
-                    label: const Text(
-                      'Zatwierdź (PIN)',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF3525CD),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    child: const Icon(Icons.family_restroom_rounded, color: AppColors.primary, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$studentName prosi o usprawiedliwienie',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.slate900,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${dateRange.isNotEmpty ? "$dateRange • " : ""}$count $lessonLabel • ${firstReq.reason}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.slate700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Zobacz szczegóły →',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: openApprovalModal,
+                      icon: const Icon(Icons.pin, size: 14),
+                      label: const Text(
+                        'Zatwierdź (PIN)',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(0, 36),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      ParentRejectionModal.show(
-                        context,
-                        firstReq,
-                        availableRecords: attendanceRecords,
-                        studentDisplayName: studentName,
-                        onReject: (reason) async {
-                          final ok = await ref
-                              .read(attendanceProvider.notifier)
-                              .rejectJustification(firstReq.id, reason: reason);
-                          if (ok && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Wniosek ucznia został odrzucony z komentarzem.'),
-                                backgroundColor: Color(0xFFDC2626),
-                              ),
-                            );
-                          }
-                          return ok;
-                        },
-                      );
-                    },
-                    icon: const Icon(Icons.close_rounded, size: 14, color: Color(0xFFDC2626)),
-                    label: const Text(
-                      'Odrzuć',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFDC2626)),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFFCA5A5)),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        ParentRejectionModal.show(
+                          context,
+                          firstReq,
+                          availableRecords: attendanceRecords,
+                          studentDisplayName: studentName,
+                          onReject: (reason) async {
+                            final ok = await ref
+                                .read(attendanceProvider.notifier)
+                                .rejectJustification(firstReq.id, reason: reason);
+                            if (ok && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Wniosek ucznia został odrzucony z komentarzem.'),
+                                  backgroundColor: AppColors.danger,
+                                ),
+                              );
+                            }
+                            return ok;
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.close_rounded, size: 14, color: AppColors.danger),
+                      label: const Text(
+                        'Odrzuć',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.danger),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        side: const BorderSide(color: AppColors.dangerBorderStrong),
+                        minimumSize: const Size(0, 36),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
                   ),
                 ],
@@ -1457,9 +1467,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEF2F2),
+        color: AppColors.dangerSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFECACA)),
+        border: Border.all(color: AppColors.dangerBorder),
         boxShadow: const [
           BoxShadow(
             color: Color(0x08000000),
@@ -1476,7 +1486,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.info_outline_rounded, color: Color(0xFFDC2626), size: 22),
+            child: const Icon(Icons.info_outline_rounded, color: AppColors.danger, size: 22),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1488,7 +1498,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF991B1B),
+                    color: AppColors.dangerTitle,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1497,7 +1507,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF7F1D1D),
+                    color: AppColors.dangerDark,
                   ),
                 ),
               ],
@@ -1533,6 +1543,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
             style: FilledButton.styleFrom(
               backgroundColor: const Color(0xFF2563EB),
               foregroundColor: Colors.white,
+              minimumSize: const Size(0, 36),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
@@ -1550,7 +1561,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.slate200),
         boxShadow: const [
           BoxShadow(
             color: Color(0x1A000000),
@@ -1572,12 +1583,12 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEEF2FF),
+                    color: AppColors.indigoSurface,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     isStudent ? Icons.family_restroom_rounded : Icons.mark_email_read_outlined,
-                    color: const Color(0xFF4338CA),
+                    color: AppColors.primary,
                     size: 20,
                   ),
                 ),
@@ -1589,9 +1600,9 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                       Text(
                         'Wybrano $count $lessonLabel',
                         style: const TextStyle(
-                          fontSize: 15,
+                          fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: Color(0xFF0F172A),
+                          color: AppColors.slate900,
                         ),
                       ),
                       Text(
@@ -1600,14 +1611,14 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                           : 'Gotowe do wysłania e-Usprawiedliwienia',
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Color(0xFF64748B),
+                          color: AppColors.slate500,
                         ),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Color(0xFF94A3B8), size: 20),
+                  icon: const Icon(Icons.close, color: AppColors.slate400, size: 20),
                   onPressed: () => setState(() => _selectedIds.clear()),
                   tooltip: 'Odznacz wszystkie',
                 ),
@@ -1622,7 +1633,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.6,
-                color: Color(0xFF64748B),
+                color: AppColors.slate500,
               ),
             ),
             const SizedBox(height: 8),
@@ -1639,10 +1650,10 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFFEEF2FF) : const Color(0xFFF1F5F9),
+                          color: isSelected ? AppColors.indigoSurface : AppColors.slate100,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: isSelected ? const Color(0xFF4338CA) : const Color(0xFFE2E8F0),
+                            color: isSelected ? AppColors.primary : AppColors.slate200,
                             width: isSelected ? 1.5 : 1.0,
                           ),
                         ),
@@ -1651,7 +1662,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                            color: isSelected ? const Color(0xFF4338CA) : const Color(0xFF334155),
+                            color: isSelected ? AppColors.primary : AppColors.slate700,
                           ),
                         ),
                       ),
@@ -1687,7 +1698,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                               content: Text(
                                 'Prośba o usprawiedliwienie (${selectedList.length} $lessonLabel) została przesłana do rodzica.',
                               ),
-                              backgroundColor: const Color(0xFF006C4A),
+                              backgroundColor: AppColors.successDark,
                             ),
                           );
                         }
@@ -1712,7 +1723,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                               content: Text(
                                 'Wniosek o usprawiedliwienie (${selectedList.length} $lessonLabel) został pomyślnie wysłany do wychowawcy.',
                               ),
-                              backgroundColor: const Color(0xFF006C4A),
+                              backgroundColor: AppColors.successDark,
                             ),
                           );
                         }
@@ -1721,7 +1732,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   }
                 },
                 style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFF3525CD),
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 2,
@@ -1750,14 +1761,14 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 Icon(
                   isStudent ? Icons.family_restroom_rounded : Icons.shield_outlined,
                   size: 14,
-                  color: const Color(0xFF64748B),
+                  color: AppColors.slate500,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   isStudent
                       ? 'Wniosek zostanie przekazany rodzicowi do zatwierdzenia kodem PIN'
                       : 'Wymagane zatwierdzenie kodem PIN rodzica w następnym kroku',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF64748B)),
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.slate500),
                 ),
               ],
             ),
@@ -1788,7 +1799,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFCBD5E1),
+                      color: AppColors.slate300,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1799,10 +1810,10 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFEF3C7),
+                        color: AppColors.warningSurfaceAlt,
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.hourglass_empty_rounded, color: Color(0xFFD97706), size: 22),
+                      child: const Icon(Icons.hourglass_empty_rounded, color: AppColors.warningIcon, size: 22),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -1811,11 +1822,11 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         children: [
                           Text(
                             'Lekcja ${record.lessonNumber}: ${record.subjectName}',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.slate900),
                           ),
                           Text(
                             '${record.timeSlot} • ${record.teacherName ?? "Wychowawca"}',
-                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                            style: const TextStyle(fontSize: 12, color: AppColors.slate500),
                           ),
                         ],
                       ),
@@ -1826,21 +1837,21 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
+                    color: AppColors.warningSurfaceAlt,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFFDE68A)),
+                    border: Border.all(color: AppColors.warningBorder),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.hourglass_bottom_rounded, size: 14, color: Color(0xFF92400E)),
+                      Icon(Icons.hourglass_bottom_rounded, size: 14, color: AppColors.warningTitle),
                       SizedBox(width: 6),
                       Text(
                         'Oczekuje na wychowawcę w Librusie',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF92400E),
+                          color: AppColors.warningTitle,
                         ),
                       ),
                     ],
@@ -1851,23 +1862,23 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
+                    color: AppColors.slate50,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    border: Border.all(color: AppColors.slate200),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Powód usprawiedliwienia:',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF64748B)),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.slate500),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         record.justificationReason?.isNotEmpty == true
                             ? record.justificationReason!
                             : 'Brak podanego powodu',
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.slate800),
                       ),
                     ],
                   ),
@@ -1892,7 +1903,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                                         content: Text(
                                           'Cofnięto wniosek. Możesz teraz zaznaczyć i edytować.',
                                         ),
-                                        backgroundColor: Color(0xFF3525CD),
+                                        backgroundColor: AppColors.primary,
                                       ),
                                     );
                                   }
@@ -1905,8 +1916,8 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         icon: const Icon(Icons.undo_rounded, size: 18),
                         label: const Text('Cofnij wniosek'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF475569),
-                          side: const BorderSide(color: Color(0xFFCBD5E1)),
+                          foregroundColor: AppColors.slate600,
+                          side: const BorderSide(color: AppColors.slate300),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
@@ -1918,7 +1929,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         key: const ValueKey('close_requested_details_modal_button'),
                         onPressed: () => Navigator.pop(ctx),
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF3525CD),
+                          backgroundColor: AppColors.primary,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),

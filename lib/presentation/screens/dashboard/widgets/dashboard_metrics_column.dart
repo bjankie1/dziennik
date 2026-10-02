@@ -137,7 +137,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
                             const Text(
                               'ŚREDNIA WAŻONA',
                               style: TextStyle(
-                                fontSize: 9,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.onSurfaceVariant,
                                 letterSpacing: 0.5,
@@ -164,18 +164,18 @@ class DashboardMetricsColumn extends ConsumerWidget {
                                     ),
                                     decoration: BoxDecoration(
                                       color: isPositiveDelta
-                                          ? const Color(0xFFDCFCE7)
-                                          : const Color(0xFFFEE2E2),
+                                          ? AppColors.successSurface
+                                          : AppColors.dangerContainer,
                                       borderRadius: BorderRadius.circular(6),
                                     ),
                                     child: Text(
                                       '${isPositiveDelta ? '+' : ''}${delta.toStringAsFixed(2)}',
                                       style: TextStyle(
-                                        fontSize: 10,
+                                        fontSize: 11,
                                         fontWeight: FontWeight.w700,
                                         color: isPositiveDelta
-                                            ? const Color(0xFF15803D)
-                                            : const Color(0xFFB91C1C),
+                                            ? AppColors.successDark
+                                            : AppColors.dangerDark,
                                       ),
                                     ),
                                   ),
@@ -579,7 +579,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
                 content: Text(
                   'Usprawiedliwienie dla $studentName zostało zatwierdzone.',
                 ),
-                backgroundColor: const Color(0xFF006C4A),
+                backgroundColor: AppColors.secondary,
               ),
             );
           }
@@ -599,7 +599,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
                 content: Text(
                   'Usprawiedliwienie dla $studentName zostało zatwierdzone.',
                 ),
-                backgroundColor: const Color(0xFF006C4A),
+                backgroundColor: AppColors.secondary,
               ),
             );
           }
@@ -613,7 +613,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Wniosek ucznia został odrzucony.'),
-                backgroundColor: Color(0xFFDC2626),
+                backgroundColor: AppColors.danger,
               ),
             );
           }
@@ -630,9 +630,9 @@ class DashboardMetricsColumn extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: const Color(0xFFFEF3C7),
+            color: AppColors.warningSurface,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFFDE68A)),
+            border: Border.all(color: AppColors.warningBorder),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -642,7 +642,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
                   const Icon(
                     Icons.family_restroom_rounded,
                     size: 16,
-                    color: Color(0xFFB45309),
+                    color: AppColors.warningDark,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -651,7 +651,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF78350F),
+                        color: AppColors.warningDeep,
                       ),
                     ),
                   ),
@@ -662,7 +662,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
                 '${dateRange.isNotEmpty ? "$dateRange • " : ""}$count lekcji • ${req.reason}',
                 style: const TextStyle(
                   fontSize: 11,
-                  color: Color(0xFF92400E),
+                  color: AppColors.warningText,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -672,7 +672,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFFB45309),
+                  color: AppColors.warningDark,
                 ),
               ),
               const SizedBox(height: 10),
@@ -680,19 +680,19 @@ class DashboardMetricsColumn extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: SizedBox(
-                      height: 34,
+                      height: 36,
                       child: FilledButton.icon(
                         onPressed: openApprovalModal,
                         icon: const Icon(Icons.pin, size: 14),
                         label: const Text(
                           'Zatwierdź (PIN)',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                         style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF3525CD),
+                          backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           shape: RoundedRectangleBorder(
@@ -704,7 +704,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
                   ),
                   const SizedBox(width: 8),
                   SizedBox(
-                    height: 34,
+                    height: 36,
                     child: OutlinedButton.icon(
                       onPressed: () {
                         ParentRejectionModal.show(
@@ -722,7 +722,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
                                   content: Text(
                                     'Wniosek ucznia został odrzucony z komentarzem.',
                                   ),
-                                  backgroundColor: Color(0xFFDC2626),
+                                  backgroundColor: AppColors.danger,
                                 ),
                               );
                             }
@@ -733,18 +733,18 @@ class DashboardMetricsColumn extends ConsumerWidget {
                       icon: const Icon(
                         Icons.close_rounded,
                         size: 14,
-                        color: Color(0xFFDC2626),
+                        color: AppColors.danger,
                       ),
                       label: const Text(
                         'Odrzuć',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFFDC2626),
+                          color: AppColors.danger,
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFFCA5A5)),
+                        side: const BorderSide(color: AppColors.dangerBorder),
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -769,9 +769,9 @@ class DashboardMetricsColumn extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEF2F2),
+        color: AppColors.dangerSurface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFECACA)),
+        border: Border.all(color: AppColors.dangerSoftBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -781,7 +781,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
               Icon(
                 Icons.info_outline_rounded,
                 size: 16,
-                color: Color(0xFFDC2626),
+                color: AppColors.danger,
               ),
               SizedBox(width: 8),
               Expanded(
@@ -790,7 +790,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF991B1B),
+                    color: AppColors.dangerDark,
                   ),
                 ),
               ),
@@ -801,14 +801,14 @@ class DashboardMetricsColumn extends ConsumerWidget {
             'Komentarz: „${req.rejectionReason ?? 'Wymagane dodatkowe wyjaśnienie'}”',
             style: const TextStyle(
               fontSize: 11,
-              color: Color(0xFF7F1D1D),
+              color: AppColors.dangerDeep,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
-            height: 34,
+            height: 36,
             child: FilledButton.icon(
               onPressed: () {
                 StudentResponseModal.show(
@@ -824,7 +824,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
                           content: Text(
                             'Twoje wyjaśnienie zostało przekazane rodzicowi.',
                           ),
-                          backgroundColor: Color(0xFF2563EB),
+                          backgroundColor: AppColors.primary,
                         ),
                       );
                     }
@@ -835,10 +835,10 @@ class DashboardMetricsColumn extends ConsumerWidget {
               icon: const Icon(Icons.reply_rounded, size: 15),
               label: const Text(
                 'Odpowiedz / Poproś ponownie',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
               ),
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -895,7 +895,7 @@ class DashboardMetricsColumn extends ConsumerWidget {
             Text(
               dateStr,
               style: const TextStyle(
-                fontSize: 10,
+                fontSize: 11,
                 color: AppColors.onSurfaceVariant,
               ),
             ),
