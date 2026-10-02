@@ -108,6 +108,12 @@
 - [x] **REQ-ATT-01**: Interaktywny podgląd szczegółów prośby o usprawiedliwienie (zgrupowana po dniach lista lekcji, przedmiotów, godzin, nauczycieli i historii Q&A) z możliwością częściowego zatwierdzania wybranych godzin (checkboxy) na Pulpicie i we Frekwencji.
 - [x] **REQ-ATT-02**: Rozwijany akordeon „X wnioski czekają na wychowawcę” z możliwością wycofania pojedynczej lekcji (`Cofnij`) lub wszystkich wniosków (`Cofnij wszystkie`) oraz 4. pigułka filtra `Oczekujące (Y)`.
 
+### Architecture, UI Modularity & Rebuild Efficiency (Phase 21 & Phase 24)
+- [ ] **REQ-ARCH-01**: Dekompozycja monolitycznych widoków UI (`message_thread_screen.dart` – 2 059 LOC, `attendance_screen.dart` – 1 942 LOC, `notification_settings_modal.dart` – 1 642 LOC) na autonomiczne klasy `ConsumerWidget` / `StatelessWidget` z konstruktorami `const` (< 350 LOC na plik) oraz ekstrakcja współdzielonych komponentów (`JustificationRequestBanner`, `PolishDateFormatter`).
+- [ ] **REQ-ARCH-02**: Optymalizacja granic przebudowy (`rebuild scope`) poprzez zastąpienie prywatnych metod `Widget _build*()` osobnymi klasami widgetów oraz zastosowanie selektywnych subskrypcji Riverpod (`ref.watch(...select(...))`), tak aby lokalne interakcje (checkboxy, rozwijanie sekcji, wpisywanie tekstu) nie przebudowywały całych ekranów.
+- [ ] **REQ-ARCH-03**: Dekompozycja monolitycznego `FirestoreSchoolRepository` (2 691 LOC) na wyspecjalizowane serwisy domenowe w `lib/data/repositories/firestore/` (`SchoolDataCacheManager`, `FirestoreGradesDataSource`, `FirestoreAttendanceDataSource`, `FirestoreJustificationsDataSource`, `FirestoreMessagesDataSource`, `FirestoreScheduleDataSource`) za fasadą `SchoolRepository` (< 250 LOC).
+- [ ] **REQ-ARCH-04**: Eliminacja globalnych pól `static final Map<...>` w warstwie repozytorium na rzecz instancyjnego `SchoolDataCacheManager` z czystą izolacją stanu pomiędzy użytkownikami i testami jednostkowymi.
+
 ## Traceability
 
 | Requirement | Phase | Status |
@@ -130,7 +136,9 @@
 | REQ-REPORT-02 | Phase 19 | Pending |
 | REQ-AI-01 | Phase 20 | Complete |
 | REQ-AI-02 | Phase 20 | Complete |
+| REQ-ARCH-01 | Phase 21 | Pending |
+| REQ-ARCH-02 | Phase 21 | Pending |
 | REQ-ATT-01 | Phase 23 | Complete |
 | REQ-ATT-02 | Phase 23 | Complete |
-
-
+| REQ-ARCH-03 | Phase 24 | Pending |
+| REQ-ARCH-04 | Phase 24 | Pending |

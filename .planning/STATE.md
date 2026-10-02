@@ -36,8 +36,10 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - [x] **Phase 18**: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push (completed 2026-09-25)
 - [ ] **Phase 19**: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
 - [x] **Phase 20**: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A) (completed 2026-09-26)
+- [ ] **Phase 21**: Refaktoryzacja monolitycznych widoków UI (>1 600 LOC), wspólne komponenty i optymalizacja granic przebudowy Riverpod
 - [x] **Phase 22**: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail (completed 2026-10-01)
 - [x] **Phase 23**: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków (completed 2026-10-02)
+- [ ] **Phase 24**: Dekompozycja monolitycznego FirestoreSchoolRepository (2 691 LOC) na serwisy domenowe i izolacja warstwy cache
 
 ## Completed in Previous Milestones
 
@@ -67,9 +69,10 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - Phase 14.1 inserted: Czat rodzinny i dwukierunkowy dialog usprawiedliwień (URGENT)
 - Phase 17.1 inserted: Refactoring architektury widoków i biblioteka współdzielonych komponentów UI (URGENT)
 - Phase 20 added: Asystent AI dziennika szkolnego — Konwersacja z agentem na temat tego co znajduje się w dzienniku czyli oceny, plan lekcji, sprawdziany, wiadomości, nieobecności (np. „Kiedy jest następny sprawdzian”, „Kiedy jest wycieczka Oskara do Warszawy”, „Kiedy jest zebranie z rodzicami”)
-- Phase 21 added: Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen (1 340 LOC → modularne widgety zgodne z dobrymi praktykami Flutter)
+- Phase 21 expanded: Refaktoryzacja monolitycznych widoków UI (`message_thread_screen.dart` 2 059 LOC, `attendance_screen.dart` 1 942 LOC, `notification_settings_modal.dart` 1 642 LOC), wspólne komponenty (`JustificationRequestBanner`, `PolishDateFormatter`) i optymalizacja granic przebudowy Riverpod (`.select`)
 - Phase 22 added: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail (na życzenie użytkownika jednym kliknięciem z linkiem „Otwórz w Google Drive”)
 - Phase 23 added: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków (podgląd konkretnych dni, lekcji, przedmiotów i powodów dla prośby o usprawiedliwienie „6 lekcji • Choroba” na Pulpicie i we Frekwencji oraz dla banera „7 wnioski czekają na wychowawcę”)
+- Phase 24 added: Dekompozycja monolitycznego `FirestoreSchoolRepository` (2 691 LOC) na serwisy domenowe i izolacja warstwy cache (`SchoolDataCacheManager`, `*DataSource`)
 
 ### Quick Tasks Completed
 

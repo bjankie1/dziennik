@@ -33,9 +33,10 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 18: Powiadomienia w czasie rzeczywistym: Telegram Bot i Web Push** — Integracja bota Telegram w Cloud Functions z kodem parowania, natychmiastowe alerty o ocenach/wiadomościach/sprawdzianach oraz powiadomienia Web Push w przeglądarce. (completed 2026-09-25)
 - [ ] **Phase 19: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)** — Automatyczny harmonogram Cloud Scheduler w piątki wieczorem generujący i wysyłający raport podsumowujący nadchodzący tydzień przez bota Telegram do rodzica i ucznia.
 - [x] **Phase 20: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A)** — Konwersacja z agentem AI na temat danych w dzienniku (oceny, plan lekcji, sprawdziany, wiadomości, ogłoszenia, nieobecności, zadania) z przeszukiwaniem pełnej treści wiadomości (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”). (completed 2026-09-26)
-- [ ] **Phase 21: Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen** — Rozbicie monolitycznego `message_thread_screen.dart` (1 340 LOC) oraz `messages_screen.dart` (725 LOC) na dedykowane, reużywalne widgety w `lib/presentation/screens/messages/widgets/`, przeniesienie logiki parsowania nadawców/DW do modelu domenowego `MessageThread` oraz izolacja granic przebudowy Riverpod.
+- [ ] **Phase 21: Refaktoryzacja monolitycznych widoków UI (>1 600 LOC), wspólne komponenty i optymalizacja granic przebudowy Riverpod** — Dekompozycja `message_thread_screen.dart` (2 059 LOC), `attendance_screen.dart` (1 942 LOC) oraz `notification_settings_modal.dart` (1 642 LOC) na modularne klasy `ConsumerWidget` / `StatelessWidget` (< 350 LOC), wydzielenie wspólnego `JustificationRequestBanner` i `PolishDateFormatter` oraz zawężenie przebudów przez `.select(...)`.
 - [x] **Phase 22: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail** — Zapisywanie pojedynczych lub wszystkich załączników wiadomości Librus na żądanie użytkownika bezpośrednio na jego koncie Google Drive (do dedykowanego folderu np. `EduSync / Załączniki szkolne`) z wizualnym statusem zapisania i bezpośrednim linkiem „Otwórz w Google Drive” na wzór Gmaila. (completed 2026-09-29)
 - [x] **Phase 23: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków** — Możliwość podglądu konkretnych dni, numerów lekcji, przedmiotów, godzin i powodów zarówno na banerze prośby o usprawiedliwienie („6 lekcji • Choroba” na Pulpicie i we Frekwencji), jak i na banerze oczekujących wniosków („7 wnioski czekają na wychowawcę”). (completed 2026-10-02)
+- [ ] **Phase 24: Dekompozycja monolitycznego FirestoreSchoolRepository (2 691 LOC) na serwisy domenowe i izolacja warstwy cache** — Podział `FirestoreSchoolRepository` na wyspecjalizowane klasy domenowe (`SchoolDataCacheManager`, `FirestoreGradesDataSource`, `FirestoreAttendanceDataSource`, `FirestoreJustificationsDataSource`, `FirestoreMessagesDataSource`, `FirestoreScheduleDataSource`) z eliminacją statycznych map globalnych i zachowaniem fasady `SchoolRepository`.
 
 ---
 
@@ -220,21 +221,17 @@ Plans:
 - [x] 20-01-PLAN.md: Backend Full Message Body Indexing (`sync_service.js` + `librus_client.js`) + Flutter AI Domain Models, `SchoolAiContextBuilder` & `SchoolAiAssistantService` (`firebase_ai: ^4.0.0`, Gemini 3.8 Flash / 3.1 Pro)
 - [x] 20-02-PLAN.md: Riverpod AI Providers (`ai_assistant_provider.dart`), Per-Role Firestore History, Floating Chat Widget (`FloatingChatFab` + `FloatingChatPanel`) & Dual-Mode `FamilyChatScreen` Integration
 
-### Phase 21: Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen
+### Phase 21: Refaktoryzacja monolitycznych widoków UI (>1 600 LOC), wspólne komponenty i optymalizacja granic przebudowy Riverpod
 
-**Goal**: Doprowadzenie modułu wiadomości (`message_thread_screen.dart` – 1 340 LOC, `messages_screen.dart` – 725 LOC) do pełnej zgodności z dobrymi praktykami Fluttera i standardem z Fazy 17.1 poprzez dekompozycję monolitycznych klas `State` na autonomiczne widgety `ConsumerWidget` / `StatelessWidget` w `lib/presentation/screens/messages/widgets/`, przeniesienie logiki parsowania nadawców i kopii DW do modelu domenowego `MessageThread` oraz eliminację duplikacji banerów zadań To-Do.  
+**Goal**: Doprowadzenie największych widoków aplikacji (`message_thread_screen.dart` – 2 059 LOC, `attendance_screen.dart` – 1 942 LOC, `notification_settings_modal.dart` – 1 642 LOC) do pełnej zgodności z dobrymi praktykami Fluttera i Riverpod poprzez dekompozycję monolitycznych klas `State` i prywatnych metod `Widget _build*()` na autonomiczne widgety `ConsumerWidget` / `StatelessWidget` z konstruktorami `const`, wydzielenie wspólnego komponentu `JustificationRequestBanner` oraz helpera `PolishDateFormatter`, a także zawężenie przebudów drzewa widgetów przez `.select(...)`.  
 **Requirements**: REQ-ARCH-01, REQ-ARCH-02  
-**Depends on**: Phase 20  
+**Depends on**: Phase 23  
 **Success Criteria**:
 
-1. Plik `lib/presentation/screens/messages/message_thread_screen.dart` zostaje zredukowany z **1 340 LOC do < 300 LOC**, pełniąc wyłącznie rolę koordynatora układu (`Scaffold` + `AppBar` + lista sekcji).
-2. Metody pomocnicze `_build*` zostają zastąpione osobnymi klasami widgetów z konstruktorami `const` w `lib/presentation/screens/messages/widgets/`:
-   - `MessageThreadHeaderCard` (nagłówek wątku, statusy `NOWA`/`Ważne`, rola nadawcy, licznik wiadomości),
-   - `MessageTaskBanner` (karta powiązanego zadania / heurystycznej sugestii zadania z izolowanym `ref.watch(tasksStreamProvider)`),
-   - `MessageAccordionTile` (zwinięta/rozwinięta karta pojedynczej wiadomości w wątku wraz z listą załączników),
-   - `MessageReplyComposer` (formularz odpowiedzi z pigułkami adresatów, szybką akcją `+ DW:` i wyborem nauczyciela z izolowanym `ref.watch(teachersProvider)`).
-3. Logika wyrażeń regularnych (`_resolveSenderName`, `_extractCcTeacherFromBody`) zostaje przeniesiona z warstwy widoku (`State`) do modelu domenowego `MessageThread` (`lib/domain/models/message_thread.dart`) i pokryta testami jednostkowymi.
-4. `flutter analyze` zwraca 0 błędów i ostrzeżeń, a interakcje w wątku (np. rozwijanie wiadomości czy pisanie odpowiedzi) przebudowują wyłącznie pojedynczy pod-widget zamiast całego drzewa ekranu.
+1. Pliki `message_thread_screen.dart` (2 059 LOC), `attendance_screen.dart` (1 942 LOC) oraz `notification_settings_modal.dart` (1 642 LOC) zostają zredukowane do **< 350 LOC każdy**, pełniąc rolę koordynatorów układu delegujących sekcje do dedykowanych klas widgetów (`widgets/`).
+2. Powtarzający się w 3 miejscach (`DashboardMobileView`, `DashboardMetricsColumn`, `AttendanceScreen`) żółty baner prośby ucznia o usprawiedliwienie zostaje zastąpiony jednym współdzielonym komponentem `JustificationRequestBanner` w `lib/presentation/widgets/common/`, a formatowanie polskich dat jednym helperem `PolishDateFormatter` w `lib/core/utils/`.
+3. Prywatne metody pomocnicze `Widget _build*()` w refaktoryzowanych ekranach zostają zastąpione klasami `StatelessWidget` / `ConsumerWidget` z konstruktorami `const` i selektywnym `ref.watch(...select(...))`, dzięki czemu lokalne interakcje (np. zaznaczenie checkboxa lekcji, rozwinięcie akordeonu, pisanie odpowiedzi) przebudowują wyłącznie dany pod-widget, a nie cały ekran.
+4. `flutter analyze` zwraca 0 błędów i ostrzeżeń, a wszystkie istniejące testy widgetów przechodzą bez regresji.
 
 **Plans:** 0 plans
 
@@ -287,3 +284,28 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 23-02-PLAN.md: Day-Grouped Lesson Breakdown & Per-Lesson Checkboxes in `ParentApprovalModal` & `ParentRejectionModal`, Interactive Justification Banners with `'Zobacz szczegóły →'` on Dashboard & `AttendanceScreen`, Expandable `"X wnioski czekają na wychowawcę"` Accordion with Per-Lesson `Cofnij`, 4th Filter Pill `Oczekujące (Y)` & Widget Tests
+
+### Phase 24: Dekompozycja monolitycznego FirestoreSchoolRepository (2 691 LOC) na serwisy domenowe i izolacja warstwy cache
+
+**Goal**: Rozbicie monolitycznego pliku `lib/data/repositories/firestore_school_repository.dart` (2 691 LOC) na wyspecjalizowane, łatwe w utrzymaniu i testowaniu serwisy domenowe w `lib/data/repositories/firestore/` oraz zastąpienie globalnych pól `static final Map<...>` instancyjnym menedżerem pamięci podręcznej (`SchoolDataCacheManager`) przy pełnym zachowaniu kontraktu interfejsu `SchoolRepository`.  
+**Requirements**: REQ-ARCH-03, REQ-ARCH-04  
+**Depends on**: Phase 21  
+**Success Criteria**:
+
+1. Plik `lib/data/repositories/firestore_school_repository.dart` zostaje odchudzony z **2 691 LOC do < 250 LOC**, pełniąc rolę czystej fasady implementującej `SchoolRepository` i delegującej wywołania do wyspecjalizowanych klas domenowych.
+2. W katalogu `lib/data/repositories/firestore/` powstają dedykowane, jednozadaniowe moduły domenowe:
+   - `SchoolDataCacheManager` (współdzielony cache dokumentu `school_data/{primaryLogin}` oraz instancyjne zarządzanie lokalnymi nadpisaniami w `SharedPreferences` bez pól `static`),
+   - `FirestoreGradesDataSource` (oceny, przedmioty, średnie ważone i delty),
+   - `FirestoreAttendanceDataSource` (rekordy frekwencji, wzbogacanie o nauczyciela/salę z planu lekcji, wysyłanie i cofanie wniosków),
+   - `FirestoreJustificationsDataSource` (prośby ucznia, zatwierdzanie PIN-em pełne i częściowe, odrzucenia i historia Q&A),
+   - `FirestoreMessagesDataSource` (wiadomości, wątki, oznaczanie przeczytania, wysyłanie, załączniki i integracja z Google Drive),
+   - `FirestoreScheduleDataSource` (plan lekcji, zastępstwa, sprawdziany, szczęśliwy numerek).
+3. Żaden z istniejących providerów Riverpod (`school_providers.dart`) ani ekranów UI nie wymaga zmiany swojego publicznego API, a wszystkie testy jednostkowe i widgetowe przechodzą w 100%.
+4. Dodane zostają dedykowane testy jednostkowe dla `SchoolDataCacheManager` oraz wyodrębnionych klas `*DataSource`.
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run `/gsd-plan-phase 24` to break down)
+
