@@ -4,17 +4,17 @@ milestone: v3.0
 current_phase: 19
 current_phase_name: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
 status: planning
-stopped_at: Phase 22 complete, ready to plan Phase 19
-last_updated: "2026-09-29T05:42:58.007Z"
-last_activity: 2026-09-29
+stopped_at: Phase 23 context gathered
+last_updated: "2026-10-02T07:48:44.864Z"
+last_activity: 2026-10-02
 last_activity_desc: Phase 22 complete, transitioned to Phase 19
-state_head: b40442da2b087da216e173e295191468ce5c6b60
+state_head: aa146a1164f81a4c2ac38ada4a910be0c563fb47
 progress:
-  total_phases: 11
+  total_phases: 12
   completed_phases: 8
   total_plans: 15
   completed_plans: 20
-  percent: 73
+  percent: 67
 milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ---
 
@@ -67,6 +67,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - Phase 20 added: Asystent AI dziennika szkolnego — Konwersacja z agentem na temat tego co znajduje się w dzienniku czyli oceny, plan lekcji, sprawdziany, wiadomości, nieobecności (np. „Kiedy jest następny sprawdzian”, „Kiedy jest wycieczka Oskara do Warszawy”, „Kiedy jest zebranie z rodzicami”)
 - Phase 21 added: Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen (1 340 LOC → modularne widgety zgodne z dobrymi praktykami Flutter)
 - Phase 22 added: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail (na życzenie użytkownika jednym kliknięciem z linkiem „Otwórz w Google Drive”)
+- Phase 23 added: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków (podgląd konkretnych dni, lekcji, przedmiotów i powodów dla prośby o usprawiedliwienie „6 lekcji • Choroba” na Pulpicie i we Frekwencji oraz dla banera „7 wnioski czekają na wychowawcę”)
 
 ### Quick Tasks Completed
 
@@ -94,9 +95,9 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 ## Session
 
-**Last session:** 2026-10-02
-**Stopped at:** Completed quick task 261002-94s, ready to plan Phase 19
-**Resume file:** .planning/phases/22-zapisywanie-za-cznik-w-wiadomo-ci-w-google-drive-w-stylu-gma/22-CONTEXT.md
+**Last session:** 2026-10-02T07:48:44.703Z
+**Stopped at:** Phase 23 context gathered
+**Resume file:** /Users/bjankiewicz/Projects/dziennik szkolny/.planning/phases/23-podgl-d-szczeg-w-pr-b-o-usprawiedliwienie-i-oczekuj-cych-wni/23-CONTEXT.md
 Last activity: 2026-10-02 — Completed quick task 261002-94s (Instrukcja krok po kroku konfiguracji Telegram Bot i getMe)
 
 ## Current Position
