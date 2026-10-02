@@ -1,3 +1,4 @@
+import '../../core/utils/polish_date_formatter.dart';
 import 'attendance_record.dart';
 
 /// Status of a student justification request in the parental approval pipeline.
@@ -321,34 +322,8 @@ class JustificationRequest {
   }
 
   /// Formats a Polish day header, e.g. 'Wtorek, 29 Września 2026' (D-05, D-07).
-  static String formatPolishDayHeader(DateTime date) {
-    const weekdays = <int, String>{
-      1: 'Poniedziałek',
-      2: 'Wtorek',
-      3: 'Środa',
-      4: 'Czwartek',
-      5: 'Piątek',
-      6: 'Sobota',
-      7: 'Niedziela',
-    };
-    const months = <int, String>{
-      1: 'Stycznia',
-      2: 'Lutego',
-      3: 'Marca',
-      4: 'Kwietnia',
-      5: 'Maja',
-      6: 'Czerwca',
-      7: 'Lipca',
-      8: 'Sierpnia',
-      9: 'Września',
-      10: 'Października',
-      11: 'Listopada',
-      12: 'Grudnia',
-    };
-    final dayName = weekdays[date.weekday] ?? 'Dzień';
-    final monthName = months[date.month] ?? '';
-    return '$dayName, ${date.day} $monthName ${date.year}';
-  }
+  static String formatPolishDayHeader(DateTime date) =>
+      PolishDateFormatter.formatDayHeader(date);
 
   /// Formats a concise date range summary (e.g. '29.09' or '28.09–29.09') for banners (D-02).
   String formatDateRangeSummary([List<AttendanceRecord>? allRecords]) {
