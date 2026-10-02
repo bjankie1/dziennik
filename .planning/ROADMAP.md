@@ -35,6 +35,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 20: Asystent AI dziennika szkolnego (Konwersacyjny agent Q&A)** — Konwersacja z agentem AI na temat danych w dzienniku (oceny, plan lekcji, sprawdziany, wiadomości, ogłoszenia, nieobecności, zadania) z przeszukiwaniem pełnej treści wiadomości (np. „Kiedy jest następny sprawdzian?”, „Kiedy jest wycieczka Oskara do Warszawy?”, „Kiedy jest zebranie z rodzicami?”). (completed 2026-09-26)
 - [ ] **Phase 21: Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen** — Rozbicie monolitycznego `message_thread_screen.dart` (1 340 LOC) oraz `messages_screen.dart` (725 LOC) na dedykowane, reużywalne widgety w `lib/presentation/screens/messages/widgets/`, przeniesienie logiki parsowania nadawców/DW do modelu domenowego `MessageThread` oraz izolacja granic przebudowy Riverpod.
 - [x] **Phase 22: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail** — Zapisywanie pojedynczych lub wszystkich załączników wiadomości Librus na żądanie użytkownika bezpośrednio na jego koncie Google Drive (do dedykowanego folderu np. `EduSync / Załączniki szkolne`) z wizualnym statusem zapisania i bezpośrednim linkiem „Otwórz w Google Drive” na wzór Gmaila. (completed 2026-09-29)
+- [ ] **Phase 23: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków** — Możliwość podglądu konkretnych dni, numerów lekcji, przedmiotów, godzin i powodów zarówno na banerze prośby o usprawiedliwienie („6 lekcji • Choroba” na Pulpicie i we Frekwencji), jak i na banerze oczekujących wniosków („7 wnioski czekają na wychowawcę”).
 
 ---
 
@@ -263,3 +264,22 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 22-02-PLAN.md: Gmail-Style Attachment Actions in `MessageThreadScreen` (`Pobierz` + `Zapisz na Dysku Google` / `Otwórz w Google Drive`, bulk `Zapisz wszystkie na Dysku`), `DriveFolderPickerModal` (`Zmień folder / Przenieś`), Settings Default Drive Folder & Widget Tests
+
+### Phase 23: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków
+
+**Goal**: Umożliwienie rodzicowi i uczniowi przejrzystego podglądu, czego dokładnie dotyczą prośby o usprawiedliwienie (zarówno na Pulpicie, jak i na ekranie Frekwencji, gdzie obecnie widać jedynie „6 lekcji • Choroba”) oraz jakie konkretnie lekcje wchodzą w skład oczekujących wniosków („7 wnioski czekają na wychowawcę”).  
+**Requirements**: REQ-ATT-01, REQ-ATT-02  
+**Depends on**: Phase 22  
+**Success Criteria**:
+
+1. Na banerze prośby o usprawiedliwienie (`JustificationApprovalBanner` na Pulpicie oraz na ekranie Frekwencji) użytkownik widzi nie tylko liczbę lekcji i powód (np. „6 lekcji • Choroba”), ale może jednym kliknięciem rozwinąć lub otworzyć modal szczegółów pokazujący pełną listę objętych lekcji (data, dzień tygodnia, numer lekcji, przedmiot, godziny trwania oraz notatka ucznia).
+2. W modalu zatwierdzania PIN-em lub odrzucania prośby rodzic również widzi listę konkretnych lekcji i dni, których dotyczy zatwierdzana/odrzucana prośba.
+3. Na ekranie Frekwencji baner „X wnioski czekają na wychowawcę” udostępnia interaktywny podgląd (rozwijana lista lub modal) wszystkich lekcji ze statusem oczekującego wniosku (data, numer lekcji, przedmiot, godzina, powód/data wysłania) wraz z możliwością cofnięcia wybranych lub wszystkich wniosków.
+4. Wszystkie widoki (Pulpit desktop/mobile oraz Frekwencja) działają spójnie na rzeczywistych danych z Firestore (`justification_requests` oraz `attendances`).
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run `/gsd-plan-phase 23` to break down)
+
