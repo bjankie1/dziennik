@@ -233,12 +233,12 @@ Plans:
 3. Prywatne metody pomocnicze `Widget _build*()` w refaktoryzowanych ekranach zostają zastąpione klasami `StatelessWidget` / `ConsumerWidget` z konstruktorami `const` i selektywnym `ref.watch(...select(...))`, dzięki czemu lokalne interakcje (np. zaznaczenie checkboxa lekcji, rozwinięcie akordeonu, pisanie odpowiedzi) przebudowują wyłącznie dany pod-widget, a nie cały ekran.
 4. `flutter analyze` zwraca 0 błędów i ostrzeżeń, a wszystkie istniejące testy widgetów przechodzą bez regresji.
 
-**Plans:** 4 plans
+**Plans:** 1/4 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 21-01-PLAN.md: Shared Foundation — `PolishDateFormatter` (`lib/core/utils/polish_date_formatter.dart` + unit tests) & `JustificationRequestBanner` (`lib/presentation/widgets/common/justification_request_banner.dart`, replacing duplicated ~300 LOC banners in `DashboardMobileView` & `DashboardMetricsColumn`)
+- [x] 21-01-PLAN.md: Shared Foundation — `PolishDateFormatter` (`lib/core/utils/polish_date_formatter.dart` + unit tests) & `JustificationRequestBanner` (`lib/presentation/widgets/common/justification_request_banner.dart`, replacing duplicated ~300 LOC banners in `DashboardMobileView` & `DashboardMetricsColumn`)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
@@ -315,4 +315,3 @@ Plans:
 Plans:
 
 - [ ] TBD (run `/gsd-plan-phase 24` to break down)
-

@@ -1,20 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: v3.0
-current_phase: 19
-current_phase_name: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
+current_phase: 21
+current_phase_name: Refaktoryzacja monolitycznych widoków UI (>1 600 LOC), wspólne komponenty i optymalizacja granic przebudowy Riverpod
 status: executing
-stopped_at: Phase 23 complete, ready to plan Phase 19
-last_updated: "2026-10-02T10:52:01.459Z"
+stopped_at: Completed 21-01-PLAN.md
+last_updated: "2026-10-02T11:06:48.247Z"
 last_activity: 2026-10-02
-last_activity_desc: Phase 23 complete, transitioned to Phase 19
-state_head: 895af36c0bf9e0abf2371e51de159e8afc620d59
+state_head: dffa3f9e7c288846c31c23edd453056722bc37da
 progress:
-  total_phases: 12
+  total_phases: 13
   completed_phases: 8
-  total_plans: 17
+  total_plans: 21
   completed_plans: 20
-  percent: 67
+  percent: 62
 milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ---
 
@@ -22,7 +21,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 **Current Milestone:** Milestone v3.0 (Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia)  
 **Active Phase:** Phase 23: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków — COMPLETED  
-**Status:** Ready to execute
+**Status:** Executing Phase 21
 **Last Updated:** 2026-10-02  
 
 ## Milestone v3.0 Roadmap
@@ -101,17 +100,17 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 ## Session
 
-**Last session:** 2026-10-02T10:06:00.000Z
-**Stopped at:** Completed quick task 261002-g0a (Phase 23 UI review fixes)
+**Last session:** 2026-10-02T11:06:48.133Z
+**Stopped at:** Completed 21-01-PLAN.md
 **Resume file:** None
-Last activity: 2026-10-02 - Completed quick task 261002-g0a: Wdróż poprawki z audytu UI Fazy 23 (23-UI-REVIEW.md)
+Last activity: 2026-10-02
 
 ## Current Position
 
-Phase: 19 — Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
+Phase: 21 (Refaktoryzacja monolitycznych widoków UI (>1 600 LOC), wspólne komponenty i optymalizacja granic przebudowy Riverpod) — EXECUTING
 Next Phase: 19 (Raporty tygodniowe) / 21 (Refaktoryzacja modułu wiadomości i dekompozycja MessageThreadScreen)
-Status: Executing Phase 23
-Last activity: 2026-10-02 — Phase 23 execution started
+Status: Executing Phase 21
+Last activity: 2026-10-02 — Phase 21 execution started
 
 ## Performance Metrics
 
@@ -119,7 +118,9 @@ Last activity: 2026-10-02 — Phase 23 execution started
 |------|----------|-------|-------|
 | Phase 23 P01 | 9 min | 2 tasks | 8 files |
 | Phase 23-podgl-d-szczeg-w-pr-b-o-usprawiedliwienie-i-oczekuj-cych-wni P02 | 18min | 2 tasks | 8 files |
+| Phase 21 P01 | 11 min | 2 tasks | 7 files |
 
 ## Decisions
 
 - [Phase 23-podgl-d-szczeg-w-pr-b-o-usprawiedliwienie-i-oczekuj-cych-wni]: Upgraded ParentApprovalModal with day-grouped lesson breakdowns, teacher/classroom metadata, Q&A history, and per-lesson checkboxes for partial PIN approval; made justification banners interactive with 'Zobacz szczegóły →' and effectiveStudentName across Dashboard and AttendanceScreen; and added the expandable 'X wnioski czekają na wychowawcę' accordion with per-lesson 'Cofnij' plus the 4th 'Oczekujące (Y)' filter pill
+- [Phase 21-01]: Consolidated three variants of the parent pending / student rejected justification banner into a single parameterized JustificationRequestBanner with selective Riverpod .select(...) subscriptions, and created PolishDateFormatter utility
