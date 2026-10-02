@@ -10,11 +10,44 @@ class NotificationChannelsService {
   static const String _functionsBaseUrl =
       'https://europe-west3-lepsza-szkola.cloudfunctions.net';
 
-  final FirebaseFirestore _firestore;
+  final FirebaseFirestore? _customFirestore;
+  final http.Client _httpClient;
   final Set<String> _dispatchedEventIds = <String>{};
 
-  NotificationChannelsService({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+  NotificationChannelsService({
+    FirebaseFirestore? firestore,
+    http.Client? httpClient,
+  })  : _customFirestore = firestore,
+        _httpClient = httpClient ?? http.Client();
+
+  FirebaseFirestore get _firestore =>
+      _customFirestore ?? FirebaseFirestore.instance;
+
+  /// Queries Telegram Bot API `getMe` to resolve the bot's `@username` (without `@`) from its token.
+  Future<String?> fetchBotUsername(String botToken) async {
+    final trimmed = botToken.trim();
+    if (trimmed.isEmpty) return null;
+    try {
+      final uri = Uri.parse('https://api.telegram.org/bot$trimmed/getMe');
+      final response = await _httpClient
+          .get(uri)
+          .timeout(const Duration(seconds: 8));
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        final result = decoded['result'];
+        if (result is Map) {
+          final username = (result['username'] ?? '')
+              .toString()
+              .trim()
+              .replaceAll('@', '');
+          if (username.isNotEmpty) {
+            return username;
+          }
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
 
   /// Escapes `<`, `>`, and `&` for safe Telegram `parse_mode: 'HTML'` messages.
   static String escapeTelegramHtml(String input) {
@@ -92,11 +125,21 @@ class NotificationChannelsService {
       'pairingCodeExpiresAt': Timestamp.fromDate(expiresAt),
       'updatedAt': FieldValue.serverTimestamp(),
     };
+
+    String? resolvedBotUsername = botUsername?.trim().replaceAll('@', '');
     if (botToken != null && botToken.trim().isNotEmpty) {
       updates['telegramBotToken'] = botToken.trim();
+      if (resolvedBotUsername == null ||
+          resolvedBotUsername.isEmpty ||
+          resolvedBotUsername == 'EduSyncSzkolnyBot') {
+        final fetched = await fetchBotUsername(botToken);
+        if (fetched != null && fetched.isNotEmpty) {
+          resolvedBotUsername = fetched;
+        }
+      }
     }
-    if (botUsername != null && botUsername.trim().isNotEmpty) {
-      updates['telegramBotUsername'] = botUsername.trim().replaceAll('@', '');
+    if (resolvedBotUsername != null && resolvedBotUsername.isNotEmpty) {
+      updates['telegramBotUsername'] = resolvedBotUsername;
     }
 
     await _settingsRef(familyId, roleKey).set(updates, SetOptions(merge: true));
@@ -178,7 +221,8 @@ class NotificationChannelsService {
         final uri = Uri.parse(
           'https://api.telegram.org/bot$trimmedToken/getUpdates?limit=50',
         );
-        final response = await http.get(uri).timeout(const Duration(seconds: 10));
+        final response =
+            await _httpClient.get(uri).timeout(const Duration(seconds: 10));
         if (response.statusCode == 200) {
           final decoded = jsonDecode(response.body) as Map<String, dynamic>;
           final results = (decoded['result'] as List<dynamic>?) ?? [];
@@ -249,7 +293,7 @@ class NotificationChannelsService {
     // 2. Cloud Function fallback (uses server-side TELEGRAM_BOT_TOKEN if configured)
     try {
       final uri = Uri.parse('$_functionsBaseUrl/verifyTelegramPairing');
-      final response = await http
+      final response = await _httpClient
           .post(
             uri,
             headers: {'Content-Type': 'application/json'},
@@ -304,7 +348,7 @@ class NotificationChannelsService {
         final uri = Uri.parse(
           'https://api.telegram.org/bot$trimmedToken/sendMessage',
         );
-        final resp = await http
+        final resp = await _httpClient
             .post(
               uri,
               headers: {'Content-Type': 'application/json'},
@@ -323,7 +367,7 @@ class NotificationChannelsService {
     // Cloud Function fallback
     try {
       final uri = Uri.parse('$_functionsBaseUrl/sendTestTelegramNotification');
-      final resp = await http
+      final resp = await _httpClient
           .post(
             uri,
             headers: {'Content-Type': 'application/json'},
