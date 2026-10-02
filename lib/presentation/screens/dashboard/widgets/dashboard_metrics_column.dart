@@ -549,158 +549,214 @@ class DashboardMetricsColumn extends ConsumerWidget {
     WidgetRef ref,
     JustificationRequest req,
   ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFEF3C7),
+    final attendanceRecords =
+        ref.watch(attendanceProvider).value ?? const <AttendanceRecord>[];
+    final studentProfile = student ?? ref.watch(studentProfileProvider).value;
+    final studentName = req.effectiveStudentName(
+      profileStudentName: studentProfile?.name,
+    );
+    final resolved = req.resolveAttendanceRecords(attendanceRecords);
+    final count = resolved.isNotEmpty
+        ? resolved.length
+        : (req.lessonNumbers.isNotEmpty
+            ? req.lessonNumbers.length
+            : req.recordIds.length);
+    final dateRange = req.formatDateRangeSummary(attendanceRecords);
+
+    void openApprovalModal() {
+      ParentApprovalModal.show(
+        context,
+        req,
+        availableRecords: attendanceRecords,
+        studentDisplayName: studentName,
+        onApprove: (pin) async {
+          final ok = await ref
+              .read(attendanceProvider.notifier)
+              .approveJustification(req.id, pin);
+          if (ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Usprawiedliwienie dla $studentName zostało zatwierdzone.',
+                ),
+                backgroundColor: const Color(0xFF006C4A),
+              ),
+            );
+          }
+          return ok;
+        },
+        onApproveSelected: (pin, selectedIds) async {
+          final ok = await ref
+              .read(attendanceProvider.notifier)
+              .approveJustification(
+                req.id,
+                pin,
+                selectedRecordIds: selectedIds,
+              );
+          if (ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Usprawiedliwienie dla $studentName zostało zatwierdzone.',
+                ),
+                backgroundColor: const Color(0xFF006C4A),
+              ),
+            );
+          }
+          return ok;
+        },
+        onReject: (reason) async {
+          final ok = await ref
+              .read(attendanceProvider.notifier)
+              .rejectJustification(req.id, reason: reason);
+          if (ok && context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Wniosek ucznia został odrzucony.'),
+                backgroundColor: Color(0xFFDC2626),
+              ),
+            );
+          }
+          return ok;
+        },
+      );
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFDE68A)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        onTap: openApprovalModal,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFEF3C7),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFDE68A)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.family_restroom_rounded,
-                size: 16,
-                color: Color(0xFFB45309),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '${req.studentName} prosi o usprawiedliwienie',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF78350F),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.family_restroom_rounded,
+                    size: 16,
+                    color: Color(0xFFB45309),
                   ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '$studentName prosi o usprawiedliwienie',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF78350F),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${dateRange.isNotEmpty ? "$dateRange • " : ""}$count lekcji • ${req.reason}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF92400E),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${req.lessonNumbers.isNotEmpty ? req.lessonNumbers.length : req.recordIds.length} godz. • ${req.reason}',
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF92400E),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 34,
-                  child: FilledButton.icon(
-                    onPressed: () {
-                      ParentApprovalModal.show(
-                        context,
-                        req,
-                        onApprove: (pin) async {
-                          final ok = await ref
-                              .read(attendanceProvider.notifier)
-                              .approveJustification(req.id, pin);
-                          if (ok && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Usprawiedliwienie dla ${req.studentName} zostało zatwierdzone.',
+              const SizedBox(height: 4),
+              const Text(
+                'Zobacz szczegóły →',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFFB45309),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 34,
+                      child: FilledButton.icon(
+                        onPressed: openApprovalModal,
+                        icon: const Icon(Icons.pin, size: 14),
+                        label: const Text(
+                          'Zatwierdź (PIN)',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF3525CD),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 34,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        ParentRejectionModal.show(
+                          context,
+                          req,
+                          availableRecords: attendanceRecords,
+                          studentDisplayName: studentName,
+                          onReject: (reason) async {
+                            final ok = await ref
+                                .read(attendanceProvider.notifier)
+                                .rejectJustification(req.id, reason: reason);
+                            if (ok && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Wniosek ucznia został odrzucony z komentarzem.',
+                                  ),
+                                  backgroundColor: Color(0xFFDC2626),
                                 ),
-                                backgroundColor: const Color(0xFF006C4A),
-                              ),
-                            );
-                          }
-                          return ok;
-                        },
-                        onReject: (reason) async {
-                          final ok = await ref
-                              .read(attendanceProvider.notifier)
-                              .rejectJustification(req.id, reason: reason);
-                          if (ok && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Wniosek ucznia został odrzucony.'),
-                                backgroundColor: Color(0xFFDC2626),
-                              ),
-                            );
-                          }
-                          return ok;
-                        },
-                      );
-                    },
-                    icon: const Icon(Icons.pin, size: 14),
-                    label: const Text(
-                      'Zatwierdź (PIN)',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF3525CD),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                height: 34,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    ParentRejectionModal.show(
-                      context,
-                      req,
-                      onReject: (reason) async {
-                        final ok = await ref
-                            .read(attendanceProvider.notifier)
-                            .rejectJustification(req.id, reason: reason);
-                        if (ok && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Wniosek ucznia został odrzucony z komentarzem.',
-                              ),
-                              backgroundColor: Color(0xFFDC2626),
-                            ),
-                          );
-                        }
-                        return ok;
+                              );
+                            }
+                            return ok;
+                          },
+                        );
                       },
-                    );
-                  },
-                  icon: const Icon(
-                    Icons.close_rounded,
-                    size: 14,
-                    color: Color(0xFFDC2626),
-                  ),
-                  label: const Text(
-                    'Odrzuć',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFFDC2626),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        size: 14,
+                        color: Color(0xFFDC2626),
+                      ),
+                      label: const Text(
+                        'Odrzuć',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFDC2626),
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFFCA5A5)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                     ),
                   ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFFCA5A5)),
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

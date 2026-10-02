@@ -233,7 +233,6 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
     state = const AsyncValue.loading();
     final repo = ref.read(schoolRepositoryProvider);
     await repo.submitJustification(recordIds, reason, date: date);
-    ref.invalidate(justificationRequestsProvider);
     state = AsyncValue.data(await repo.getAttendanceRecords());
   }
 
@@ -241,7 +240,6 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
     state = const AsyncValue.loading();
     final repo = ref.read(schoolRepositoryProvider);
     await repo.cancelJustification(recordIds);
-    ref.invalidate(justificationRequestsProvider);
     state = AsyncValue.data(await repo.getAttendanceRecords());
   }
 
@@ -249,7 +247,6 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
     state = const AsyncValue.loading();
     final repo = ref.read(schoolRepositoryProvider);
     await repo.requestJustification(recordIds, reason, date: date);
-    ref.invalidate(justificationRequestsProvider);
     state = AsyncValue.data(await repo.getAttendanceRecords());
   }
 
@@ -264,7 +261,6 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
       pin,
       selectedRecordIds: selectedRecordIds,
     );
-    ref.invalidate(justificationRequestsProvider);
     state = AsyncValue.data(await repo.getAttendanceRecords());
     return success;
   }
@@ -272,7 +268,6 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
   Future<bool> rejectJustification(String requestId, {String? reason}) async {
     final repo = ref.read(schoolRepositoryProvider);
     final success = await repo.rejectJustificationRequest(requestId, reason: reason);
-    ref.invalidate(justificationRequestsProvider);
     state = AsyncValue.data(await repo.getAttendanceRecords());
     return success;
   }
@@ -280,7 +275,6 @@ class AttendanceNotifier extends AsyncNotifier<List<AttendanceRecord>> {
   Future<bool> respondToJustification(String requestId, String responseText) async {
     final repo = ref.read(schoolRepositoryProvider);
     final success = await repo.respondJustificationRequest(requestId, responseText: responseText);
-    ref.invalidate(justificationRequestsProvider);
     state = AsyncValue.data(await repo.getAttendanceRecords());
     return success;
   }
