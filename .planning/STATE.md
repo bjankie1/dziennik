@@ -4,10 +4,10 @@ milestone: v3.0
 current_phase: 21
 current_phase_name: Refaktoryzacja monolitycznych widoków UI (>1 600 LOC), wspólne komponenty i optymalizacja granic przebudowy Riverpod
 status: executing
-stopped_at: Completed 21-03-PLAN.md
-last_updated: "2026-10-03T16:44:24.474Z"
+stopped_at: Completed 21-04-PLAN.md
+last_updated: "2026-10-03T16:53:16.036Z"
 last_activity: 2026-10-02
-state_head: c4a486d76ede29993a4433d33f403768d32ae06a
+state_head: 1f76e1847769e74843f804ced86b3c1c0ff40b10
 progress:
   total_phases: 13
   completed_phases: 8
@@ -100,8 +100,8 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 ## Session
 
-**Last session:** 2026-10-03T16:44:24.317Z
-**Stopped at:** Completed 21-03-PLAN.md
+**Last session:** 2026-10-03T16:53:15.913Z
+**Stopped at:** Completed 21-04-PLAN.md
 **Resume file:** None
 Last activity: 2026-10-02
 
@@ -121,6 +121,7 @@ Last activity: 2026-10-02 — Phase 21 execution started
 | Phase 21 P01 | 11 min | 2 tasks | 7 files |
 | Phase 21 P02 | 12 min | 2 tasks | 7 files |
 | Phase 21 P03 | 6 min | 2 tasks | 7 files |
+| Phase 21 P04 | 7 min | 2 tasks | 7 files |
 
 ## Decisions
 
@@ -128,3 +129,4 @@ Last activity: 2026-10-02 — Phase 21 execution started
 - [Phase 21-01]: Consolidated three variants of the parent pending / student rejected justification banner into a single parameterized JustificationRequestBanner with selective Riverpod .select(...) subscriptions, and created PolishDateFormatter utility
 - [Phase 21]: [Phase 21-02]: Decomposed MessageThreadScreen (2 060 -> 340 LOC) into MessageThreadHeaderCard, MessageTaskBanner, MessageAccordionTile, and MessageReplyComposer with .select(...) subscriptions and moved sender/CC/attachment regex parsing to MessageThread
 - [Phase 21]: [Phase 21-03]: Decomposed AttendanceScreen (1 952 -> 273 LOC) into 6 focused sub-widgets in lib/presentation/screens/attendance/widgets/ with isolated Riverpod/UI state and wired JustificationRequestBanner and PolishDateFormatter
+- [Phase 21]: [Phase 21-04]: Decomposed NotificationSettingsModal (1 643 -> 333 LOC) into 6 focused sub-widgets in lib/presentation/widgets/modals/notification_settings/ with Dart 3 record .select(...) subscriptions and GlobalKey pending-config flush

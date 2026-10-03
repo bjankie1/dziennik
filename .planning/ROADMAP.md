@@ -233,7 +233,7 @@ Plans:
 3. Prywatne metody pomocnicze `Widget _build*()` w refaktoryzowanych ekranach zostają zastąpione klasami `StatelessWidget` / `ConsumerWidget` z konstruktorami `const` i selektywnym `ref.watch(...select(...))`, dzięki czemu lokalne interakcje (np. zaznaczenie checkboxa lekcji, rozwinięcie akordeonu, pisanie odpowiedzi) przebudowują wyłącznie dany pod-widget, a nie cały ekran.
 4. `flutter analyze` zwraca 0 błędów i ostrzeżeń, a wszystkie istniejące testy widgetów przechodzą bez regresji.
 
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans executed
 
 Plans:
 **Wave 1**
@@ -244,7 +244,7 @@ Plans:
 
 - [x] 21-02-PLAN.md: `message_thread_screen.dart` Decomposition (`2 060 LOC` -> `< 350 LOC`) — `MessageThread` domain helpers (`resolveSenderName`, `extractCcTeacherFromBody`, `looksLikeMessageWithAttachment`) + 4 sub-widgets (`MessageThreadHeaderCard`, `MessageTaskBanner`, `MessageAccordionTile`, `MessageReplyComposer`) with `.select(...)`
 - [x] 21-03-PLAN.md: `attendance_screen.dart` Decomposition (`1 952 LOC` -> `< 350 LOC`) — 6 sub-widgets (`AttendanceSemesterKpiCard`, `PendingTeacherAccordionBanner`, `AttendanceFilterBar`, `AttendanceDayGroupCard`, `FloatingJustificationDock`, `RequestedAttendanceDetailsSheet`) + `JustificationRequestBanner` & `PolishDateFormatter`
-- [ ] 21-04-PLAN.md: `notification_settings_modal.dart` Decomposition (`1 643 LOC` -> `< 350 LOC`) — 6 sub-widgets (`NotificationSectionCard`, `TelegramChannelCard`, `TelegramStepByStepGuide`, `WebPushChannelCard`, `NotificationCategoriesCard`, `NotificationAlertsHistoryTab`) with Dart 3 record `.select(...)` selectors
+- [x] 21-04-PLAN.md: `notification_settings_modal.dart` Decomposition (`1 643 LOC` -> `< 350 LOC`) — 6 sub-widgets (`NotificationSectionCard`, `TelegramChannelCard`, `TelegramStepByStepGuide`, `WebPushChannelCard`, `NotificationCategoriesCard`, `NotificationAlertsHistoryTab`) with Dart 3 record `.select(...)` selectors
 
 ### Phase 22: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail
 
