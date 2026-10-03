@@ -1,7 +1,6 @@
 {
   "model_profile": "quality",
   "mode": "interactive",
-  "depth": "comprehensive",
   "workflow": {
     "research": true,
     "plan_check": true,
@@ -25,5 +24,6 @@
   "git": {
     "commit_docs": true,
     "atomic_commits": true
-  }
+  },
+  "granularity": "fine"
 }
