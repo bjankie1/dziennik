@@ -4,10 +4,10 @@ milestone: v3.0
 current_phase: 21
 current_phase_name: Refaktoryzacja monolitycznych widoków UI (>1 600 LOC), wspólne komponenty i optymalizacja granic przebudowy Riverpod
 status: executing
-stopped_at: Completed 21-02-PLAN.md
-last_updated: "2026-10-03T16:36:46.684Z"
+stopped_at: Completed 21-03-PLAN.md
+last_updated: "2026-10-03T16:44:24.474Z"
 last_activity: 2026-10-02
-state_head: 1d3bf62ef508dd4b74c09569501d80b01d4052be
+state_head: c4a486d76ede29993a4433d33f403768d32ae06a
 progress:
   total_phases: 13
   completed_phases: 8
@@ -100,8 +100,8 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 ## Session
 
-**Last session:** 2026-10-03T16:36:46.564Z
-**Stopped at:** Completed 21-02-PLAN.md
+**Last session:** 2026-10-03T16:44:24.317Z
+**Stopped at:** Completed 21-03-PLAN.md
 **Resume file:** None
 Last activity: 2026-10-02
 
@@ -120,9 +120,11 @@ Last activity: 2026-10-02 — Phase 21 execution started
 | Phase 23-podgl-d-szczeg-w-pr-b-o-usprawiedliwienie-i-oczekuj-cych-wni P02 | 18min | 2 tasks | 8 files |
 | Phase 21 P01 | 11 min | 2 tasks | 7 files |
 | Phase 21 P02 | 12 min | 2 tasks | 7 files |
+| Phase 21 P03 | 6 min | 2 tasks | 7 files |
 
 ## Decisions
 
 - [Phase 23-podgl-d-szczeg-w-pr-b-o-usprawiedliwienie-i-oczekuj-cych-wni]: Upgraded ParentApprovalModal with day-grouped lesson breakdowns, teacher/classroom metadata, Q&A history, and per-lesson checkboxes for partial PIN approval; made justification banners interactive with 'Zobacz szczegóły →' and effectiveStudentName across Dashboard and AttendanceScreen; and added the expandable 'X wnioski czekają na wychowawcę' accordion with per-lesson 'Cofnij' plus the 4th 'Oczekujące (Y)' filter pill
 - [Phase 21-01]: Consolidated three variants of the parent pending / student rejected justification banner into a single parameterized JustificationRequestBanner with selective Riverpod .select(...) subscriptions, and created PolishDateFormatter utility
 - [Phase 21]: [Phase 21-02]: Decomposed MessageThreadScreen (2 060 -> 340 LOC) into MessageThreadHeaderCard, MessageTaskBanner, MessageAccordionTile, and MessageReplyComposer with .select(...) subscriptions and moved sender/CC/attachment regex parsing to MessageThread
+- [Phase 21]: [Phase 21-03]: Decomposed AttendanceScreen (1 952 -> 273 LOC) into 6 focused sub-widgets in lib/presentation/screens/attendance/widgets/ with isolated Riverpod/UI state and wired JustificationRequestBanner and PolishDateFormatter
