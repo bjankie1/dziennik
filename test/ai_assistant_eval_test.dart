@@ -246,4 +246,62 @@ void main() {
     expect(meetingReply.suggestedEvent?.date, '2026-05-28');
     expect(meetingReply.suggestedEvent?.startTime, '17:30');
   });
+
+  test('Regression: stop-words ("informacje", "temat") do not match NNW insurance message; Polish stem matches matura message & attachments', () {
+    final inputWithInsuranceAndMatura = SchoolAiContextSnapshotInput(
+      now: DateTime(2026, 10, 3, 19, 30),
+      viewerRole: 'parent',
+      messages: [
+        MessageThread(
+          id: '2149280',
+          senderName: 'Piwnik Ewa',
+          senderInitials: 'PE',
+          senderRole: 'Nauczyciel',
+          subject: 'Informacje o ubezpieczeniu na rok szkolny 2026/2027',
+          preview: 'Informacje o ubezpieczeniu na rok szkolny 2026/2027',
+          body:
+              'Drodzy Rodzice, Wzorem lat ubiegłych załączeniu przesyłamy wynegocjowaną dedykowaną ofertę ubezpieczenia NNW dla dzieci i młodzieży.',
+          timestamp: DateTime(2026, 9, 29, 12, 0),
+          isUnread: false,
+        ),
+        MessageThread(
+          id: '2027508',
+          senderName: 'Sobota Łukasz',
+          senderInitials: 'SŁ',
+          senderRole: 'Nauczyciel',
+          subject: 'Informacje na temat egzaminu maturalnego',
+          preview: 'Informacje na temat egzaminu maturalnego',
+          body:
+              'Dzień dobry, przesyłam Państwu obiecaną prezentację. Pozdrawiam, Łukasz Sobota',
+          timestamp: DateTime(2026, 9, 10, 14, 0),
+          isUnread: false,
+          attachments: const [
+            'matura2027_wrzesien2026_R_U.pdf',
+            'matura2027_wrzesien2026_R_U.pptx',
+          ],
+          hasAttachments: true,
+        ),
+      ],
+    );
+
+    final snapshot =
+        SchoolAiContextBuilder.buildContextSnapshot(inputWithInsuranceAndMatura);
+    expect(snapshot, contains('matura2027_wrzesien2026_R_U.pdf'));
+
+    final reply = SchoolAiContextBuilder.generateGroundedLocalReply(
+      question: 'Czy były jakieś informacje na temat matury próbnej z Operon?',
+      input: inputWithInsuranceAndMatura,
+    );
+
+    // Must NOT return the unrelated NNW insurance message
+    expect(reply.text, isNot(contains('Piwnik Ewa')));
+    expect(reply.text, isNot(contains('ubezpieczenia NNW')));
+
+    // Must return the matura message from Sobota Łukasz, list attachments, and note missing 'operon'
+    expect(reply.text, contains('Sobota Łukasz'));
+    expect(reply.text, contains('Informacje na temat egzaminu maturalnego'));
+    expect(reply.text, contains('matura2027_wrzesien2026_R_U.pdf'));
+    expect(reply.text, contains('operon'));
+    expect(reply.sources.first.targetId, '2027508');
+  });
 }

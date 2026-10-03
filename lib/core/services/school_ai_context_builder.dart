@@ -298,6 +298,9 @@ $snapshot
           '--- WIADOMOŚĆ [ID: ${m.id}] | Data: ${_fmtDate(m.timestamp)} (${_fmtShortDate(m.timestamp)}) | Od: ${m.senderName} (${m.senderRole}) | Temat: "${m.subject}" ---',
         );
         buf.writeln('Treść: $clippedBody');
+        if (m.attachments.isNotEmpty) {
+          buf.writeln('Załączniki: ${m.attachments.join(', ')}');
+        }
       }
     }
 
@@ -715,35 +718,18 @@ $snapshot
       );
     }
 
-    // 7. Generic keyword search across all full message bodies & announcements
-    final words = q
-        .replaceAll(RegExp(r'[^\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ\s]'), ' ')
-        .split(RegExp(r'\s+'))
-        .where((w) => w.length >= 4 && !{'kiedy', 'jest', 'oskara', 'oskar', 'jakie', 'gdzie'}.contains(w))
-        .toList();
-
-    for (final m in input.messages) {
-      final hay = '${m.subject} ${m.body}'.toLowerCase();
-      if (words.isNotEmpty && words.any((w) => hay.contains(w))) {
-        return AiChatMessage(
-          id: msgId,
-          role: 'assistant',
-          viewerRole: input.viewerRole,
-          timestamp: now,
-          modelUsed: modelUsed,
-          text:
-              'W wiadomości od **${m.senderName}** (*„${m.subject}”* z ${_fmtShortDate(m.timestamp)}) znaleziono pasującą informację:\n\n'
-              '📩 **${m.body.trim()}**',
-          sources: [
-            AiSourceCitation(
-              type: 'message',
-              label:
-                  '📩 Wiadomość: ${m.subject} (${DateFormat('dd.MM').format(m.timestamp)})',
-              route: '/wiadomosci',
-              targetId: m.id,
-            ),
-          ],
-        );
+    // 7. Ranked Polish-stem keyword search across messages (with attachments) & announcements
+    final queryWords = _extractMeaningfulQueryWords(q);
+    if (queryWords.isNotEmpty) {
+      final rankedReply = _buildRankedKeywordReply(
+        queryWords: queryWords,
+        input: input,
+        msgId: msgId,
+        now: now,
+        modelUsed: modelUsed,
+      );
+      if (rankedReply != null) {
+        return rankedReply;
       }
     }
 
@@ -754,7 +740,7 @@ $snapshot
       timestamp: now,
       modelUsed: modelUsed,
       text:
-          'Przeszukałem dziennik Oskara (oceny, plan lekcji, sprawdziany, nieobecności oraz **${input.messages.length}** wiadomości z pełną treścią), ale nie znalazłem jednoznacznej wzmianki na ten temat. Spróbuj zapytać np. o **następny sprawdzian**, **wycieczkę**, **zebranie z rodzicami**, **oceny** lub **nieobecności**.',
+          'Przeszukałem dziennik Oskara (oceny, plan lekcji, sprawdziany, nieobecności oraz **${input.messages.length}** wiadomości wraz z załącznikami i ogłoszeniami), ale nie znalazłem jednoznacznej wzmianki na temat: **${queryWords.isNotEmpty ? queryWords.join(', ') : question.trim()}**.',
       sources: const [
         AiSourceCitation(
           type: 'message',
@@ -768,6 +754,360 @@ $snapshot
         ),
       ],
     );
+  }
+
+  static const Set<String> _polishStopWords = {
+    'czy',
+    'był',
+    'byl',
+    'była',
+    'byla',
+    'było',
+    'bylo',
+    'były',
+    'byly',
+    'byli',
+    'będzie',
+    'bedzie',
+    'będą',
+    'beda',
+    'jest',
+    'są',
+    'mamy',
+    'masz',
+    'mają',
+    'maja',
+    'jakie',
+    'jaki',
+    'jaka',
+    'jakieś',
+    'jakies',
+    'jakaś',
+    'jakas',
+    'jakiś',
+    'jakis',
+    'kiedy',
+    'gdzie',
+    'komu',
+    'czym',
+    'czego',
+    'dlaczego',
+    'coś',
+    'cos',
+    'ktoś',
+    'ktos',
+    'informacje',
+    'informacja',
+    'informacji',
+    'informację',
+    'informacjom',
+    'temat',
+    'tematu',
+    'temacie',
+    'sprawie',
+    'sprawa',
+    'sprawy',
+    'dotyczące',
+    'dotyczace',
+    'dotyczy',
+    'wiadomo',
+    'wiadomości',
+    'wiadomosci',
+    'wiadomość',
+    'wiadomosc',
+    'ogłoszenie',
+    'ogloszenie',
+    'ogłoszenia',
+    'ogloszenia',
+    'dzienniku',
+    'dziennik',
+    'librus',
+    'librusie',
+    'szkole',
+    'szkoły',
+    'szkola',
+    'szkoła',
+    'klasie',
+    'klasy',
+    'klasa',
+    'oskara',
+    'oskar',
+    'oskarowi',
+    'oskarze',
+    'nasz',
+    'nasza',
+    'nasze',
+    'tego',
+    'tym',
+    'tych',
+    'taki',
+    'taka',
+    'takie',
+    'oraz',
+    'albo',
+    'żeby',
+    'zeby',
+    'więc',
+    'wiec',
+    'bardzo',
+    'proszę',
+    'prosze',
+    'powiedz',
+    'napisz',
+    'sprawdź',
+    'sprawdz',
+    'pokaż',
+    'pokaz',
+    'ostatnio',
+    'ostatnie',
+    'ostatnich',
+    'nowe',
+    'nowych',
+    'przez',
+    'przy',
+    'przed',
+    'około',
+    'okolo',
+    'tylko',
+    'jeszcze',
+    'może',
+    'moze',
+    'można',
+    'mozna',
+  };
+
+  /// Extracts non-stopword query words of length >= 4 from [queryLower].
+  static List<String> _extractMeaningfulQueryWords(String queryLower) {
+    final rawTokens = queryLower
+        .replaceAll(RegExp(r'[^\wąćęłńóśźżĄĆĘŁŃÓŚŹŻ\s]'), ' ')
+        .split(RegExp(r'\s+'))
+        .map((w) => w.trim())
+        .where((w) => w.length >= 4 && !_polishStopWords.contains(w))
+        .toList();
+    final seen = <String>{};
+    final unique = <String>[];
+    for (final token in rawTokens) {
+      if (seen.add(token)) {
+        unique.add(token);
+      }
+    }
+    return unique;
+  }
+
+  /// Normalizes a Polish word or filename token to a stem of at least 4 chars
+  /// so inflections like `matury`, `maturalnego`, and `matura2027` share stem `matur`,
+  /// and `próbnej` / `próbna` share stem `próbn`.
+  static String polishStem(String word) {
+    var clean = word
+        .toLowerCase()
+        .replaceAll(RegExp(r'[0-9_]+'), '')
+        .trim();
+    if (clean.length <= 4) return clean;
+
+    const suffixes = <String>[
+      'alnego',
+      'alnych',
+      'alnym',
+      'alnej',
+      'alny',
+      'alna',
+      'alne',
+      'owych',
+      'owego',
+      'owym',
+      'owej',
+      'eniu',
+      'enia',
+      'enie',
+      'ami',
+      'ach',
+      'ego',
+      'emu',
+      'ych',
+      'imi',
+      'ymi',
+      'iej',
+      'ej',
+      'ów',
+      'ow',
+      'om',
+      'em',
+      'ie',
+      'ze',
+      'ą',
+      'ę',
+      'y',
+      'i',
+      'a',
+      'u',
+      'o',
+      'e',
+    ];
+
+    for (final suffix in suffixes) {
+      if (clean.endsWith(suffix) && clean.length - suffix.length >= 4) {
+        return clean.substring(0, clean.length - suffix.length);
+      }
+    }
+    return clean;
+  }
+
+  static bool _textMatchesQueryWord(String textLower, String queryWord) {
+    if (textLower.contains(queryWord)) return true;
+    final stem = polishStem(queryWord);
+    if (stem.length >= 4 && textLower.contains(stem)) return true;
+    return false;
+  }
+
+  static AiChatMessage? _buildRankedKeywordReply({
+    required List<String> queryWords,
+    required SchoolAiContextSnapshotInput input,
+    required String msgId,
+    required DateTime now,
+    required String modelUsed,
+  }) {
+    // Track which query words appear anywhere in the entire gradebook
+    final allCorpusText = StringBuffer();
+    for (final m in input.messages) {
+      allCorpusText.write(
+        ' ${m.subject} ${m.body} ${m.preview} ${m.senderName} ${m.attachments.join(' ')} ',
+      );
+    }
+    for (final a in input.announcements) {
+      allCorpusText.write(' ${a.title} ${a.content} ${a.author} ');
+    }
+    final corpusLower = allCorpusText.toString().toLowerCase();
+
+    final globallyMatchedWords = <String>[];
+    final globallyMissingWords = <String>[];
+    for (final w in queryWords) {
+      if (_textMatchesQueryWord(corpusLower, w)) {
+        globallyMatchedWords.add(w);
+      } else {
+        globallyMissingWords.add(w);
+      }
+    }
+
+    if (globallyMatchedWords.isEmpty) {
+      return null;
+    }
+
+    // Score each MessageThread by number of matched query words + field weights
+    MessageThread? bestMessage;
+    var bestMsgScore = 0;
+    var bestMsgMatchedWords = <String>[];
+
+    for (final m in input.messages) {
+      final subjLower = m.subject.toLowerCase();
+      final attLower = m.attachments.join(' ').toLowerCase();
+      final bodyLower = '${m.body} ${m.preview} ${m.senderName}'.toLowerCase();
+      final combinedLower = '$subjLower $attLower $bodyLower';
+
+      var score = 0;
+      final matched = <String>[];
+      for (final w in queryWords) {
+        if (_textMatchesQueryWord(combinedLower, w)) {
+          matched.add(w);
+          score += 10;
+          if (_textMatchesQueryWord(subjLower, w)) score += 5;
+          if (_textMatchesQueryWord(attLower, w)) score += 4;
+        }
+      }
+      if (score > bestMsgScore) {
+        bestMsgScore = score;
+        bestMessage = m;
+        bestMsgMatchedWords = matched;
+      }
+    }
+
+    // Score each Announcement as well
+    Announcement? bestAnnouncement;
+    var bestAnnScore = 0;
+    var bestAnnMatchedWords = <String>[];
+
+    for (final a in input.announcements) {
+      final titleLower = a.title.toLowerCase();
+      final contentLower = '${a.content} ${a.author}'.toLowerCase();
+      final combinedLower = '$titleLower $contentLower';
+
+      var score = 0;
+      final matched = <String>[];
+      for (final w in queryWords) {
+        if (_textMatchesQueryWord(combinedLower, w)) {
+          matched.add(w);
+          score += 10;
+          if (_textMatchesQueryWord(titleLower, w)) score += 5;
+        }
+      }
+      if (score > bestAnnScore) {
+        bestAnnScore = score;
+        bestAnnouncement = a;
+        bestAnnMatchedWords = matched;
+      }
+    }
+
+    if (bestMessage != null && bestMsgScore >= bestAnnScore) {
+      final m = bestMessage;
+      final missingForMessage = queryWords
+          .where((w) => !bestMsgMatchedWords.contains(w))
+          .toList();
+      final attachmentsBlock = m.attachments.isNotEmpty
+          ? '\n\n📎 **Załączniki:** ${m.attachments.join(', ')}'
+          : '';
+
+      final intro = missingForMessage.isEmpty
+          ? 'W wiadomości od **${m.senderName}** (*„${m.subject}”* z ${_fmtShortDate(m.timestamp)}) znaleziono pasującą informację:'
+          : 'W dzienniku nie znaleziono bezpośredniej wzmianki o: **${missingForMessage.join(', ')}**.\n\n'
+              'Znaleziono natomiast powiązaną wiadomość dotyczącą hasła **${bestMsgMatchedWords.join(', ')}** od **${m.senderName}** (*„${m.subject}”* z ${_fmtShortDate(m.timestamp)}):';
+
+      return AiChatMessage(
+        id: msgId,
+        role: 'assistant',
+        viewerRole: input.viewerRole,
+        timestamp: now,
+        modelUsed: modelUsed,
+        text: '$intro\n\n📩 **${m.body.trim()}**$attachmentsBlock',
+        sources: [
+          AiSourceCitation(
+            type: 'message',
+            label:
+                '📩 Wiadomość: ${m.subject} (${DateFormat('dd.MM').format(m.timestamp)})',
+            route: '/wiadomosci',
+            targetId: m.id,
+          ),
+        ],
+      );
+    }
+
+    if (bestAnnouncement != null && bestAnnScore > 0) {
+      final a = bestAnnouncement;
+      final missingForAnn = queryWords
+          .where((w) => !bestAnnMatchedWords.contains(w))
+          .toList();
+      final intro = missingForAnn.isEmpty
+          ? 'W ogłoszeniu szkolnym **„${a.title}”** (${a.author}, ${_fmtShortDate(a.publishedDate)}) znaleziono pasującą informację:'
+          : 'W dzienniku nie znaleziono bezpośredniej wzmianki o: **${missingForAnn.join(', ')}**.\n\n'
+              'Znaleziono natomiast powiązane ogłoszenie dotyczące hasła **${bestAnnMatchedWords.join(', ')}** (**„${a.title}”**, ${_fmtShortDate(a.publishedDate)}):';
+
+      return AiChatMessage(
+        id: msgId,
+        role: 'assistant',
+        viewerRole: input.viewerRole,
+        timestamp: now,
+        modelUsed: modelUsed,
+        text: '$intro\n\n📌 **${a.content.trim()}**',
+        sources: [
+          AiSourceCitation(
+            type: 'announcement',
+            label: '📩 Ogłoszenie: ${a.title}',
+            route: '/wiadomosci',
+            targetId: a.id,
+          ),
+        ],
+      );
+    }
+
+    return null;
   }
 
   static String? _extractEventIsoDate(String text, {required int referenceYear}) {

@@ -618,7 +618,7 @@ class _AiAssistantChatViewState extends ConsumerState<AiAssistantChatView> {
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
-                      '• ${msg.modelUsed!.contains('pro') ? '3.1 Pro' : '3.8 Flash'}',
+                      '• ${msg.modelUsed!.contains('lokalny') ? 'Lokalny indeks' : (msg.modelUsed!.contains('pro') ? '3.1 Pro' : '3.8 Flash')}',
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 10,

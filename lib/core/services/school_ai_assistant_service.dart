@@ -127,15 +127,25 @@ class SchoolAiAssistantService {
           Content.model([TextPart(turn.text)]),
     ];
 
-    for (final candidateModelId in candidateModels) {
+    // Try Vertex AI in Firebase first (uses GCP project quota instead of AI Studio prepayment credits),
+    // followed by Gemini Developer API (`googleAI`) candidate models.
+    final attempts = <({bool useVertex, String modelId})>[
+      (useVertex: true, modelId: 'gemini-2.5-flash'),
+      for (final candidateModelId in candidateModels)
+        (useVertex: false, modelId: candidateModelId),
+    ];
+
+    for (final attempt in attempts) {
       try {
-        final googleAI = FirebaseAI.googleAI();
-        final model = googleAI.generativeModel(
-          model: candidateModelId,
+        final aiBackend = attempt.useVertex
+            ? FirebaseAI.agentPlatform()
+            : FirebaseAI.googleAI();
+        final model = aiBackend.generativeModel(
+          model: attempt.modelId,
           systemInstruction: Content.system(systemPrompt),
           generationConfig: GenerationConfig(
             temperature: 0.2,
-            maxOutputTokens: 1200,
+            maxOutputTokens: 2048,
             responseMimeType: 'application/json',
             responseSchema: responseSchema,
           ),
@@ -152,23 +162,23 @@ class SchoolAiAssistantService {
             id: msgId,
             rawJson: rawText,
             viewerRole: contextInput.viewerRole,
-            modelUsed: candidateModelId,
+            modelUsed: selectedModel.modelId,
           );
         }
       } catch (e) {
         debugPrint(
-          '[SchoolAiAssistantService] Model $candidateModelId attempt failed: $e',
+          '[SchoolAiAssistantService] Backend ${attempt.useVertex ? "vertexAI" : "googleAI"} model ${attempt.modelId} failed: $e',
         );
-        // Continue to next candidate model in fallback chain
+        // Continue to next candidate in fallback chain
       }
     }
 
-    // Resilient local grounded fallback when offline or before `firebase init ailogic` is provisioned
+    // Resilient local grounded fallback when offline or if all remote API quotas fail
     return SchoolAiContextBuilder.generateGroundedLocalReply(
       question: trimmed,
       input: contextInput,
       id: msgId,
-      modelUsed: selectedModel.modelId,
+      modelUsed: '${selectedModel.modelId} (lokalny indeks dziennika)',
     );
   }
 }
