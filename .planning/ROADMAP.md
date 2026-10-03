@@ -37,6 +37,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 22: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail** — Zapisywanie pojedynczych lub wszystkich załączników wiadomości Librus na żądanie użytkownika bezpośrednio na jego koncie Google Drive (do dedykowanego folderu np. `EduSync / Załączniki szkolne`) z wizualnym statusem zapisania i bezpośrednim linkiem „Otwórz w Google Drive” na wzór Gmaila. (completed 2026-09-29)
 - [x] **Phase 23: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków** — Możliwość podglądu konkretnych dni, numerów lekcji, przedmiotów, godzin i powodów zarówno na banerze prośby o usprawiedliwienie („6 lekcji • Choroba” na Pulpicie i we Frekwencji), jak i na banerze oczekujących wniosków („7 wnioski czekają na wychowawcę”). (completed 2026-10-02)
 - [x] **Phase 24: Dekompozycja monolitycznego FirestoreSchoolRepository (2 691 LOC) na serwisy domenowe i izolacja warstwy cache** — Podział `FirestoreSchoolRepository` na wyspecjalizowane klasy domenowe (`SchoolDataCacheManager`, `FirestoreGradesDataSource`, `FirestoreAttendanceDataSource`, `FirestoreJustificationsDataSource`, `FirestoreMessagesDataSource`, `FirestoreScheduleDataSource`) z eliminacją statycznych map globalnych i zachowaniem fasady `SchoolRepository`. (completed 2026-10-03)
+- [ ] **Phase 25: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień i powiadomienia o akceptacji** — Ręczna archiwizacja i przywracanie wiadomości z zakładką „Archiwum”, automatyczna archiwizacja systemowych potwierdzeń akceptacji usprawiedliwień z podglądem zaakceptowanych usprawiedliwień we Frekwencji oraz powiadomienia Telegram / Web Push o zaakceptowaniu usprawiedliwienia przez wychowawcę.
 
 ---
 
@@ -320,3 +321,22 @@ Plans:
 **Wave 2** *(blocked on Wave 1 completion)*
 
 - [x] 24-02-PLAN.md: Extract `FirestoreMessagesDataSource` & `FirestoreScheduleDataSource`, Refactor `FirestoreSchoolRepository` Facade (`< 250 LOC`) + Unit Tests (`test/data/repositories/firestore_messages_and_schedule_test.dart`)
+
+### Phase 25: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień i powiadomienia o akceptacji
+
+**Goal**: Uporządkowanie skrzynki odbiorczej poprzez wprowadzenie ręcznej archiwizacji/przywracania wiadomości (z dedykowanym filtrem/zakładką „Archiwum”), automatyczne archiwizowanie systemowych wiadomości potwierdzających akceptację usprawiedliwienia przez wychowawcę, czytelny podgląd zaakceptowanych usprawiedliwień w module Frekwencji oraz wysyłanie powiadomień (Telegram Bot / Web Push / historia alertów) o zaakceptowaniu usprawiedliwienia.  
+**Requirements**: REQ-MSG-ARCH-01, REQ-MSG-ARCH-02, REQ-ATT-ACC-01, REQ-NOTIF-ACC-01  
+**Depends on**: Phase 24  
+**Success Criteria**:
+
+1. Użytkownik może ręcznie archiwizować i przywracać z archiwum dowolną wiadomość (zarówno z listy w `MessagesScreen`, jak i z nagłówka wątku `MessageThreadScreen`), a stan zarchiwizowania jest trwale zapisywany (Firestore + `SharedPreferences`) i dostępny w dedykowanym filtrze/zakładce **„Archiwum”**.
+2. Systemowe wiadomości dotyczące akceptacji usprawiedliwienia (np. od nadawcy `Usprawiedliwienia` / `System Librus` lub o temacie potwierdzającym akceptację usprawiedliwienia) są automatycznie oznaczane jako zarchiwizowane i nie zaśmiecają głównej skrzynki odbiorczej.
+3. W module Frekwencji (`AttendanceScreen`) użytkownik może w przejrzysty sposób zobaczyć, które nieobecności zostały zaakceptowane/usprawiedliwione (dedykowany filtr lub podgląd zaakceptowanych usprawiedliwień wraz z powiązanymi godzinami lekcyjnymi).
+4. Wykrycie nowej akceptacji usprawiedliwienia (zmiana statusu nieobecności na usprawiedliwioną lub nadejście wiadomości systemowej o akceptacji usprawiedliwienia) generuje natychmiastowe powiadomienie (Telegram Bot, Web Push oraz wpis w zakładce „Ostatnie alerty”).
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run `/gsd-plan-phase 25` to break down)
+
