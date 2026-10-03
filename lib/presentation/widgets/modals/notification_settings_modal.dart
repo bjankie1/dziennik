@@ -1,27 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/utils/calendar_browser_helper_stub.dart'
-    if (dart.library.js_interop) '../../../core/utils/calendar_browser_helper_web.dart';
-import '../../../domain/models/notification_settings.dart';
 import '../../providers/notification_settings_provider.dart';
 import '../../providers/school_providers.dart';
+import 'notification_settings/notification_alerts_history_tab.dart';
+import 'notification_settings/notification_categories_card.dart';
+import 'notification_settings/telegram_channel_card.dart';
+import 'notification_settings/web_push_channel_card.dart';
 
 class NotificationSettingsModal extends ConsumerStatefulWidget {
   final int initialTabIndex;
 
-  const NotificationSettingsModal({
-    super.key,
-    this.initialTabIndex = 0,
-  });
+  const NotificationSettingsModal({super.key, this.initialTabIndex = 0});
 
-  static Future<void> show(
-    BuildContext context, {
-    int initialTabIndex = 0,
-  }) {
+  static Future<void> show(BuildContext context, {int initialTabIndex = 0}) {
     return showDialog(
       context: context,
       builder: (ctx) => Dialog(
@@ -40,19 +32,13 @@ class NotificationSettingsModal extends ConsumerStatefulWidget {
 class _NotificationSettingsModalState
     extends ConsumerState<NotificationSettingsModal>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final TextEditingController _botTokenController = TextEditingController();
-  final TextEditingController _botUsernameController = TextEditingController();
-  final TextEditingController _manualChatIdController = TextEditingController();
+  late final TabController _tabController;
+  final GlobalKey<TelegramChannelCardState> _telegramCardKey =
+      GlobalKey<TelegramChannelCardState>();
 
-  bool _isGeneratingCode = false;
-  bool _isVerifyingCode = false;
-  bool _isSendingTelegramTest = false;
-  bool _showTelegramGuide = false;
-  bool _showAdvancedBotConfig = false;
-  bool _controllersInitialized = false;
   String? _statusMessage;
   bool _statusIsError = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -67,26 +53,7 @@ class _NotificationSettingsModalState
   @override
   void dispose() {
     _tabController.dispose();
-    _botTokenController.dispose();
-    _botUsernameController.dispose();
-    _manualChatIdController.dispose();
     super.dispose();
-  }
-
-  void _syncControllers(NotificationChannelSettings settings) {
-    if (_controllersInitialized) return;
-    _botTokenController.text = settings.telegramBotToken ?? '';
-    _botUsernameController.text = settings.telegramBotUsername;
-    _manualChatIdController.text = settings.telegramChatId ?? '';
-    _controllersInitialized = true;
-  }
-
-  String _formatPairingCode(String? code) {
-    final trimmed = (code ?? '').trim();
-    if (trimmed.length == 6) {
-      return '${trimmed.substring(0, 3)} ${trimmed.substring(3)}';
-    }
-    return trimmed;
   }
 
   void _setFeedback(String msg, {bool isError = false}) {
@@ -97,14 +64,42 @@ class _NotificationSettingsModalState
     });
   }
 
+  Future<void> _handleSaveAndClose() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+    try {
+      await _telegramCardKey.currentState?.savePendingConfigIfNeeded();
+      if (!mounted) return;
+      final nav = Navigator.of(context);
+      if (nav.canPop()) {
+        nav.pop();
+      } else {
+        _setFeedback('Zapisano ustawienia powiadomień.');
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final settingsAsync = ref.watch(notificationChannelSettingsProvider);
-    final notificationsAsync = ref.watch(schoolNotificationsStreamProvider);
-    final student = ref.watch(studentProfileProvider).value;
-    final studentName = student?.name.split(' ').first ?? 'Oskar';
-    final roleKey = ref.watch(notificationRoleKeyProvider);
-    final isStudent = roleKey == 'student';
+    final settingsLoadState = ref.watch(
+      notificationChannelSettingsProvider.select(
+        (a) => (
+          isLoading: a.isLoading && !a.hasValue,
+          error: a.hasError && !a.hasValue ? a.error : null,
+        ),
+      ),
+    );
+    final alertsCount = ref.watch(
+      schoolNotificationsStreamProvider.select((a) => a.value?.length ?? 0),
+    );
+    final studentName = ref.watch(
+      studentProfileProvider.select(
+        (s) => s.value?.name.split(' ').first ?? 'Oskar',
+      ),
+    );
+    final isStudent = ref.watch(notificationRoleKeyProvider) == 'student';
 
     return Container(
       constraints: const BoxConstraints(maxWidth: 680, maxHeight: 780),
@@ -181,7 +176,10 @@ class _NotificationSettingsModalState
                       ),
                     ),
                     IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () {
+                        final nav = Navigator.of(context);
+                        if (nav.canPop()) nav.pop();
+                      },
                       icon: const Icon(Icons.close),
                       tooltip: 'Zamknij',
                     ),
@@ -205,8 +203,7 @@ class _NotificationSettingsModalState
                     ),
                     Tab(
                       icon: const Icon(Icons.history_edu_rounded, size: 18),
-                      text:
-                          'Ostatnie alerty (${notificationsAsync.value?.length ?? 0})',
+                      text: 'Ostatnie alerty ($alertsCount)',
                     ),
                   ],
                 ),
@@ -258,1380 +255,74 @@ class _NotificationSettingsModalState
 
           // Body
           Expanded(
-            child: settingsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(
-                child: Text('Błąd wczytywania ustawień: $err'),
-              ),
-              data: (settings) {
-                _syncControllers(settings);
-                return TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildChannelsTab(context, settings, studentName),
-                    _buildAlertsHistoryTab(
-                      context,
-                      settings,
-                      notificationsAsync.value ?? const [],
-                      studentName,
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChannelsTab(
-    BuildContext context,
-    NotificationChannelSettings settings,
-    String studentName,
-  ) {
-    final service = ref.read(notificationChannelsServiceProvider);
-    final browserPerm = service.getWebPushPermission();
-    final swActive = service.isSwActive();
-
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        // 1. TELEGRAM BOT CARD
-        _buildSectionCard(
-          icon: Icons.send_rounded,
-          iconBg: const Color(0xFFE0F2FE),
-          iconColor: const Color(0xFF0284C7),
-          title: 'Telegram Bot (Powiadomienia natychmiastowe)',
-          subtitle:
-              'Otrzymuj nowe oceny, wiadomości i sprawdziany bezpośrednio na czacie Telegram',
-          badgeText: settings.isTelegramPaired
-              ? 'Połączono (${settings.telegramUsername ?? settings.telegramChatId})'
-              : 'Niepołączono',
-          badgeColor: settings.isTelegramPaired
-              ? const Color(0xFF15803D)
-              : const Color(0xFFB45309),
-          badgeBg: settings.isTelegramPaired
-              ? const Color(0xFFDCFCE7)
-              : const Color(0xFFFEF3C7),
-          trailing: settings.isTelegramPaired
-              ? Switch(
-                  value: settings.telegramEnabled,
-                  activeThumbColor: AppColors.primary,
-                  onChanged: (val) async {
-                    await service.updateSettings(
-                      familyId: settings.familyId,
-                      roleKey: settings.roleKey,
-                      patch: {'telegramEnabled': val},
-                    );
-                    _setFeedback(
-                      val
-                          ? 'Włączono powiadomienia Telegram.'
-                          : 'Wstrzymano powiadomienia Telegram.',
-                    );
-                  },
-                )
-              : null,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (settings.isTelegramPaired) ...[
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F9FF),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFBAE6FD)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.verified_rounded,
-                        color: Color(0xFF0284C7),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
+            child: settingsLoadState.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : settingsLoadState.error != null
+                    ? Center(
                         child: Text(
-                          'Konto powiązane z czatem Telegram ID: ${settings.telegramChatId}'
-                          '${settings.telegramUsername != null ? " (@${settings.telegramUsername})" : ""}',
-                          style: const TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF0369A1),
-                          ),
+                          'Błąd wczytywania ustawień: ${settingsLoadState.error}',
                         ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () async {
-                          await service.disconnectTelegram(
-                            familyId: settings.familyId,
-                            roleKey: settings.roleKey,
-                          );
-                          _setFeedback('Rozłączono czat Telegram.');
-                        },
-                        icon: const Icon(
-                          Icons.link_off,
-                          size: 16,
-                          color: AppColors.error,
-                        ),
-                        label: const Text(
-                          'Rozłącz',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.error,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-              ],
-
-              // 6-digit Pairing Code Box
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: AppColors.outlineVariant.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.qr_code_2_rounded,
-                          size: 18,
-                          color: AppColors.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text(
-                            'Parowanie 6-cyfrowym kodem jednorazowym',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        FilledButton.tonalIcon(
-                          onPressed: _isGeneratingCode
-                              ? null
-                              : () async {
-                                  setState(() => _isGeneratingCode = true);
-                                  try {
-                                    final token =
-                                        _botTokenController.text.trim();
-                                    var currentBotUser =
-                                        _botUsernameController.text.trim();
-                                    if (token.isNotEmpty &&
-                                        (currentBotUser.isEmpty ||
-                                            currentBotUser ==
-                                                'EduSyncSzkolnyBot')) {
-                                      final resolved = await service
-                                          .fetchBotUsername(token);
-                                      if (resolved != null &&
-                                          resolved.isNotEmpty) {
-                                        currentBotUser = resolved;
-                                        _botUsernameController.text = resolved;
-                                      }
-                                    }
-                                    final code =
-                                        await service.generatePairingCode(
-                                      familyId: settings.familyId,
-                                      roleKey: settings.roleKey,
-                                      botToken: token,
-                                      botUsername: currentBotUser,
-                                    );
-                                    _setFeedback(
-                                      'Wygenerowano 6-cyfrowy kod parowania: $code (ważny 15 minut).',
-                                    );
-                                  } finally {
-                                    if (mounted) {
-                                      setState(() => _isGeneratingCode = false);
-                                    }
-                                  }
-                                },
-                          icon: _isGeneratingCode
-                              ? const SizedBox(
-                                  width: 14,
-                                  height: 14,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Icon(Icons.refresh_rounded, size: 16),
-                          label: Text(
-                            settings.hasActivePairingCode
-                                ? 'Nowy kod'
-                                : 'Generuj 6-cyfrowy kod',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (settings.hasActivePairingCode) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.35),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'TWÓJ KOD PAROWANIA (15 MIN):',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.onSurfaceVariant,
-                                    letterSpacing: 0.6,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                SelectableText(
-                                  _formatPairingCode(settings.pairingCode),
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: 3,
-                                    color: AppColors.primary,
-                                    fontFamily: 'monospace',
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Wrap(
-                              spacing: 8,
-                              children: [
-                                OutlinedButton.icon(
-                                  onPressed: () {
-                                    Clipboard.setData(
-                                      ClipboardData(
-                                        text: '/start ${settings.pairingCode}',
-                                      ),
-                                    );
-                                    _setFeedback(
-                                      'Skopiowano komendę "/start ${settings.pairingCode}" do schowka.',
-                                    );
-                                  },
-                                  icon: const Icon(Icons.copy, size: 15),
-                                  label: Text(
-                                    'Kopiuj /start ${settings.pairingCode}',
-                                    style: const TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                                FilledButton.icon(
-                                  onPressed: () {
-                                    final botUser = _botUsernameController.text
-                                            .trim()
-                                            .isNotEmpty
-                                        ? _botUsernameController.text
-                                            .trim()
-                                            .replaceAll('@', '')
-                                        : settings.telegramBotUsername;
-                                    openUrlInBrowser(
-                                      'https://t.me/$botUser?start=${settings.pairingCode}',
-                                    );
-                                  },
-                                  icon: const Icon(
-                                    Icons.open_in_new_rounded,
-                                    size: 15,
-                                  ),
-                                  label: const Text(
-                                    'Otwórz Telegram',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
+                      )
+                    : TabBarView(
+                        controller: _tabController,
                         children: [
-                          const Expanded(
-                            child: Text(
-                              'Krok 2: Po wysłaniu komendy /start do bota w Telegramie kliknij przycisk obok, aby powiązać czat:',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                color: AppColors.onSurfaceVariant,
+                          ListView(
+                            padding: const EdgeInsets.all(20),
+                            children: [
+                              TelegramChannelCard(
+                                key: _telegramCardKey,
+                                studentName: studentName,
+                                onFeedback: _setFeedback,
                               ),
-                            ),
+                              const SizedBox(height: 16),
+                              WebPushChannelCard(
+                                studentName: studentName,
+                                onFeedback: _setFeedback,
+                              ),
+                              const SizedBox(height: 16),
+                              const NotificationCategoriesCard(),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          FilledButton.icon(
-                            style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF0284C7),
-                            ),
-                            onPressed: _isVerifyingCode
-                                ? null
-                                : () async {
-                                    setState(() => _isVerifyingCode = true);
-                                    try {
-                                      final res =
-                                          await service.verifyPairingCode(
-                                        familyId: settings.familyId,
-                                        roleKey: settings.roleKey,
-                                        pairingCode: settings.pairingCode!,
-                                        botToken:
-                                            _botTokenController.text.isNotEmpty
-                                                ? _botTokenController.text
-                                                : settings.telegramBotToken,
-                                      );
-                                      if (res.paired) {
-                                        _manualChatIdController.text =
-                                            res.chatId ?? '';
-                                        _setFeedback(
-                                          'Pomyślnie sparowano czat Telegram (${res.username ?? res.chatId}) i wysłano powitanie!',
-                                        );
-                                      } else {
-                                        _setFeedback(
-                                          res.error ??
-                                              'Nie znaleziono wiadomości z kodem.',
-                                          isError: true,
-                                        );
-                                      }
-                                    } finally {
-                                      if (mounted) {
-                                        setState(
-                                          () => _isVerifyingCode = false,
-                                        );
-                                      }
-                                    }
-                                  },
-                            icon: _isVerifyingCode
-                                ? const SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Icon(
-                                    Icons.check_circle_outline,
-                                    size: 16,
-                                  ),
-                            label: const Text(
-                              'Weryfikuj parowanie',
-                              style: TextStyle(fontSize: 12),
-                            ),
+                          NotificationAlertsHistoryTab(
+                            onFeedback: _setFeedback,
                           ),
                         ],
                       ),
-                    ] else ...[
-                      const SizedBox(height: 6),
-                      const Text(
-                        'Kliknij „Generuj 6-cyfrowy kod”, a następnie wyślij go botowi na Telegramie komendą /start KOD.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Step-by-step guide, Advanced configuration (Bot Token / Manual Chat ID) & Test Button
-              Wrap(
-                spacing: 8,
-                runSpacing: 6,
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  TextButton.icon(
-                    key: const ValueKey('telegram_step_by_step_guide_button'),
-                    onPressed: () {
-                      setState(
-                        () => _showTelegramGuide = !_showTelegramGuide,
-                      );
-                    },
-                    icon: Icon(
-                      _showTelegramGuide
-                          ? Icons.expand_less_rounded
-                          : Icons.help_outline_rounded,
-                      size: 16,
-                    ),
-                    label: Text(
-                      _showTelegramGuide
-                          ? 'Ukryj instrukcję krok po kroku'
-                          : 'Instrukcja krok po kroku (Jak połączyć?)',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  TextButton.icon(
-                    onPressed: () {
-                      setState(
-                        () => _showAdvancedBotConfig = !_showAdvancedBotConfig,
-                      );
-                    },
-                    icon: Icon(
-                      _showAdvancedBotConfig
-                          ? Icons.expand_less
-                          : Icons.settings_ethernet_rounded,
-                      size: 16,
-                    ),
-                    label: Text(
-                      _showAdvancedBotConfig
-                          ? 'Ukryj konfigurację Tokenu / Chat ID'
-                          : 'Konfiguracja własnego bota (@BotFather) / Ręczny Chat ID',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ),
-                  if (settings.isTelegramPaired)
-                    OutlinedButton.icon(
-                      onPressed: _isSendingTelegramTest
-                          ? null
-                          : () async {
-                              setState(() => _isSendingTelegramTest = true);
-                              try {
-                                final ok = await service.sendTestTelegram(
-                                  settings: settings,
-                                  studentName: studentName,
-                                );
-                                if (ok) {
-                                  _setFeedback(
-                                    'Wysłano testowe powiadomienie na Twój czat Telegram!',
-                                  );
-                                } else {
-                                  _setFeedback(
-                                    'Nie udało się wysłać wiadomości. Sprawdź Token Bota oraz Chat ID w sekcji konfiguracji.',
-                                    isError: true,
-                                  );
-                                }
-                              } finally {
-                                if (mounted) {
-                                  setState(
-                                    () => _isSendingTelegramTest = false,
-                                  );
-                                }
-                              }
-                            },
-                      icon: _isSendingTelegramTest
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.send_outlined, size: 15),
-                      label: const Text(
-                        'Wyślij test na Telegram',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
-                ],
-              ),
-
-              if (_showTelegramGuide) ...[
-                const SizedBox(height: 10),
-                _buildTelegramStepByStepGuide(context, settings),
-              ],
-
-              if (_showAdvancedBotConfig) ...[
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLowest,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.outlineVariant.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Własny Bot Telegram (@BotFather) lub bezpośredni Chat ID',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Wklej Token HTTP API bota z @BotFather (np. 123456:ABC-DEF...) oraz opcjonalnie swój Chat ID, aby natychmiast odbierać powiadomienia.',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: TextField(
-                              controller: _botTokenController,
-                              decoration: InputDecoration(
-                                labelText: 'Telegram Bot Token (@BotFather)',
-                                hintText: 'np. 7123456789:AAH...',
-                                isDense: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              style: const TextStyle(fontSize: 12.5),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: _manualChatIdController,
-                              decoration: InputDecoration(
-                                labelText: 'Telegram Chat ID',
-                                hintText: 'np. 123456789',
-                                isDense: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              style: const TextStyle(fontSize: 12.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _botUsernameController,
-                              decoration: InputDecoration(
-                                labelText: 'Nazwa bota (bez @)',
-                                hintText: 'EduSyncSzkolnyBot',
-                                isDense: true,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              style: const TextStyle(fontSize: 12.5),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          FilledButton.icon(
-                            onPressed: () async {
-                              final token = _botTokenController.text.trim();
-                              final chatId =
-                                  _manualChatIdController.text.trim();
-                              var botUser =
-                                  _botUsernameController.text.trim();
-                              if (token.isNotEmpty &&
-                                  (botUser.isEmpty ||
-                                      botUser == 'EduSyncSzkolnyBot')) {
-                                final resolved =
-                                    await service.fetchBotUsername(token);
-                                if (resolved != null && resolved.isNotEmpty) {
-                                  botUser = resolved;
-                                  _botUsernameController.text = resolved;
-                                }
-                              }
-                              await service.updateSettings(
-                                familyId: settings.familyId,
-                                roleKey: settings.roleKey,
-                                patch: {
-                                  'telegramBotToken':
-                                      token.isNotEmpty ? token : null,
-                                  'telegramBotUsername': botUser.isNotEmpty
-                                      ? botUser.replaceAll('@', '')
-                                      : 'EduSyncSzkolnyBot',
-                                  if (chatId.isNotEmpty) ...{
-                                    'telegramChatId': chatId,
-                                    'telegramEnabled': true,
-                                  },
-                                },
-                              );
-                              _setFeedback(
-                                'Zapisano konfigurację bota Telegram${chatId.isNotEmpty ? " i aktywowano czat $chatId" : ""}.',
-                              );
-                            },
-                            icon: const Icon(Icons.save_outlined, size: 16),
-                            label: const Text(
-                              'Zapisz konfigurację',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
           ),
-        ),
 
-        const SizedBox(height: 16),
-
-        // 2. WEB PUSH CARD
-        _buildSectionCard(
-          icon: Icons.web_asset_rounded,
-          iconBg: const Color(0xFFEDE9FE),
-          iconColor: const Color(0xFF6D28D9),
-          title: 'Powiadomienia Web Push w przeglądarce',
-          subtitle:
-              'Natywne powiadomienia systemowe (macOS / Windows / Android / iOS) przez Service Worker',
-          badgeText: browserPerm == 'granted' && settings.webPushEnabled
-              ? 'Aktywne (SW Ready)'
-              : browserPerm == 'denied'
-                  ? 'Zablokowane w przeglądarce'
-                  : 'Nieaktywne',
-          badgeColor: browserPerm == 'granted' && settings.webPushEnabled
-              ? const Color(0xFF15803D)
-              : browserPerm == 'denied'
-                  ? AppColors.error
-                  : const Color(0xFF6D28D9),
-          badgeBg: browserPerm == 'granted' && settings.webPushEnabled
-              ? const Color(0xFFDCFCE7)
-              : browserPerm == 'denied'
-                  ? AppColors.errorContainer
-                  : const Color(0xFFEDE9FE),
-          trailing: Switch(
-            value: settings.webPushEnabled && browserPerm == 'granted',
-            activeThumbColor: AppColors.primary,
-            onChanged: (val) async {
-              if (val) {
-                final perm = await service.requestAndEnableWebPush(
-                  familyId: settings.familyId,
-                  roleKey: settings.roleKey,
-                );
-                if (perm == 'granted') {
-                  _setFeedback(
-                    'Włączono powiadomienia Web Push w przeglądarce!',
-                  );
-                } else {
-                  _setFeedback(
-                    'Przeglądarka nie udzieliła zgody na powiadomienia (status: $perm). Odblokuj powiadomienia obok paska adresu.',
-                    isError: true,
-                  );
-                }
-              } else {
-                await service.updateSettings(
-                  familyId: settings.familyId,
-                  roleKey: settings.roleKey,
-                  patch: {'webPushEnabled': false},
-                );
-                _setFeedback('Wyłączono powiadomienia Web Push.');
-              }
-              setState(() {});
-            },
-          ),
-          child: Row(
-            children: [
-              Icon(
-                swActive ? Icons.check_circle : Icons.info_outline,
-                size: 16,
-                color:
-                    swActive ? const Color(0xFF15803D) : AppColors.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  swActive
-                      ? 'Service Worker (/sw-notifications.js) zarejestrowany • Uprawnienia: ${browserPerm.toUpperCase()}'
-                      : 'Uprawnienia przeglądarki: ${browserPerm.toUpperCase()}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ),
-              ),
-              FilledButton.tonalIcon(
-                onPressed: () async {
-                  if (browserPerm != 'granted') {
-                    final perm = await service.requestAndEnableWebPush(
-                      familyId: settings.familyId,
-                      roleKey: settings.roleKey,
-                    );
-                    if (perm != 'granted') {
-                      _setFeedback(
-                        'Najpierw zezwól na powiadomienia w przeglądarce.',
-                        isError: true,
-                      );
-                      return;
-                    }
-                  }
-                  final ok = service.triggerWebPush(
-                    title: '🎓 EduSync • Nowa ocena: 5 (Język angielski)',
-                    body:
-                        'Uczeń: $studentName • Kategoria: Sprawdzian (Waga 3) • Kliknij, aby otworzyć Oceny.',
-                    tag: 'edusync-test-webpush',
-                    url: '/oceny',
-                  );
-                  if (ok) {
-                    _setFeedback(
-                      'Wyświetlono natywne powiadomienie Web Push w przeglądarce!',
-                    );
-                  } else {
-                    _setFeedback(
-                      'Nie udało się wyświetlić powiadomienia Web Push.',
-                      isError: true,
-                    );
-                  }
-                },
-                icon: const Icon(Icons.notifications_active_outlined, size: 16),
-                label: const Text(
-                  'Testuj Web Push',
-                  style: TextStyle(fontSize: 12),
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        // 3. EVENT CATEGORIES CARD
-        _buildSectionCard(
-          icon: Icons.category_outlined,
-          iconBg: const Color(0xFFFEF3C7),
-          iconColor: const Color(0xFFD97706),
-          title: 'Kategorie powiadomień (Filtry zdarzeń)',
-          subtitle:
-              'Wybierz, o jakich zdarzeniach szkolnych chcesz otrzymywać alerty na Telegram i Web Push',
-          child: Column(
-            children: [
-              _buildCategoryToggle(
-                icon: Icons.verified_outlined,
-                title: 'Nowe oceny i średnie',
-                subtitle:
-                    'Przedmiot, stopień, waga oceny, kategoria oraz nauczyciel',
-                value: settings.notifyGrades,
-                onChanged: (val) => service.updateSettings(
-                  familyId: settings.familyId,
-                  roleKey: settings.roleKey,
-                  patch: {'notifyGrades': val},
-                ),
-              ),
-              const Divider(height: 1),
-              _buildCategoryToggle(
-                icon: Icons.mail_outline_rounded,
-                title: 'Nowe wiadomości i ogłoszenia z Librusa',
-                subtitle:
-                    'Powiadomienia o nowych wiadomościach od nauczycieli i wychowawcy',
-                value: settings.notifyMessages,
-                onChanged: (val) => service.updateSettings(
-                  familyId: settings.familyId,
-                  roleKey: settings.roleKey,
-                  patch: {'notifyMessages': val},
-                ),
-              ),
-              const Divider(height: 1),
-              _buildCategoryToggle(
-                icon: Icons.event_note_rounded,
-                title: 'Nadchodzące sprawdziany i kartkówki',
-                subtitle:
-                    'Nowe wpisy w terminarzu sprawdzianów wraz z zakresem materiału',
-                value: settings.notifyExams,
-                onChanged: (val) => service.updateSettings(
-                  familyId: settings.familyId,
-                  roleKey: settings.roleKey,
-                  patch: {'notifyExams': val},
-                ),
-              ),
-              const Divider(height: 1),
-              _buildCategoryToggle(
-                icon: Icons.forum_outlined,
-                title: 'Czat rodzinny i wnioski o e-usprawiedliwienie',
-                subtitle:
-                    'Nowe wiadomości od rodzica/ucznia oraz prośby o akceptację usprawiedliwienia',
-                value: settings.notifyFamilyChat,
-                onChanged: (val) => service.updateSettings(
-                  familyId: settings.familyId,
-                  roleKey: settings.roleKey,
-                  patch: {'notifyFamilyChat': val},
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAlertsHistoryTab(
-    BuildContext context,
-    NotificationChannelSettings settings,
-    List<SchoolNotificationItem> items,
-    String studentName,
-  ) {
-    final service = ref.read(notificationChannelsServiceProvider);
-
-    if (items.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.notifications_none_rounded,
-                size: 48,
-                color: AppColors.onSurfaceVariant.withValues(alpha: 0.5),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'Brak zapisanych alertów z ostatnich synchronizacji',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.onSurface,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Gdy w Librusie pojawi się nowa ocena, wiadomość lub sprawdzian, zobaczysz je tutaj oraz na Telegramie / Web Push.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final unreadCount = items.where((i) => !i.isRead).length;
-
-    return Column(
-      children: [
-        if (unreadCount > 0)
+          // Footer Bar
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              onPressed: () async {
-                await service.markAllNotificationsAsRead(settings.familyId);
-                _setFeedback('Oznaczono wszystkie alerty jako przeczytane.');
-              },
-              icon: const Icon(Icons.done_all_rounded, size: 16),
-              label: Text(
-                'Oznacz wszystkie jako przeczytane ($unreadCount)',
-                style: const TextStyle(fontSize: 12),
-              ),
-            ),
-          ),
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.all(20),
-            itemCount: items.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final (icon, color, route) = switch (item.type) {
-                'grade' => (
-                    Icons.school_rounded,
-                    const Color(0xFF2563EB),
-                    '/oceny'
-                  ),
-                'message' || 'announcement' => (
-                    Icons.mail_rounded,
-                    const Color(0xFF0284C7),
-                    '/wiadomosci'
-                  ),
-                'exam' => (
-                    Icons.event_available_rounded,
-                    const Color(0xFFD97706),
-                    '/plan-lekcji'
-                  ),
-                'family_chat' => (
-                    Icons.forum_rounded,
-                    const Color(0xFF7C3AED),
-                    '/czat'
-                  ),
-                _ => (
-                    Icons.notifications_rounded,
-                    AppColors.primary,
-                    '/pulpit'
-                  ),
-              };
-
-              return Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: item.isRead
-                      ? AppColors.surfaceContainerLow
-                      : AppColors.primaryFixed.withValues(alpha: 0.25),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: item.isRead
-                        ? AppColors.outlineVariant.withValues(alpha: 0.35)
-                        : AppColors.primary.withValues(alpha: 0.35),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, color: color, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.title,
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: item.isRead
-                                  ? FontWeight.w600
-                                  : FontWeight.w700,
-                              color: AppColors.onSurface,
-                            ),
-                          ),
-                          if (item.body.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              item.body,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 4),
-                          Text(
-                            DateFormat('dd.MM.yyyy HH:mm')
-                                .format(item.timestamp),
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.outline,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Wyślij jako Web Push',
-                      onPressed: () {
-                        service.triggerWebPush(
-                          title: item.title,
-                          body: item.body,
-                          tag: item.id,
-                          url: route,
-                        );
-                      },
-                      icon: const Icon(Icons.open_in_browser_rounded, size: 18),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        service.markNotificationAsRead(
-                          settings.familyId,
-                          item.id,
-                        );
-                        Navigator.of(context).pop();
-                        context.go(route);
-                      },
-                      child:
-                          const Text('Otwórz', style: TextStyle(fontSize: 12)),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionCard({
-    required IconData icon,
-    required Color iconBg,
-    required Color iconColor,
-    required String title,
-    required String subtitle,
-    required Widget child,
-    String? badgeText,
-    Color? badgeColor,
-    Color? badgeBg,
-    Widget? trailing,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.45),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: iconColor, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.onSurface,
-                            ),
-                          ),
-                        ),
-                        if (badgeText != null) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: badgeBg,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              badgeText,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: badgeColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              ?trailing,
-            ],
-          ),
-          const SizedBox(height: 14),
-          child,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryToggle({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return SwitchListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-      secondary: Icon(icon, color: AppColors.primary, size: 20),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 13.5,
-          fontWeight: FontWeight.w600,
-          color: AppColors.onSurface,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(
-          fontSize: 11.5,
-          color: AppColors.onSurfaceVariant,
-        ),
-      ),
-      value: value,
-      activeThumbColor: AppColors.primary,
-      onChanged: onChanged,
-    );
-  }
-
-  Widget _buildTelegramStepByStepGuide(
-    BuildContext context,
-    NotificationChannelSettings settings,
-  ) {
-    final codeHint = settings.hasActivePairingCode
-        ? settings.pairingCode!
-        : '123456';
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFF0284C7).withValues(alpha: 0.35),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.menu_book_rounded,
-                size: 18,
-                color: Color(0xFF0284C7),
-              ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text(
-                  'Instrukcja krok po kroku: Jak skonfigurować powiadomienia Telegram',
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.onSurface,
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: () => setState(() => _showTelegramGuide = false),
-                icon: const Icon(Icons.close, size: 16),
-                tooltip: 'Ukryj instrukcję',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Step 1
-          _buildGuideStepItem(
-            stepLabel: 'Krok 1',
-            title: 'Utwórz własnego bota w @BotFather',
-            description:
-                'Otwórz rozmowę z oficjalnym botem @BotFather w aplikacji Telegram i wyślij komendę /newbot. '
-                'Podaj dowolną nazwę wyświetlaną (np. „Dziennik Szkolny EduSync”), a następnie nazwę użytkownika zakończoną na „bot” (np. EduSyncOskar_bot). '
-                'Skopiuj wygenerowany przez @BotFather klucz HTTP API Token (np. 7123456789:AAH...).',
-            actions: Wrap(
-              spacing: 8,
-              runSpacing: 6,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () {
-                    Clipboard.setData(const ClipboardData(text: '/newbot'));
-                    _setFeedback(
-                      'Skopiowano komendę "/newbot" do schowka.',
-                    );
-                  },
-                  icon: const Icon(Icons.copy_rounded, size: 14),
-                  label: const Text(
-                    'Kopiuj /newbot',
-                    style: TextStyle(fontSize: 11.5),
-                  ),
-                ),
-                FilledButton.tonalIcon(
-                  onPressed: () {
-                    openUrlInBrowser('https://t.me/BotFather');
-                  },
-                  icon: const Icon(Icons.open_in_new_rounded, size: 14),
-                  label: const Text(
-                    'Otwórz @BotFather',
-                    style: TextStyle(fontSize: 11.5),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Step 2
-          _buildGuideStepItem(
-            stepLabel: 'Krok 2',
-            title: 'Wklej Token Bota w EduSync',
-            description:
-                'Rozwiń sekcję „Konfiguracja własnego bota (@BotFather) / Ręczny Chat ID”, wklej skopiowany Telegram Bot Token i kliknij „Zapisz konfigurację” '
-                '(EduSync automatycznie pobierze nazwę Twojego bota z Telegram API).',
-            actions: OutlinedButton.icon(
-              key: const ValueKey('telegram_guide_show_token_field_button'),
-              onPressed: () {
-                setState(() => _showAdvancedBotConfig = true);
-              },
-              icon: const Icon(Icons.key_rounded, size: 14),
-              label: const Text(
-                'Pokaż pole Tokenu poniżej',
-                style: TextStyle(fontSize: 11.5),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Step 3
-          _buildGuideStepItem(
-            stepLabel: 'Krok 3',
-            title: 'Wygeneruj 6-cyfrowy kod i wyślij go SWOJEMU nowemu botowi',
-            description:
-                'Kliknij „Generuj 6-cyfrowy kod” powyżej, przejdź do okna czatu ze SWOIM nowo utworzonym botem (nie z @BotFather!) i wyślij mu wiadomość /start $codeHint.',
-          ),
-          const SizedBox(height: 10),
-
-          // Warning Box about "Invalid bot passed"
-          Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFBEB),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: const Color(0xFFF59E0B).withValues(alpha: 0.6),
+              color: AppColors.surfaceContainerLow.withValues(alpha: 0.5),
+              borderRadius:
+                  const BorderRadius.vertical(bottom: Radius.circular(24)),
+              border: Border(
+                top: BorderSide(
+                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                ),
               ),
             ),
-            child: const Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  color: Color(0xFFD97706),
-                  size: 20,
+                TextButton(
+                  onPressed: () {
+                    final nav = Navigator.of(context);
+                    if (nav.canPop()) nav.pop();
+                  },
+                  child: const Text('Anuluj', style: TextStyle(fontSize: 12.5)),
                 ),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Uwaga na błąd „Invalid bot passed” — nie wysyłaj kodu do @BotFather!',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF92400E),
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Nie wklejaj komendy „/start KOD” w oknie rozmowy z @BotFather — @BotFather służy wyłącznie do tworzenia botów i odpowie błędem „Invalid bot passed”. '
-                        'W wiadomości zwrotnej od @BotFather kliknij link t.me/TwojaNazwaBota_bot, aby przejść do czatu ze SWOIM nowym botem, kliknij „START” na dole ekranu i dopiero tam wyślij „/start KOD”.',
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          height: 1.35,
-                          color: Color(0xFF78350F),
-                        ),
-                      ),
-                    ],
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  key: const ValueKey('save_notification_settings_button'),
+                  onPressed: _isSaving ? null : _handleSaveAndClose,
+                  icon: const Icon(Icons.check_rounded, size: 16),
+                  label: const Text(
+                    'Zapisz ustawienia',
+                    style: TextStyle(fontSize: 12.5),
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          // Step 4
-          _buildGuideStepItem(
-            stepLabel: 'Krok 4',
-            title: 'Kliknij „Weryfikuj parowanie”',
-            description:
-                'Wróć do tego okna w EduSync i kliknij przycisk „Weryfikuj parowanie”. '
-                'Po pomyślnym połączeniu możesz przetestować powiadomienia przyciskiem „Wyślij test na Telegram”.',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGuideStepItem({
-    required String stepLabel,
-    required String title,
-    required String description,
-    Widget? actions,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: AppColors.outlineVariant.withValues(alpha: 0.35),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE0F2FE),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              stepLabel,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF0369A1),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    height: 1.35,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                ),
-                if (actions != null) ...[
-                  const SizedBox(height: 8),
-                  actions,
-                ],
               ],
             ),
           ),
