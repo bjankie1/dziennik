@@ -55,11 +55,14 @@ class WeeklyGridView extends ConsumerWidget {
     }
     final timeSlots = defaultTimeSlots.take(maxLessonNumber.clamp(6, 10)).toList();
 
+    final selectedDayIndex = ref.watch(selectedScheduleDayProvider);
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenWidth = constraints.maxWidth;
-        final isCompactTablet = screenWidth >= 700 && screenWidth < 1024;
-        final timeColWidth = isCompactTablet ? 72.0 : 96.0;
+        final isCompactTablet = screenWidth < 1024;
+        final timeColWidth = isCompactTablet ? 72.0 : 92.0;
+        final tableWidth = screenWidth < 820 ? 820.0 : screenWidth;
 
         return Container(
           decoration: BoxDecoration(
@@ -77,11 +80,12 @@ class WeeklyGridView extends ConsumerWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: SingleChildScrollView(
-              scrollDirection: screenWidth < 700 ? Axis.horizontal : Axis.vertical,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: screenWidth < 700 ? 760 : screenWidth,
-                ),
+              scrollDirection: Axis.horizontal,
+              physics: screenWidth < 820
+                  ? const BouncingScrollPhysics()
+                  : const NeverScrollableScrollPhysics(),
+              child: SizedBox(
+                width: tableWidth,
                 child: Column(
                   children: [
                     // Header Row: Days
@@ -98,7 +102,7 @@ class WeeklyGridView extends ConsumerWidget {
                           SizedBox(
                             width: timeColWidth,
                             child: const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12),
+                              padding: EdgeInsets.symmetric(vertical: 10),
                               child: Center(
                                 child: Text(
                                   'GODZINA',
@@ -117,6 +121,7 @@ class WeeklyGridView extends ConsumerWidget {
                           ...List.generate(5, (i) {
                             final dayDate = dayDates[i];
                             final isToday = _isSameDay(dayDate, now);
+                            final isSelectedDay = selectedDayIndex == i;
                             final dayLessons = weekMap[i + 1] ?? [];
                             final dayNumber = DateFormat('d MMMM', 'pl_PL').format(dayDate);
 
@@ -128,7 +133,11 @@ class WeeklyGridView extends ConsumerWidget {
 
                             return Expanded(
                               child: Material(
-                                color: isToday ? AppColors.primary.withValues(alpha: 0.05) : Colors.transparent,
+                                color: isToday
+                                    ? AppColors.primary.withValues(alpha: 0.06)
+                                    : (isSelectedDay
+                                        ? AppColors.primary.withValues(alpha: 0.03)
+                                        : Colors.transparent),
                                 child: InkWell(
                                   onTap: () {
                                     if (onDayHeaderTap != null) onDayHeaderTap!(i);
@@ -136,12 +145,19 @@ class WeeklyGridView extends ConsumerWidget {
                                   child: Container(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: isCompactTablet ? 6 : 10,
-                                      vertical: 10,
+                                      vertical: 8,
                                     ),
                                     decoration: BoxDecoration(
                                       border: Border(
                                         left: const BorderSide(color: AppColors.surfaceContainerHigh),
-                                        top: isToday ? const BorderSide(color: AppColors.primary, width: 3) : BorderSide.none,
+                                        top: (isToday || isSelectedDay)
+                                            ? BorderSide(
+                                                color: isToday
+                                                    ? AppColors.primary
+                                                    : AppColors.primary.withValues(alpha: 0.55),
+                                                width: 3,
+                                              )
+                                            : BorderSide.none,
                                       ),
                                     ),
                                     child: Row(

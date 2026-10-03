@@ -7,103 +7,87 @@ import 'widgets/weekly_summary_banner.dart';
 import 'widgets/weekly_grid_view.dart';
 import 'widgets/agenda_view.dart';
 
-class ScheduleScreen extends ConsumerStatefulWidget {
+class ScheduleScreen extends ConsumerWidget {
   const ScheduleScreen({super.key});
 
-  @override
-  ConsumerState<ScheduleScreen> createState() => _ScheduleScreenState();
-}
-
-class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
-  int? _viewMode; // 0 = Siatka, 1 = Agenda (null until initialized from screen size)
-
-  void _previousWeek() {
+  void _previousWeek(WidgetRef ref) {
     ref.read(selectedWeekMondayProvider.notifier).previousWeek();
   }
 
-  void _nextWeek() {
+  void _nextWeek(WidgetRef ref) {
     ref.read(selectedWeekMondayProvider.notifier).nextWeek();
   }
 
-  void _goToCurrentWeek() {
+  void _goToCurrentWeek(WidgetRef ref) {
     ref.read(selectedWeekMondayProvider.notifier).resetToCurrentWeek();
     final now = DateTime.now();
-    ref.read(selectedScheduleDayProvider.notifier).setDay((now.weekday - 1).clamp(0, 4));
+    ref
+        .read(selectedScheduleDayProvider.notifier)
+        .setDay((now.weekday - 1).clamp(0, 4));
   }
 
   @override
-  Widget build(BuildContext context) {
-    final studentAsync = ref.watch(studentProfileProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
     final currentWeekMonday = ref.watch(selectedWeekMondayProvider);
     final weekScheduleAsync = ref.watch(weekScheduleProvider);
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 1024;
-        // If view mode was not manually toggled by the user, default to Grid on desktop, Agenda on mobile
-        final activeViewMode = _viewMode ?? (isDesktop ? 0 : 1);
-
-        final student = studentAsync.value;
-        final className = student != null ? 'Klasa ${student.className}' : 'Klasa';
-        final schoolName = student?.schoolName ?? 'LO nr X we Wrocławiu';
-        final educatorName = student?.educator ?? 'Wychowawca';
+        // Automatically switch between full 5-day Grid (wide viewports >= 900px)
+        // and daily Agenda (narrow/mobile viewports < 900px)
+        final isWideGrid = constraints.maxWidth >= 900;
 
         return Scaffold(
-          backgroundColor: isDesktop ? AppColors.surface : Colors.white,
+          backgroundColor: isWideGrid ? AppColors.surface : Colors.white,
           body: RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(weekScheduleProvider);
             },
             child: ListView(
               padding: EdgeInsets.symmetric(
-                horizontal: isDesktop ? 24 : 16,
-                vertical: 16,
+                horizontal: isWideGrid ? 20 : 12,
+                vertical: 10,
               ),
               children: [
-                // 1. Week Navigator Bar with Tools & View Toggle
+                // 1. Compact 1-line Week Navigator Bar
                 WeekNavigatorBar(
                   currentWeekMonday: currentWeekMonday,
-                  onPreviousWeek: _previousWeek,
-                  onNextWeek: _nextWeek,
-                  onCurrentWeek: _goToCurrentWeek,
-                  viewMode: activeViewMode,
-                  onViewModeChanged: (mode) {
-                    setState(() {
-                      _viewMode = mode;
-                    });
-                  },
-                  className: className,
-                  profileName: schoolName,
-                  teacherName: educatorName,
+                  onPreviousWeek: () => _previousWeek(ref),
+                  onNextWeek: () => _nextWeek(ref),
+                  onCurrentWeek: () => _goToCurrentWeek(ref),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
 
-                // 2. Weekly Summary Banner (4 Alert Cards) - always available or above Grid
-                const WeeklySummaryBanner(),
-                const SizedBox(height: 14),
-
-                // 3. Main Schedule Area (Grid or Agenda)
+                // 2. Main Schedule Area starts immediately at the top:
+                // - Wide viewports (>= 900px): WeeklyGridView at the top + AgendaView below the grid
+                // - Narrow viewports (< 900px): AgendaView immediately at the top
                 weekScheduleAsync.when(
                   data: (weekMap) {
-                    if (activeViewMode == 0) {
-                      // Grid View
-                      return WeeklyGridView(
-                        currentWeekMonday: currentWeekMonday,
-                        weekMap: weekMap,
-                        onDayHeaderTap: (dayIdx) {
-                          ref.read(selectedScheduleDayProvider.notifier).setDay(dayIdx);
-                          setState(() {
-                            _viewMode = 1; // Switch to Agenda view for this day
-                          });
-                        },
-                      );
-                    } else {
-                      // Agenda View
-                      return AgendaView(
-                        currentWeekMonday: currentWeekMonday,
-                        weekMap: weekMap,
+                    if (isWideGrid) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          WeeklyGridView(
+                            currentWeekMonday: currentWeekMonday,
+                            weekMap: weekMap,
+                            onDayHeaderTap: (dayIdx) {
+                              ref
+                                  .read(selectedScheduleDayProvider.notifier)
+                                  .setDay(dayIdx);
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          AgendaView(
+                            currentWeekMonday: currentWeekMonday,
+                            weekMap: weekMap,
+                          ),
+                        ],
                       );
                     }
+                    return AgendaView(
+                      currentWeekMonday: currentWeekMonday,
+                      weekMap: weekMap,
+                    );
                   },
                   loading: () => Container(
                     padding: const EdgeInsets.symmetric(vertical: 48),
@@ -119,11 +103,18 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     ),
                     child: Column(
                       children: [
-                        const Icon(Icons.error_outline, size: 36, color: AppColors.error),
+                        const Icon(
+                          Icons.error_outline,
+                          size: 36,
+                          color: AppColors.error,
+                        ),
                         const SizedBox(height: 8),
                         Text(
                           'Nie udało się pobrać planu lekcji: $err',
-                          style: const TextStyle(fontSize: 13, color: AppColors.error),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.error,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 12),
@@ -135,6 +126,10 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 14),
+
+                // 3. Weekly Summary Banner placed below the schedule so it doesn't push lessons down
+                const WeeklySummaryBanner(),
                 const SizedBox(height: 32),
               ],
             ),
