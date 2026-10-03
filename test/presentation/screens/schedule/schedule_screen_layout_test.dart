@@ -74,7 +74,7 @@ void main() {
   });
 
   testWidgets(
-      'Wide viewport (>=900px) automatically renders WeeklyGridView at the top with AgendaView and WeeklySummaryBanner below it',
+      'Wide viewport (>=900px) automatically renders WeeklyGridView only at the top with WeeklySummaryBanner below it',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(1280, 900));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -83,11 +83,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(WeeklyGridView), findsOneWidget);
-    expect(find.byType(AgendaView), findsOneWidget);
+    expect(find.byType(AgendaView), findsNothing);
 
     final gridTop = tester.getTopLeft(find.byType(WeeklyGridView)).dy;
-    final agendaTop = tester.getTopLeft(find.byType(AgendaView)).dy;
+    final bannerTop = tester.getTopLeft(find.byType(WeeklySummaryBanner)).dy;
     expect(gridTop, lessThan(100));
-    expect(agendaTop, greaterThan(gridTop));
+    expect(bannerTop, greaterThan(gridTop));
   });
 }

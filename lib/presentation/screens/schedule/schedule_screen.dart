@@ -59,29 +59,19 @@ class ScheduleScreen extends ConsumerWidget {
                 const SizedBox(height: 10),
 
                 // 2. Main Schedule Area starts immediately at the top:
-                // - Wide viewports (>= 900px): WeeklyGridView at the top + AgendaView below the grid
-                // - Narrow viewports (< 900px): AgendaView immediately at the top
+                // - Wide viewports (>= 900px): WeeklyGridView ONLY
+                // - Narrow viewports (< 900px): AgendaView ONLY
                 weekScheduleAsync.when(
                   data: (weekMap) {
                     if (isWideGrid) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          WeeklyGridView(
-                            currentWeekMonday: currentWeekMonday,
-                            weekMap: weekMap,
-                            onDayHeaderTap: (dayIdx) {
-                              ref
-                                  .read(selectedScheduleDayProvider.notifier)
-                                  .setDay(dayIdx);
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          AgendaView(
-                            currentWeekMonday: currentWeekMonday,
-                            weekMap: weekMap,
-                          ),
-                        ],
+                      return WeeklyGridView(
+                        currentWeekMonday: currentWeekMonday,
+                        weekMap: weekMap,
+                        onDayHeaderTap: (dayIdx) {
+                          ref
+                              .read(selectedScheduleDayProvider.notifier)
+                              .setDay(dayIdx);
+                        },
                       );
                     }
                     return AgendaView(
