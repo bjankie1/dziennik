@@ -106,6 +106,116 @@ void main() {
     });
   });
 
+  group(
+    'MessageThread domain helpers (resolveSenderName, extractCcTeacherFromBody, looksLikeMessageWithAttachment)',
+    () {
+      test('resolveSenderName returns trimmed senderName when non-empty', () {
+        final thread = MessageThread(
+          id: 't1',
+          senderName: '  Sobota Łukasz  ',
+          senderInitials: 'SŁ',
+          senderRole: 'Wychowawca',
+          subject: 'Temat',
+          preview: 'Podgląd',
+          body: 'Treść',
+          timestamp: DateTime(2026, 9, 30),
+        );
+        expect(thread.resolveSenderName(), 'Sobota Łukasz');
+      });
+
+      test(
+        'resolveSenderName parses signature following Pozdrawiam or Z poważaniem when senderName is empty',
+        () {
+          final thread = MessageThread(
+            id: 't2',
+            senderName: '',
+            senderInitials: 'AS',
+            senderRole: 'Administrator szkoły',
+            subject: 'Ubezpieczenie szkolne',
+            preview: 'Szczegóły ubezpieczenia',
+            body: 'Dzień dobry,\nProszę o opłatę.\nPozdrawiam,\n Jan Kowalski',
+            timestamp: DateTime(2026, 9, 30),
+          );
+          expect(
+            thread.resolveSenderName(),
+            'Jan Kowalski (Administrator szkoły)',
+          );
+        },
+      );
+
+      test(
+        'resolveSenderName falls back to senderRole or Administrator szkoły when no signature exists or signature is Kopia powyższej',
+        () {
+          final threadNoSig = MessageThread(
+            id: 't3',
+            senderName: '   ',
+            senderInitials: 'AS',
+            senderRole: '',
+            subject: 'Komunikat',
+            preview: 'Brak podpisu',
+            body: 'Pozdrawiam,\nKopia powyższej wiadomości została wysłana do nauczyciela: Jan Nowak',
+            timestamp: DateTime(2026, 9, 30),
+          );
+          expect(threadNoSig.resolveSenderName(), 'Administrator szkoły');
+        },
+      );
+
+      test(
+        'extractCcTeacherFromBody extracts teacher name when CC notice is present and returns null when absent',
+        () {
+          final threadWithCc = MessageThread(
+            id: 't4',
+            senderName: '',
+            senderInitials: 'AS',
+            senderRole: 'Administrator szkoły',
+            subject: 'Ubezpieczenie',
+            preview: '',
+            body:
+                'Treść wiadomości.\nKopia powyższej wiadomości została wysłana do nauczyciela: Sobota Łukasz',
+            timestamp: DateTime(2026, 9, 30),
+          );
+          expect(threadWithCc.extractCcTeacherFromBody(), 'Sobota Łukasz');
+
+          final threadWithoutCc = MessageThread(
+            id: 't5',
+            senderName: 'Piwnik Ewa',
+            senderInitials: 'PE',
+            senderRole: 'Nauczyciel',
+            subject: 'Konsultacje',
+            preview: 'Zapraszam',
+            body: 'Zapraszam na konsultacje w czwartek.',
+            timestamp: DateTime(2026, 9, 30),
+          );
+          expect(threadWithoutCc.extractCcTeacherFromBody(), isNull);
+        },
+      );
+
+      test(
+        'looksLikeMessageWithAttachment detects Polish attachment keywords case-insensitively',
+        () {
+          expect(
+            MessageThread.looksLikeMessageWithAttachment(
+              'W załączniku przesyłam regulamin',
+            ),
+            isTrue,
+          );
+          expect(
+            MessageThread.looksLikeMessageWithAttachment(
+              'Dzień dobry, przesyłam Państwu obiecaną PREZENTACJĘ.',
+            ),
+            isTrue,
+          );
+          expect(
+            MessageThread.looksLikeMessageWithAttachment(
+              'Przypomnienie o jutrzejszej lekcji',
+            ),
+            isFalse,
+          );
+        },
+      );
+    },
+  );
+
   testWidgets(
     'MessagesScreen renders actual formatted timestamp for each message card instead of hardcoded mockup string',
     (tester) async {

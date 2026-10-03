@@ -304,6 +304,53 @@ class MessageThread {
   }
 
   String get formattedTimestamp => formatTimestamp(timestamp);
+
+  String resolveSenderName({String? overrideBody}) {
+    final existing = senderName.trim();
+    if (existing.isNotEmpty) return existing;
+
+    final bodyText = overrideBody ??
+        (body.trim().isNotEmpty
+            ? body
+            : (messages.isNotEmpty ? messages.first.body : preview));
+    final sigMatch = RegExp(
+      r'(?:Pozdrawiam|Z\s+poważaniem)[,:\s]*\r?\n+\s*([^\r\n\-]{3,70}(?:-[^\r\n]{2,50})?)',
+      caseSensitive: false,
+    ).firstMatch(bodyText);
+    final signedBy = sigMatch?.group(1)?.trim() ?? '';
+    final baseRole =
+        senderRole.trim().isNotEmpty ? senderRole.trim() : 'Administrator szkoły';
+    if (signedBy.isNotEmpty &&
+        !signedBy.toLowerCase().contains('kopia powyższej')) {
+      return '$signedBy ($baseRole)';
+    }
+    return baseRole;
+  }
+
+  String? extractCcTeacherFromBody([String? overrideBody]) {
+    final bodyText = overrideBody ??
+        (body.trim().isNotEmpty
+            ? body
+            : (messages.isNotEmpty ? messages.first.body : preview));
+    final ccMatch = RegExp(
+      r'Kopia powyższej wiadomości została wysłana do nauczyciela:\s*([^\r\n]+)',
+      caseSensitive: false,
+    ).firstMatch(bodyText);
+    final ccName = ccMatch?.group(1)?.trim();
+    if (ccName != null && ccName.isNotEmpty) return ccName;
+    return null;
+  }
+
+  static bool looksLikeMessageWithAttachment(String text) {
+    final lower = text.toLowerCase();
+    return lower.contains('załącz') ||
+        lower.contains('prezentacj') ||
+        lower.contains('przesyłam') ||
+        lower.contains('plik') ||
+        lower.contains('formularz') ||
+        lower.contains('regulamin') ||
+        lower.contains('dokument');
+  }
 }
 
 class Announcement {
