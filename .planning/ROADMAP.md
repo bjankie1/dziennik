@@ -310,12 +310,12 @@ Plans:
 3. Żaden z istniejących providerów Riverpod (`school_providers.dart`) ani ekranów UI nie wymaga zmiany swojego publicznego API, a wszystkie testy jednostkowe i widgetowe przechodzą w 100%.
 4. Dodane zostają dedykowane testy jednostkowe dla `SchoolDataCacheManager` oraz wyodrębnionych klas `*DataSource`.
 
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 **Wave 1**
 
-- [ ] 24-01-PLAN.md: Extract `SchoolDataCacheManager`, `FirestoreGradesDataSource`, `FirestoreAttendanceDataSource` & `FirestoreJustificationsDataSource` + Unit Tests (`test/data/repositories/firestore_cache_and_attendance_test.dart`)
+- [x] 24-01-PLAN.md: Extract `SchoolDataCacheManager`, `FirestoreGradesDataSource`, `FirestoreAttendanceDataSource` & `FirestoreJustificationsDataSource` + Unit Tests (`test/data/repositories/firestore_cache_and_attendance_test.dart`)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
