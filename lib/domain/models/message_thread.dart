@@ -351,6 +351,96 @@ class MessageThread {
         lower.contains('regulamin') ||
         lower.contains('dokument');
   }
+
+  bool get needsDetailsFetch {
+    final firstMsg = messages.firstOrNull;
+    final isBodyMissingOrSameAsSubject = firstMsg == null ||
+        firstMsg.body.trim().isEmpty ||
+        firstMsg.body.trim() == subject.trim();
+    final needsAttachmentDetails = (hasAttachments &&
+            (attachments.isEmpty || attachmentUrls.isEmpty)) ||
+        (attachments.isEmpty &&
+            looksLikeMessageWithAttachment(firstMsg?.body ?? body));
+    return isBodyMissingOrSameAsSubject || needsAttachmentDetails;
+  }
+
+  List<String> unsavedAttachmentsFor(MessageItem message) {
+    final effectiveDrive = {...driveAttachments, ...message.driveAttachments};
+    return message.attachments
+        .where((f) => !effectiveDrive.containsKey(f))
+        .toList();
+  }
+
+  MessageThread withNormalizedSenderName() {
+    final resolvedSender = resolveSenderName();
+    if (senderName.trim().isNotEmpty) return this;
+    final fixedMessages = messages.map((m) {
+      if (!m.isFromMe && m.senderName.trim().isEmpty) {
+        return m.copyWith(senderName: resolvedSender);
+      }
+      return m;
+    }).toList();
+    return copyWith(senderName: resolvedSender, messages: fixedMessages);
+  }
+
+  MessageThread withMergedDetails(MessageDetailsResult details) {
+    final firstMsg = messages.firstOrNull;
+    final fullBody = details.body.trim().isNotEmpty
+        ? details.body
+        : (firstMsg?.body ?? body);
+    final mergedAttachments =
+        details.attachments.isNotEmpty ? details.attachments : attachments;
+    final mergedUrls =
+        details.attachmentUrls.isNotEmpty ? details.attachmentUrls : attachmentUrls;
+    final mergedHasAttachments =
+        details.hasAttachments || mergedAttachments.isNotEmpty || hasAttachments;
+    final mergedDriveAttachments = {
+      ...driveAttachments,
+      ...details.driveAttachments,
+    };
+    final resolvedSender = resolveSenderName(overrideBody: fullBody);
+    final updatedMessages = messages.map((m) {
+      if (m == messages.first) {
+        return m.copyWith(
+          senderName: m.senderName.trim().isNotEmpty ? m.senderName : resolvedSender,
+          body: fullBody,
+          attachments: mergedAttachments,
+          attachmentUrls: mergedUrls,
+          hasAttachments: mergedHasAttachments,
+          driveAttachments: {...m.driveAttachments, ...mergedDriveAttachments},
+        );
+      }
+      return m;
+    }).toList();
+
+    return copyWith(
+      senderName: resolvedSender,
+      body: fullBody,
+      preview: fullBody.length > 90 ? '${fullBody.substring(0, 90)}...' : fullBody,
+      attachments: mergedAttachments,
+      attachmentUrls: mergedUrls,
+      hasAttachments: mergedHasAttachments,
+      driveAttachments: mergedDriveAttachments,
+      messages: updatedMessages,
+    );
+  }
+
+  MessageThread withSavedDriveAttachments(
+    String messageId,
+    Map<String, DriveAttachmentInfo> newEntries,
+  ) {
+    final mergedThreadDrive = {...driveAttachments, ...newEntries};
+    final updatedMessages = messages.map((m) {
+      if (m.id == messageId || m == messages.first) {
+        return m.copyWith(driveAttachments: {...m.driveAttachments, ...newEntries});
+      }
+      return m;
+    }).toList();
+    return copyWith(
+      driveAttachments: mergedThreadDrive,
+      messages: updatedMessages,
+    );
+  }
 }
 
 class Announcement {
