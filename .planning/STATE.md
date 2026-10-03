@@ -3,16 +3,17 @@ gsd_state_version: "1.0"
 milestone: v3.0
 current_phase: 24
 current_phase_name: Dekompozycja monolitycznego FirestoreSchoolRepository (2 691 LOC) na serwisy domenowe i izolacja warstwy cache
-status: executing
-stopped_at: Completed 24-01-PLAN.md
-last_updated: "2026-10-03T17:28:43.293Z"
+current_plan: 2
+status: verifying
+stopped_at: Completed 24-02-PLAN.md (Phase 24 complete)
+last_updated: "2026-10-03T17:40:41.586Z"
 last_activity: 2026-10-03
-state_head: 69d85be61a640dd8d0dd186cc9d4ff9d79d129bf
+state_head: 92737ec518a56136cbbfab87dec6a8ee0ac033fd
 progress:
   total_phases: 13
   completed_phases: 8
   total_plans: 23
-  completed_plans: 20
+  completed_plans: 21
   percent: 62
 milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ---
@@ -21,7 +22,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 **Current Milestone:** Milestone v3.0 (Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia)  
 **Active Phase:** Phase 23: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków — COMPLETED  
-**Status:** Executing Phase 24
+**Status:** Phase complete — ready for verification
 **Last Updated:** 2026-10-02  
 
 ## Milestone v3.0 Roadmap
@@ -100,8 +101,8 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 ## Session
 
-**Last session:** 2026-10-03T17:28:43.168Z
-**Stopped at:** Completed 24-01-PLAN.md
+**Last session:** 2026-10-03T17:40:41.458Z
+**Stopped at:** Completed 24-02-PLAN.md (Phase 24 complete)
 **Resume file:** None
 Last activity: 2026-10-03
 
@@ -111,7 +112,7 @@ Phase: 24 (Dekompozycja monolitycznego FirestoreSchoolRepository (2 691 LOC) na 
 Current Plan: 2
 Total Plans in Phase: 2
 Next Phase: 19 (Raporty tygodniowe)
-Status: Executing Phase 24 (Plan 24-01 complete, ready for Plan 24-02)
+Status: Phase complete — ready for verification
 Last activity: 2026-10-03 — Completed 24-01-PLAN.md
 
 ## Performance Metrics
@@ -125,6 +126,7 @@ Last activity: 2026-10-03 — Completed 24-01-PLAN.md
 | Phase 21 P03 | 6 min | 2 tasks | 7 files |
 | Phase 21 P04 | 7 min | 2 tasks | 7 files |
 | Phase 24 P01 | 6 min | 2 tasks | 5 files |
+| Phase 24 P02 | 9 min | 2 tasks | 4 files |
 
 ## Decisions
 
@@ -134,3 +136,4 @@ Last activity: 2026-10-03 — Completed 24-01-PLAN.md
 - [Phase 21]: [Phase 21-03]: Decomposed AttendanceScreen (1 952 -> 273 LOC) into 6 focused sub-widgets in lib/presentation/screens/attendance/widgets/ with isolated Riverpod/UI state and wired JustificationRequestBanner and PolishDateFormatter
 - [Phase 21]: [Phase 21-04]: Decomposed NotificationSettingsModal (1 643 -> 333 LOC) into 6 focused sub-widgets in lib/presentation/widgets/modals/notification_settings/ with Dart 3 record .select(...) subscriptions and GlobalKey pending-config flush
 - [Phase 24-01]: Extracted instance-scoped SchoolDataCacheManager (eliminating all static override maps and counters) and domain data sources FirestoreGradesDataSource, FirestoreAttendanceDataSource, and FirestoreJustificationsDataSource with lazy FirebaseFirestore resolution and injectable http.Client
+- [Phase 24]: [Phase 24-02]: Extracted FirestoreMessagesDataSource and FirestoreScheduleDataSource and reduced FirestoreSchoolRepository (2 691 -> 242 LOC) to a clean SchoolRepository facade with shared instance-scoped SchoolDataCacheManager and zero static mutable maps
