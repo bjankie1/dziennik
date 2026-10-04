@@ -76,6 +76,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - Phase 23 added: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków (podgląd konkretnych dni, lekcji, przedmiotów i powodów dla prośby o usprawiedliwienie „6 lekcji • Choroba” na Pulpicie i we Frekwencji oraz dla banera „7 wnioski czekają na wychowawcę”)
 - Phase 24 added: Dekompozycja monolitycznego `FirestoreSchoolRepository` (2 691 LOC) na serwisy domenowe i izolacja warstwy cache (`SchoolDataCacheManager`, `*DataSource`)
 - Phase 25 added: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień (z podglądem zaakceptowanych usprawiedliwień we Frekwencji) i powiadomienia o akceptacji usprawiedliwienia
+- Phase 26 added: Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram
 
 ### Quick Tasks Completed
 
