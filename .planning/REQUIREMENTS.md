@@ -134,6 +134,16 @@
 - [x] **REQ-ARCH-03**: Dekompozycja monolitycznego `FirestoreSchoolRepository` (2 691 LOC) na wyspecjalizowane serwisy domenowe w `lib/data/repositories/firestore/` (`SchoolDataCacheManager`, `FirestoreGradesDataSource`, `FirestoreAttendanceDataSource`, `FirestoreJustificationsDataSource`, `FirestoreMessagesDataSource`, `FirestoreScheduleDataSource`) za fasadą `SchoolRepository` (< 250 LOC).
 - [x] **REQ-ARCH-04**: Eliminacja globalnych pól `static final Map<...>` w warstwie repozytorium na rzecz instancyjnego `SchoolDataCacheManager` z czystą izolacją stanu pomiędzy użytkownikami i testami jednostkowymi.
 
+### Message Archiving, Accepted Justifications & Rich Telegram Notifications (Phase 25 & Phase 26)
+
+- [x] **REQ-MSG-ARCH-01**: Ręczna archiwizacja i przywracanie wiadomości (z listy `MessagesScreen` oraz z widoku wątku `MessageThreadScreen`) z filtrem „Pokaż zarchiwizowane”.
+- [x] **REQ-MSG-ARCH-02**: Automatyczna archiwizacja systemowych potwierdzeń akceptacji usprawiedliwienia przez wychowawcę.
+- [x] **REQ-ATT-ACC-01**: Podgląd zaakceptowanych usprawiedliwień i filtr `Usprawiedliwione (X)` w module Frekwencji (`AttendanceScreen`).
+- [x] **REQ-NOTIF-ACC-01**: Powiadomienia (Telegram Bot, Web Push, „Ostatnie alerty”) o zaakceptowaniu usprawiedliwienia.
+- [ ] **REQ-NOTIF-TG-MSG-01**: Powiadomienie na Telegramie o nowej wiadomości z Librusa zawiera nadawcę, temat oraz pełną treść wiadomości (`body`), a jeśli pełna treść nie była jeszcze pobrana dla danej nowej wiadomości podczas synchronizacji, backend dociąga szczegóły wiadomości (`fetchMessageDetails`) przed wysłaniem powiadomienia.
+- [ ] **REQ-NOTIF-TG-ANN-01**: Powiadomienie na Telegramie o nowym ogłoszeniu szkolnym zawiera autora, tytuł oraz pełną, wieloliniową treść ogłoszenia (`content`).
+- [ ] **REQ-NOTIF-TG-ATT-01**: Jeśli nowa wiadomość posiada załączniki (`attachmentFiles`), powiadomienie na Telegramie wypisuje listę nazw załączników wraz z klikalnymi linkami pozwalającymi na ich pobranie (`/api/downloadAttachment?path=...` na domenie `https://lepsza-szkola.web.app`).
+
 ## Traceability
 
 | Requirement | Phase | Status |
@@ -162,3 +172,10 @@
 | REQ-ATT-02 | Phase 23 | Complete |
 | REQ-ARCH-03 | Phase 24 | Complete |
 | REQ-ARCH-04 | Phase 24 | Complete |
+| REQ-MSG-ARCH-01 | Phase 25 | Complete |
+| REQ-MSG-ARCH-02 | Phase 25 | Complete |
+| REQ-ATT-ACC-01 | Phase 25 | Complete |
+| REQ-NOTIF-ACC-01 | Phase 25 | Complete |
+| REQ-NOTIF-TG-MSG-01 | Phase 26 | Planned |
+| REQ-NOTIF-TG-ANN-01 | Phase 26 | Planned |
+| REQ-NOTIF-TG-ATT-01 | Phase 26 | Planned |
