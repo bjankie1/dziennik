@@ -1,11 +1,93 @@
 const axios = require("axios");
 const admin = require("firebase-admin");
 
+const TELEGRAM_MAX_MESSAGE_LENGTH = 4096;
+const TELEGRAM_DEFAULT_CONTENT_BUDGET = 3500;
+const TELEGRAM_TRUNCATION_SUFFIX = "… (pełna treść w aplikacji)";
+
 function escapeHtml(str = "") {
   return String(str)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+/**
+ * Truncates raw plain text on a word/line boundary BEFORE calling escapeHtml()
+ * so that the resulting HTML-escaped string never exceeds `maxEscapedChars`
+ * and never cuts an HTML entity (`&amp;`, `&lt;`, `&gt;`) mid-token (D-01, D-02).
+ */
+function truncateTelegramContent(rawText = "", maxEscapedChars = TELEGRAM_DEFAULT_CONTENT_BUDGET) {
+  const normalized = String(rawText || "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  if (!normalized) return "";
+
+  const fullEscaped = escapeHtml(normalized);
+  if (fullEscaped.length <= maxEscapedChars) {
+    return fullEscaped;
+  }
+
+  const targetEscapedLen = Math.max(80, maxEscapedChars - TELEGRAM_TRUNCATION_SUFFIX.length - 1);
+  let candidate = normalized.slice(0, Math.min(normalized.length, targetEscapedLen));
+
+  while (escapeHtml(candidate).length > targetEscapedLen && candidate.length > 1) {
+    const excess = escapeHtml(candidate).length - targetEscapedLen;
+    candidate = candidate.slice(0, Math.max(1, candidate.length - Math.max(1, excess)));
+  }
+
+  const minBreakPos = Math.floor(candidate.length * 0.6);
+  const breakIdx = Math.max(candidate.lastIndexOf("\n"), candidate.lastIndexOf(" "));
+  if (breakIdx >= minBreakPos) {
+    candidate = candidate.slice(0, breakIdx);
+  }
+
+  return `${escapeHtml(candidate.trimEnd())}${TELEGRAM_TRUNCATION_SUFFIX}`;
+}
+
+/**
+ * Formats message attachments into a Telegram HTML section with clickable
+ * `/api/downloadAttachment?path=...` links (D-04, D-05, REQ-NOTIF-TG-ATT-01).
+ */
+function formatMessageAttachmentsForTelegram(notif) {
+  const rawFiles =
+    Array.isArray(notif?.attachmentFiles) && notif.attachmentFiles.length > 0
+      ? notif.attachmentFiles
+      : Array.isArray(notif?.attachments)
+        ? notif.attachments
+        : [];
+
+  const normalized = rawFiles
+    .map((item) => {
+      if (!item) return null;
+      if (typeof item === "string") {
+        const name = item.trim();
+        return name ? { name, path: "" } : null;
+      }
+      if (typeof item === "object") {
+        const name = String(item.name || item.fileName || "Załącznik").trim();
+        const path = String(item.path || item.downloadPath || "").trim();
+        return name || path ? { name: name || "Załącznik", path } : null;
+      }
+      return null;
+    })
+    .filter(Boolean);
+
+  if (normalized.length === 0) return "";
+
+  const lines = normalized.map((att) => {
+    const safeName = escapeHtml(att.name);
+    if (att.path) {
+      const href = /^https?:\/\//i.test(att.path)
+        ? att.path
+        : `https://lepsza-szkola.web.app/api/downloadAttachment?path=${encodeURIComponent(att.path)}`;
+      return `• <a href="${href}">${safeName}</a>`;
+    }
+    return `• ${safeName}`;
+  });
+
+  return `\n📎 <b>Załączniki (${normalized.length}):</b>\n${lines.join("\n")}\n`;
 }
 
 /**
@@ -24,14 +106,100 @@ function formatNotificationForTelegram(notif, studentName = "Oskar") {
         (safeBody ? `📝 ${safeBody}\n` : "") +
         `\n🔗 <a href="https://lepsza-szkola.web.app/oceny">Otwórz Oceny w EduSync</a>`
       );
-    case "message":
-    case "announcement":
-      return (
+    case "message": {
+      const rawTitle =
+        notif.title ||
+        (notif.subject ? `Nowa wiadomość: ${notif.subject}` : "Nowa wiadomość ze szkoły");
+      const safeMsgTitle = escapeHtml(rawTitle);
+
+      let rawMeta = "";
+      let rawContent = "";
+      if (typeof notif.content === "string") {
+        rawMeta = notif.body || [notif.sender, notif.date].filter(Boolean).join(" • ");
+        rawContent = notif.content;
+      } else if (notif.sender) {
+        rawMeta = [notif.sender, notif.date].filter(Boolean).join(" • ");
+        rawContent = notif.body || "";
+      } else {
+        rawMeta = notif.body || "";
+        rawContent = "";
+      }
+      if (rawContent.trim() === rawMeta.trim()) {
+        rawContent = "";
+      }
+
+      const rawMsgId =
+        notif.messageId ||
+        (typeof notif.id === "string" && notif.id.startsWith("msg_")
+          ? notif.id.slice(4)
+          : "");
+      const msgHref = rawMsgId
+        ? `https://lepsza-szkola.web.app/wiadomosci/${encodeURIComponent(String(rawMsgId))}`
+        : "https://lepsza-szkola.web.app/wiadomosci";
+
+      const headerBlock =
         `📬 <b>Nowa wiadomość w Librusie</b> (${safeStudent})\n\n` +
-        `📌 <b>${safeTitle}</b>\n` +
-        (safeBody ? `👤 ${safeBody}\n` : "") +
-        `\n🔗 <a href="https://lepsza-szkola.web.app/wiadomosci">Otwórz Wiadomości w EduSync</a>`
+        `📌 <b>${safeMsgTitle}</b>\n` +
+        (rawMeta ? `👤 ${escapeHtml(rawMeta)}\n` : "");
+      const attachmentsBlock = formatMessageAttachmentsForTelegram(notif);
+      const footerBlock = `\n🔗 <a href="${msgHref}">Otwórz wiadomość w EduSync</a>`;
+
+      const contentBudget = Math.max(
+        120,
+        Math.min(
+          TELEGRAM_DEFAULT_CONTENT_BUDGET,
+          TELEGRAM_MAX_MESSAGE_LENGTH -
+            (headerBlock.length + attachmentsBlock.length + footerBlock.length + 4)
+        )
       );
+      const safeContent = truncateTelegramContent(rawContent, contentBudget);
+
+      return (
+        headerBlock +
+        (safeContent ? `\n${safeContent}\n` : "") +
+        attachmentsBlock +
+        footerBlock
+      );
+    }
+    case "announcement": {
+      const rawTitle = notif.title || "Nowe ogłoszenie szkolne";
+      const safeAnnTitle = escapeHtml(rawTitle);
+
+      let rawMeta = "";
+      let rawContent = "";
+      if (typeof notif.content === "string") {
+        rawMeta =
+          notif.body ||
+          (notif.author ? `${notif.author}${notif.date ? " (" + notif.date + ")" : ""}` : "");
+        rawContent = notif.content;
+      } else if (notif.author) {
+        rawMeta = `${notif.author}${notif.date ? " (" + notif.date + ")" : ""}`;
+        rawContent = notif.body || "";
+      } else {
+        rawMeta = notif.body || "";
+        rawContent = "";
+      }
+      if (rawContent.trim() === rawMeta.trim()) {
+        rawContent = "";
+      }
+
+      const headerBlock =
+        `📢 <b>Nowe ogłoszenie szkolne</b> (${safeStudent})\n\n` +
+        `📌 <b>${safeAnnTitle}</b>\n` +
+        (rawMeta ? `👤 ${escapeHtml(rawMeta)}\n` : "");
+      const footerBlock = `\n🔗 <a href="https://lepsza-szkola.web.app/wiadomosci">Otwórz ogłoszenia w EduSync</a>`;
+
+      const contentBudget = Math.max(
+        120,
+        Math.min(
+          TELEGRAM_DEFAULT_CONTENT_BUDGET,
+          TELEGRAM_MAX_MESSAGE_LENGTH - (headerBlock.length + footerBlock.length + 4)
+        )
+      );
+      const safeContent = truncateTelegramContent(rawContent, contentBudget);
+
+      return headerBlock + (safeContent ? `\n${safeContent}\n` : "") + footerBlock;
+    }
     case "exam":
       return (
         `📅 <b>Nadchodzący sprawdzian!</b> (${safeStudent})\n\n` +
@@ -281,9 +449,12 @@ async function verifyAndPairCodeFromUpdates(db, { botToken, pairingCode, familyI
 
 module.exports = {
   escapeHtml,
+  truncateTelegramContent,
+  formatMessageAttachmentsForTelegram,
   formatNotificationForTelegram,
   isCategoryEnabled,
   sendTelegramMessage,
   dispatchTelegramNotificationsForStudent,
   verifyAndPairCodeFromUpdates,
 };
+
