@@ -854,6 +854,20 @@ class MockData {
       isImportant: false,
       attachments: ['Zestaw_Zadan_Redox_Matura.pdf'],
     ),
+    MessageThread(
+      id: 'msg_4',
+      senderName: 'e-Usprawiedliwienia',
+      senderInitials: 'EU',
+      senderRole: 'System Librus',
+      subject: 'Potwierdzenie usprawiedliwienia nieobecności',
+      preview: 'Usprawiedliwienie nieobecności ucznia z dnia 16.10.2024 zostało zaakceptowane przez wychowawcę.',
+      body: 'Dzień dobry,\n\nUsprawiedliwienie nieobecności ucznia Oskar Jankiewicz z dnia 16.10.2024 zostało zaakceptowane przez wychowawcę klasy.\n\nWiadomość wygenerowana automatycznie.',
+      timestamp: DateTime.now().subtract(const Duration(days: 4)),
+      isUnread: false,
+      isImportant: false,
+      isArchived: true,
+      isAutoArchived: true,
+    ),
   ];
 
   static final announcements = [

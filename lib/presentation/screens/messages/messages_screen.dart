@@ -19,6 +19,8 @@ class MessagesScreen extends ConsumerStatefulWidget {
 
 class _MessagesScreenState extends ConsumerState<MessagesScreen> {
   int _activeTab = 0; // 0 = Wiadomości, 1 = Ogłoszenia
+  bool _showArchived = false;
+  String _searchQuery = '';
   final _searchController = TextEditingController();
 
   @override
@@ -27,13 +29,45 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     super.dispose();
   }
 
+  Future<void> _toggleArchiveMessage(MessageThread thread) async {
+    final nextArchived = !thread.isArchived;
+    await ref
+        .read(schoolRepositoryProvider)
+        .archiveMessage(thread.id, isArchived: nextArchived);
+    ref.invalidate(messagesProvider);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          nextArchived
+              ? 'Wiadomość przeniesiona do archiwum'
+              : 'Przywrócono wiadomość do skrzynki odbiorczej',
+        ),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Cofnij',
+          onPressed: () async {
+            await ref
+                .read(schoolRepositoryProvider)
+                .archiveMessage(thread.id, isArchived: !nextArchived);
+            ref.invalidate(messagesProvider);
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final messagesAsync = ref.watch(messagesProvider);
     final announcementsAsync = ref.watch(announcementsProvider);
 
     final messages = messagesAsync.value ?? [];
-    final unreadMessages = messages.where((m) => m.isUnread).length;
+    final activeMessages = messages.where((m) => !m.isArchived).toList();
+    final archivedMessages = messages.where((m) => m.isArchived).toList();
+    final unreadMessages = activeMessages.where((m) => m.isUnread).length;
     final announcements = announcementsAsync.value ?? [];
 
     return Scaffold(
@@ -87,6 +121,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                   ),
                   child: TextField(
                     controller: _searchController,
+                    onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
                     decoration: const InputDecoration(
                       hintText: 'Szukaj wiadomości, nauczyciela...',
                       hintStyle: TextStyle(fontSize: 13, color: AppColors.outline),
@@ -117,17 +152,48 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // 3. Tab Content
           if (_activeTab == 0) ...[
-            if (unreadMessages > 0)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  FilterChip(
+                    key: const ValueKey('messages_archive_filter_chip'),
+                    selected: _showArchived,
+                    showCheckmark: false,
+                    avatar: Icon(
+                      _showArchived ? Icons.inventory_2 : Icons.archive_outlined,
+                      size: 16,
+                      color: _showArchived ? AppColors.onPrimaryContainer : AppColors.onSurfaceVariant,
+                    ),
+                    label: Text(
+                      'Pokaż zarchiwizowane (${archivedMessages.length})',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: _showArchived ? FontWeight.w700 : FontWeight.w600,
+                        color: _showArchived ? AppColors.onPrimaryContainer : AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    selectedColor: AppColors.primaryContainer,
+                    backgroundColor: AppColors.surfaceContainerLowest,
+                    side: BorderSide(
+                      color: _showArchived ? AppColors.primary : AppColors.surfaceContainerHigh,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    onSelected: (val) => setState(() => _showArchived = val),
+                  ),
+                  if (!_showArchived && unreadMessages > 0)
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           width: 8,
@@ -139,42 +205,62 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Nowe wiadomości: $unreadMessages',
+                          'Nowe: $unreadMessages',
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: FontWeight.w700,
                             color: AppColors.onSurface,
                           ),
                         ),
+                        const SizedBox(width: 4),
+                        TextButton.icon(
+                          onPressed: () async {
+                            await ref.read(schoolRepositoryProvider).markAllMessagesAsRead();
+                            ref.invalidate(messagesProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Wszystkie wiadomości oznaczono jako przeczytane'),
+                                  duration: Duration(seconds: 2),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.done_all, size: 15, color: AppColors.primary),
+                          label: const Text(
+                            'Oznacz jako przeczytane',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          ),
+                        ),
                       ],
                     ),
-                    TextButton.icon(
-                      onPressed: () async {
-                        await ref.read(schoolRepositoryProvider).markAllMessagesAsRead();
-                        ref.invalidate(messagesProvider);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Wszystkie wiadomości oznaczono jako przeczytane'),
-                              duration: Duration(seconds: 2),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.done_all, size: 16, color: AppColors.primary),
-                      label: const Text('Oznacz jako przeczytane', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primary)),
-                      style: TextButton.styleFrom(
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
+            ),
             messagesAsync.when(
               data: (threads) {
-                if (threads.isEmpty) {
+                final baseList = _showArchived
+                    ? threads.where((m) => m.isArchived).toList()
+                    : threads.where((m) => !m.isArchived).toList();
+                final filteredThreads = _searchQuery.isEmpty
+                    ? baseList
+                    : baseList.where((m) {
+                        final hay =
+                            '${m.subject} ${m.senderName} ${m.senderRole} ${m.preview}'
+                                .toLowerCase();
+                        return hay.contains(_searchQuery);
+                      }).toList();
+
+                if (filteredThreads.isEmpty) {
                   return Container(
                     margin: const EdgeInsets.only(top: 20),
                     padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
@@ -186,23 +272,43 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                     alignment: Alignment.center,
                     child: Column(
                       children: [
-                        Icon(Icons.mark_email_read_outlined, size: 44, color: AppColors.outline.withValues(alpha: 0.6)),
+                        Icon(
+                          _showArchived
+                              ? Icons.archive_outlined
+                              : Icons.mark_email_read_outlined,
+                          size: 44,
+                          color: AppColors.outline.withValues(alpha: 0.6),
+                        ),
                         const SizedBox(height: 10),
-                        const Text(
-                          'Brak nowych wiadomości',
-                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.onSurface),
+                        Text(
+                          _showArchived
+                              ? 'Brak zarchiwizowanych wiadomości'
+                              : 'Brak wiadomości w skrzynce',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.onSurface,
+                          ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Wszystkie wiadomości od nauczycieli zostały przeczytane.',
-                          style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+                        Text(
+                          _showArchived
+                              ? 'Zarchiwizowane wiadomości oraz potwierdzenia usprawiedliwień pojawią się tutaj.'
+                              : 'Wszystkie wiadomości od nauczycieli zostały przeczytane lub zarchiwizowane.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.onSurfaceVariant,
+                          ),
                         ),
                       ],
                     ),
                   );
                 }
                 return Column(
-                  children: threads.map((thread) => _buildMessageCard(thread)).toList(),
+                  children: filteredThreads
+                      .map((thread) => _buildMessageCard(thread))
+                      .toList(),
                 );
               },
               loading: () => const Padding(
@@ -463,6 +569,35 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                               ],
                             ),
                           ),
+                        if (thread.isArchived)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.archive_outlined,
+                                  size: 10,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  thread.isAutoArchived
+                                      ? 'Auto-archiwum'
+                                      : 'Zarchiwizowana',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -511,6 +646,47 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                     const SizedBox(height: 8),
                     _buildMessageTaskActionRow(thread),
                   ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildArchiveActionButton(MessageThread thread) {
+    final isArchived = thread.isArchived;
+    return Material(
+      color: AppColors.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        key: ValueKey('archive_message_${thread.id}'),
+        onTap: () => _toggleArchiveMessage(thread),
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: AppColors.outlineVariant.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isArchived ? Icons.unarchive_outlined : Icons.archive_outlined,
+                size: 13,
+                color: AppColors.onSurfaceVariant,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                isArchived ? 'Przywróć' : 'Archiwizuj',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.onSurfaceVariant,
                 ),
               ),
             ],
@@ -593,74 +769,80 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
               ),
             ),
           ),
+          _buildArchiveActionButton(thread),
         ],
       );
     }
 
     final isSmart = suggestion.isHeuristicMatch;
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Material(
-        color: isSmart
-            ? AppColors.primaryFixed.withValues(alpha: 0.65)
-            : AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: () {
-            TaskFormModal.show(
-              context,
-              initialTitle: suggestion.suggestedTitle,
-              initialDescription: suggestion.suggestedDescription,
-              initialSubject: suggestion.suggestedSubject,
-              initialAssignedTo: suggestion.suggestedAssignee,
-              initialPriority: suggestion.suggestedPriority,
-              initialDueDate: suggestion.suggestedDueDate,
-              initialSource: TaskSource.message,
-              initialSourceId: suggestion.sourceId,
-              initialMetadata: suggestion.metadata,
-            );
-          },
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        Material(
+          color: isSmart
+              ? AppColors.primaryFixed.withValues(alpha: 0.65)
+              : AppColors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isSmart
-                    ? AppColors.primary.withValues(alpha: 0.35)
-                    : AppColors.outlineVariant.withValues(alpha: 0.4),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  isSmart
-                      ? Icons.auto_awesome_rounded
-                      : Icons.add_task_rounded,
-                  size: 13,
+          child: InkWell(
+            onTap: () {
+              TaskFormModal.show(
+                context,
+                initialTitle: suggestion.suggestedTitle,
+                initialDescription: suggestion.suggestedDescription,
+                initialSubject: suggestion.suggestedSubject,
+                initialAssignedTo: suggestion.suggestedAssignee,
+                initialPriority: suggestion.suggestedPriority,
+                initialDueDate: suggestion.suggestedDueDate,
+                initialSource: TaskSource.message,
+                initialSourceId: suggestion.sourceId,
+                initialMetadata: suggestion.metadata,
+              );
+            },
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
                   color: isSmart
-                      ? AppColors.primary
-                      : AppColors.onSurfaceVariant,
+                      ? AppColors.primary.withValues(alpha: 0.35)
+                      : AppColors.outlineVariant.withValues(alpha: 0.4),
                 ),
-                const SizedBox(width: 5),
-                Text(
-                  isSmart
-                      ? '+ Utwórz zadanie: ${suggestion.detectedAmount != null ? "Opłata (${suggestion.detectedAmount})" : suggestion.suggestedSubject}'
-                      : '+ Utwórz zadanie z wiadomości',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isSmart
+                        ? Icons.auto_awesome_rounded
+                        : Icons.add_task_rounded,
+                    size: 13,
                     color: isSmart
                         ? AppColors.primary
                         : AppColors.onSurfaceVariant,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 5),
+                  Text(
+                    isSmart
+                        ? '+ Utwórz zadanie: ${suggestion.detectedAmount != null ? "Opłata (${suggestion.detectedAmount})" : suggestion.suggestedSubject}'
+                        : '+ Utwórz zadanie z wiadomości',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isSmart
+                          ? AppColors.primary
+                          : AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
+        _buildArchiveActionButton(thread),
+      ],
     );
   }
 

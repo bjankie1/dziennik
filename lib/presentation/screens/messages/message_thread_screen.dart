@@ -74,6 +74,40 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
     } catch (_) {}
   }
 
+  Future<void> _toggleArchiveStatus() async {
+    final newIsArchived = !_currentThread.isArchived;
+    setState(() {
+      _currentThread = _currentThread.copyWith(
+        isArchived: newIsArchived,
+        isUnread: newIsArchived ? false : _currentThread.isUnread,
+      );
+    });
+    try {
+      await ref.read(schoolRepositoryProvider).archiveMessage(
+        _currentThread.id,
+        isArchived: newIsArchived,
+      );
+      ref.invalidate(messagesProvider);
+      _showSnackBar(
+        newIsArchived ? 'Wiadomość zarchiwizowana' : 'Przywrócono wiadomość do skrzynki',
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'Cofnij',
+          onPressed: () async {
+            await ref.read(schoolRepositoryProvider).archiveMessage(
+              _currentThread.id,
+              isArchived: !newIsArchived,
+            );
+            if (mounted) {
+              setState(() => _currentThread = _currentThread.copyWith(isArchived: !newIsArchived));
+            }
+            ref.invalidate(messagesProvider);
+          },
+        ),
+      );
+    } catch (_) {}
+  }
+
   Future<void> _fetchBodyIfNeeded({bool force = false}) async {
     if (!force && !_currentThread.needsDetailsFetch) return;
     if (mounted) setState(() => _isLoadingBody = true);
@@ -280,6 +314,16 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         ),
         actions: [
           MessageAppBarTaskAction(thread: _currentThread),
+          IconButton(
+            key: const ValueKey('thread_archive_action_button'),
+            icon: Icon(
+              _currentThread.isArchived ? Icons.unarchive_outlined : Icons.archive_outlined,
+              color: _currentThread.isArchived ? AppColors.primary : AppColors.onSurfaceVariant,
+              size: 22,
+            ),
+            tooltip: _currentThread.isArchived ? 'Przywróć do skrzynki' : 'Archiwizuj wiadomość',
+            onPressed: _toggleArchiveStatus,
+          ),
           IconButton(
             icon: Icon(
               _currentThread.isUnread ? Icons.mark_email_read_outlined : Icons.mark_email_unread_outlined,
