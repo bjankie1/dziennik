@@ -224,35 +224,14 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
       });
     });
 
-    // Detect new announcements
-    const prevAnnIds = new Set((prevData.announcements || []).map(a => a.id));
-    (freshData.announcements || []).forEach(a => {
-      if (!prevAnnIds.has(a.id)) {
-        newNotifications.push({
-          id: `ann_${String(a.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`,
-          type: "announcement",
-          title: `Nowe ogłoszenie: ${a.title}`,
-          body: `${a.author} (${a.date})`,
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-          isRead: false
-        });
-      }
+    // Detect new announcements and regular messages (Phase 26 D-03, D-07)
+    const msgAndAnnNotifs = await buildMessageAndAnnouncementNotifications({
+      prevData,
+      freshData,
+      client,
+      timestampValue: admin.firestore.FieldValue.serverTimestamp()
     });
-
-    // Detect new regular messages (excluding auto-archived justification confirmations, which become 'justification' notifications)
-    const prevMsgIds = new Set((prevData.messages || []).map(m => m.id));
-    (freshData.messages || []).forEach(m => {
-      if (!prevMsgIds.has(m.id) && !isJustificationApprovalMessage(m)) {
-        newNotifications.push({
-          id: `msg_${String(m.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`,
-          type: "message",
-          title: `Nowa wiadomość: ${m.subject}`,
-          body: `${m.sender} • ${m.date}`,
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-          isRead: false
-        });
-      }
-    });
+    newNotifications.push(...msgAndAnnNotifs);
 
     // Detect justification acceptances (from new system confirmation messages and attendance/justifications transitions - Phase 25 D-06)
     const justificationNotifs = detectJustificationNotifications({
@@ -606,6 +585,14 @@ async function mergeAndIndexMessages({
           m.body = details.body.trim();
           m.preview = m.body.replace(/\s+/g, " ").substring(0, 90);
         }
+        if (Array.isArray(details?.attachmentFiles) && details.attachmentFiles.length > 0) {
+          m.attachmentFiles = details.attachmentFiles;
+          m.attachments =
+            Array.isArray(details.attachments) && details.attachments.length > 0
+              ? details.attachments
+              : details.attachmentFiles.map(a => a.name);
+          m.hasAttachments = true;
+        }
         m.bodyLoaded = true;
         fetchedCount++;
       } catch (err) {
@@ -652,11 +639,117 @@ async function mergeAndIndexMessages({
   return merged;
 }
 
+/**
+ * Phase 26 (D-03, D-07, REQ-NOTIF-TG-MSG-01, REQ-NOTIF-TG-ANN-01, REQ-NOTIF-TG-ATT-01):
+ * Builds enriched announcement and regular message notifications.
+ * Guarantees that any newly detected message missing full body or attachment metadata
+ * is hydrated via `client.fetchMessageDetails` before constructing notification payloads.
+ */
+async function buildMessageAndAnnouncementNotifications({
+  prevData,
+  freshData,
+  client = null,
+  timestampValue = null
+}) {
+  if (!prevData || !freshData) return [];
+
+  const ts =
+    timestampValue !== null
+      ? timestampValue
+      : admin.firestore.FieldValue.serverTimestamp();
+  const notifications = [];
+
+  // 1. Detect new announcements
+  const prevAnnIds = new Set((prevData.announcements || []).map(a => String(a.id)));
+  for (const a of freshData.announcements || []) {
+    if (!a || prevAnnIds.has(String(a.id))) continue;
+    notifications.push({
+      id: `ann_${String(a.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`,
+      type: "announcement",
+      title: `Nowe ogłoszenie: ${a.title || "Ogłoszenie"}`,
+      body: `${a.author || "Szkoła"}${a.date ? " (" + a.date + ")" : ""}`,
+      content: String(a.content || "").trim(),
+      author: a.author || "",
+      date: a.date || "",
+      timestamp: ts,
+      isRead: false
+    });
+  }
+
+  // 2. Detect new regular messages (excluding justification confirmations)
+  const prevMsgIds = new Set((prevData.messages || []).map(m => String(m.id)));
+  for (const m of freshData.messages || []) {
+    if (!m || prevMsgIds.has(String(m.id))) continue;
+    if (isJustificationApprovalMessage(m)) continue;
+
+    const needsBody =
+      m.bodyLoaded !== true &&
+      (!m.body || String(m.body).trim() === String(m.subject || "").trim());
+    const needsAttachments =
+      Boolean(m.hasAttachments) &&
+      (!Array.isArray(m.attachmentFiles) || m.attachmentFiles.length === 0);
+
+    if (
+      (needsBody || needsAttachments) &&
+      client &&
+      typeof client.fetchMessageDetails === "function"
+    ) {
+      try {
+        const details = await client.fetchMessageDetails(m.id, m.librusUrl);
+        if (details) {
+          if (typeof details.body === "string" && details.body.trim().length > 0) {
+            m.body = details.body.trim();
+            m.preview = m.body.replace(/\s+/g, " ").substring(0, 90);
+          }
+          if (Array.isArray(details.attachmentFiles) && details.attachmentFiles.length > 0) {
+            m.attachmentFiles = details.attachmentFiles;
+            m.attachments =
+              Array.isArray(details.attachments) && details.attachments.length > 0
+                ? details.attachments
+                : details.attachmentFiles.map(a => a.name);
+            m.hasAttachments = true;
+          }
+          m.bodyLoaded = true;
+        }
+      } catch (err) {
+        console.warn(
+          `[SyncService] Pre-notification message detail fetch failed for ${m.id}:`,
+          err.message
+        );
+      }
+    }
+
+    notifications.push({
+      id: `msg_${String(m.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`,
+      type: "message",
+      messageId: String(m.id),
+      title: `Nowa wiadomość: ${m.subject || "Wiadomość"}`,
+      body: `${m.sender || "Nadawca"}${m.date ? " • " + m.date : ""}`,
+      content: String(m.body || m.preview || "").trim(),
+      sender: m.sender || "",
+      subject: m.subject || "",
+      date: m.date || "",
+      hasAttachments: Boolean(
+        m.hasAttachments ||
+          (Array.isArray(m.attachmentFiles) && m.attachmentFiles.length > 0)
+      ),
+      attachments: Array.isArray(m.attachments) ? m.attachments : [],
+      attachmentFiles: Array.isArray(m.attachmentFiles) ? m.attachmentFiles : [],
+      timestamp: ts,
+      isRead: false
+    });
+  }
+
+  return notifications;
+}
+
 module.exports = {
   syncStudentData,
   resolveCacheDocumentId,
   shouldDispatchLibrusScrape,
   mergeAndIndexMessages,
   isJustificationApprovalMessage,
-  detectJustificationNotifications
+  detectJustificationNotifications,
+  buildMessageAndAnnouncementNotifications
 };
+

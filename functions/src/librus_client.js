@@ -721,7 +721,10 @@ class LibrusClient {
         try {
           const detailRes = await this.client.get(m.librusUrl);
           const $$ = cheerio.load(detailRes.data);
-          const bodyText = $$("div.container-message-content").text().trim();
+          const contentEl = $$("div.container-message-content").first();
+          const bodyText = contentEl.length
+            ? this._extractMultilineElementText($$, contentEl)
+            : "";
           if (bodyText) {
             m.body = bodyText;
             m.preview = bodyText.replace(/\s+/g, " ").substring(0, 90);
@@ -776,7 +779,10 @@ class LibrusClient {
     const targetUrl = librusUrl || `https://synergia.librus.pl/wiadomosci/1/5/${msgId}`;
     const detailRes = await this.client.get(targetUrl);
     const $ = cheerio.load(detailRes.data);
-    const bodyText = $("div.container-message-content").text().trim();
+    const contentEl = $("div.container-message-content").first();
+    const bodyText = contentEl.length
+      ? this._extractMultilineElementText($, contentEl)
+      : "";
     const attachmentFiles = this._parseMessageAttachments($);
     return {
       id: msgId,

@@ -263,3 +263,189 @@ test("mergeAndIndexMessages preserves driveAttachments and attachmentFiles for b
   assert.equal(merged[1].driveAttachments["zgoda.pdf"].folderName, "Szkoła");
 });
 
+test("LibrusClient.fetchMessages and fetchMessageDetails preserve multiline line breaks via _extractMultilineElementText", async () => {
+  const { LibrusClient } = require("../src/librus_client");
+  const client = new LibrusClient("test_login", "test_pass");
+
+  const listHtml = `
+    <table class="decorated">
+      <tr class="line0 bold">
+        <td><input type="checkbox" /></td>
+        <td><img src="/images/nieprzeczytana.png" alt="nieprzeczytana" /></td>
+        <td>Sobota Łukasz (Sobota Łukasz) [Wychowawca]</td>
+        <td><a href="/wiadomosci/1/5/2027508">Wycieczka i materiały</a></td>
+        <td>2026-10-04 08:15:00</td>
+      </tr>
+    </table>
+  `;
+  const detailHtml = `
+    <div class="container-message-content">
+      <p>Dzień dobry,</p>
+      przesyłam harmonogram wycieczki:<br />
+      • Dzień 1: Zwiedzanie zamku • Dzień 2: Warsztaty terenowe<br/>
+      <p>Proszę o podpisanie zgody.</p>
+    </div>
+    <table>
+      <tr>
+        <td>harmonogram.pdf</td>
+        <td><a href="/wiadomosci/pobierz_zalacznik/2027508/4410">Pobierz</a></td>
+      </tr>
+    </table>
+  `;
+
+  client.client = {
+    get: async (url) => {
+      if (url.endsWith("/wiadomosci/1/5")) {
+        return { data: listHtml };
+      }
+      return { data: detailHtml };
+    }
+  };
+
+  const { messages } = await client.fetchMessages();
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].id, "2027508");
+  assert.ok(messages[0].body.includes("Dzień dobry,\nprzesyłam harmonogram wycieczki:\n• Dzień 1: Zwiedzanie zamku\n• Dzień 2: Warsztaty terenowe"));
+  assert.ok(messages[0].body.includes("\nProszę o podpisanie zgody."));
+  assert.ok(!messages[0].preview.includes("\n"));
+
+  const details = await client.fetchMessageDetails("2027508", "https://synergia.librus.pl/wiadomosci/1/5/2027508");
+  assert.equal(details.body, messages[0].body);
+  assert.deepEqual(details.attachmentFiles, [
+    { name: "harmonogram.pdf", path: "/wiadomosci/pobierz_zalacznik/2027508/4410" }
+  ]);
+});
+
+test("mergeAndIndexMessages copies attachmentFiles and attachments from fetchMessageDetails during incremental indexing", async () => {
+  const freshMessages = [
+    {
+      id: "401",
+      sender: "Nauczyciel",
+      subject: "Materiały do sprawdzianu",
+      date: "2026-10-04",
+      preview: "Materiały do sprawdzianu",
+      body: "Materiały do sprawdzianu",
+      bodyLoaded: false,
+      hasAttachments: true,
+      attachments: [],
+      attachmentFiles: [],
+      librusUrl: "https://synergia.librus.pl/wiadomosci/1/5/401"
+    }
+  ];
+
+  const mockClient = {
+    fetchMessageDetails: async (id, url) => ({
+      id,
+      body: "W załączniku zestaw zadań.\nPowodzenia!",
+      bodyLoaded: true,
+      hasAttachments: true,
+      attachments: ["zadania.pdf"],
+      attachmentFiles: [
+        { name: "zadania.pdf", path: "/wiadomosci/pobierz_zalacznik/401/99" }
+      ],
+      librusUrl: url
+    })
+  };
+
+  const merged = await mergeAndIndexMessages({
+    freshMessages,
+    prevMessages: [],
+    client: mockClient,
+    maxIncrementalFetch: 4,
+    jitterMaxMs: 0
+  });
+
+  assert.equal(merged[0].bodyLoaded, true);
+  assert.equal(merged[0].body, "W załączniku zestaw zadań.\nPowodzenia!");
+  assert.equal(merged[0].hasAttachments, true);
+  assert.deepEqual(merged[0].attachments, ["zadania.pdf"]);
+  assert.deepEqual(merged[0].attachmentFiles, [
+    { name: "zadania.pdf", path: "/wiadomosci/pobierz_zalacznik/401/99" }
+  ]);
+});
+
+test("buildMessageAndAnnouncementNotifications hydrates unindexed new messages and populates content, messageId, and attachmentFiles while keeping body compact", async () => {
+  const { buildMessageAndAnnouncementNotifications } = require("../src/sync_service");
+  assert.equal(typeof buildMessageAndAnnouncementNotifications, "function");
+
+  const prevData = {
+    announcements: [{ id: "ann_old", title: "Stare" }],
+    messages: [{ id: "100", subject: "Stara wiadomość" }]
+  };
+
+  const freshData = {
+    announcements: [
+      { id: "ann_old", title: "Stare", author: "Dyrekcja", date: "2026-09-01", content: "Stara treść" },
+      {
+        id: "2026_10_04_Konkurs",
+        title: "Konkurs matematyczny",
+        author: "Kowalski Jan",
+        date: "2026-10-04",
+        content: "Zapraszamy do udziału w konkursie.\nZapisy w sali 12."
+      }
+    ],
+    messages: [
+      {
+        id: "915",
+        sender: "Sobota Łukasz",
+        subject: "Zebranie z rodzicami",
+        date: "2026-10-04 09:30:00",
+        preview: "Zebranie z rodzicami",
+        body: "Zebranie z rodzicami",
+        bodyLoaded: false,
+        hasAttachments: true,
+        attachments: [],
+        attachmentFiles: [],
+        librusUrl: "https://synergia.librus.pl/wiadomosci/1/5/915"
+      }
+    ]
+  };
+
+  const fetchedIds = [];
+  const mockClient = {
+    fetchMessageDetails: async (id, url) => {
+      fetchedIds.push(id);
+      return {
+        id,
+        body: "Szanowni Państwo,\nZebranie odbędzie się w czwartek o 17:30.\nPozdrawiam",
+        bodyLoaded: true,
+        hasAttachments: true,
+        attachments: ["agenda.pdf"],
+        attachmentFiles: [
+          { name: "agenda.pdf", path: "/wiadomosci/pobierz_zalacznik/915/12" }
+        ],
+        librusUrl: url
+      };
+    }
+  };
+
+  const notifs = await buildMessageAndAnnouncementNotifications({
+    prevData,
+    freshData,
+    client: mockClient,
+    timestampValue: "2026-10-04T10:00:00Z"
+  });
+
+  assert.deepEqual(fetchedIds, ["915"]);
+  assert.equal(notifs.length, 2);
+
+  const annNotif = notifs.find(n => n.type === "announcement");
+  assert.ok(annNotif);
+  assert.equal(annNotif.title, "Nowe ogłoszenie: Konkurs matematyczny");
+  assert.equal(annNotif.body, "Kowalski Jan (2026-10-04)");
+  assert.equal(annNotif.content, "Zapraszamy do udziału w konkursie.\nZapisy w sali 12.");
+
+  const msgNotif = notifs.find(n => n.type === "message");
+  assert.ok(msgNotif);
+  assert.equal(msgNotif.messageId, "915");
+  assert.equal(msgNotif.title, "Nowa wiadomość: Zebranie z rodzicami");
+  assert.equal(msgNotif.body, "Sobota Łukasz • 2026-10-04 09:30:00");
+  assert.equal(msgNotif.content, "Szanowni Państwo,\nZebranie odbędzie się w czwartek o 17:30.\nPozdrawiam");
+  assert.deepEqual(msgNotif.attachmentFiles, [
+    { name: "agenda.pdf", path: "/wiadomosci/pobierz_zalacznik/915/12" }
+  ]);
+  assert.equal(freshData.messages[0].bodyLoaded, true);
+  assert.equal(freshData.messages[0].attachmentFiles.length, 1);
+});
+
+
