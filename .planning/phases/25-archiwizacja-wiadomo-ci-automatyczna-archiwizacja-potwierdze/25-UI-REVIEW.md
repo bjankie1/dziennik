@@ -10,14 +10,14 @@
 
 | Pillar | Score | Key Finding |
 |--------|-------|-------------|
-| 1. Copywriting | 3/4 | Clear, contextual Polish copy; minor wording divergence in archive SnackBars between list and thread views |
+| 1. Copywriting | 4/4 | Unified archive SnackBar copy across list and thread views; full Polish paucal pluralization (`formatLessonsCount`) |
 | 2. Visuals | 4/4 | Strong hierarchy, semantic icons (`Icons.verified_rounded`, `Icons.archive_outlined`), tooltips, and smooth accordion chevron rotation |
-| 3. Color | 3/4 | Semantic `AppColors` tokens used consistently for archive/success states; minor mix of M3 surface tokens and Tailwind `slate*` tokens |
-| 4. Typography | 3/4 | Clear weight hierarchy (`w600`–`w800`); 6 distinct font sizes (`10`–`15px`) in compact cards with `10px` badges |
+| 3. Color | 4/4 | Semantic `AppColors` M3 surface and status tokens used consistently across archive and accepted justification widgets |
+| 4. Typography | 4/4 | Clear weight hierarchy (`w600`–`w800`) and standardized `11px` minimum badge typography |
 | 5. Spacing | 4/4 | Consistent padding/margin rhythm matching existing cards and `Expanded` wrapping preventing narrow-screen overflow |
-| 6. Experience Design | 3/4 | Undoable `SnackBarAction` (`Cofnij`), distinct empty states, and animated accordion; compact ~23px tap target on card-level `Archiwizuj` pill |
+| 6. Experience Design | 4/4 | Undoable `SnackBarAction` (`Cofnij`, 4s), distinct empty states, animated accordion, and >=32px touch target on card `Archiwizuj` pill |
 
-**Overall: 20/24**
+**Overall: 24/24 (all recommendations applied in `261004-bpl` / `26cda74`)**
 
 ---
 
