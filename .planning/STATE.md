@@ -102,6 +102,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 261002-94s | Dodanie szczegółowej instrukcji krok po kroku konfiguracji Telegram Bot w oknie powiadomień oraz automatycznego pobierania nazwy bota przez getMe | 2026-10-02 | e0b604c | [261002-94s-dodaj-szczeg-ow-instrukcj-krok-po-kroku-](./quick/261002-94s-dodaj-szczeg-ow-instrukcj-krok-po-kroku-/) |
 | 261002-g0a | Wdróż poprawki z audytu UI Fazy 23 (23-UI-REVIEW.md): zabezpieczenie Wyślij do Librusa i poprawa statusu Oczekuje na wychowawcę, animacja AnimatedSize i potwierdzenie/stan ładowania przy Cofnij wszystkie, ujednolicenie czcionek i tap targetów | 2026-10-02 | f0cd7ff | [261002-g0a-wdr-poprawki-z-audytu-ui-fazy-23-23-ui-r](./quick/261002-g0a-wdr-poprawki-z-audytu-ui-fazy-23-23-ui-r/) |
 | 261004-bpl | Zaaplikuj rekomendacje UI dla Fazy 25 (25-UI-REVIEW.md): minHeight 32px dla przycisku Archiwizuj/Przywróć, ujednolicenie SnackBar (4s), pełna polska odmiana liczebników w AcceptedJustificationsSummaryCard, plakietki 11px i tokeny M3 | 2026-10-04 | 26cda74 | [261004-bpl-zaaplikuj-rekomendacje-ui-dla-fazy-25](./quick/261004-bpl-zaaplikuj-rekomendacje-ui-dla-fazy-25/) |
+| 261004-c2e | Wektorowe ikony archiwum (ArchiveBoxIcon), przełącznik Pokaż zarchiwizowane w linii wyszukiwarki (kompaktowa ikona <600px), wyrównana wysokość 30px i rozróżnienie kolorystyczne przycisków Utwórz zadanie vs Archiwizuj | 2026-10-04 | 3b47a8d | [261004-c2e-popraw-ikony-wyrownanie-wysokosci-kolory](./quick/261004-c2e-popraw-ikony-wyrownanie-wysokosci-kolory/) |
 
 ## Session
 
