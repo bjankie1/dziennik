@@ -137,12 +137,17 @@
       "number": "25",
       "name": "Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień i powiadomienia o akceptacji",
       "status": "complete"
+    },
+    {
+      "number": "26",
+      "name": "Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram",
+      "status": "complete"
     }
   ],
   "next": {
     "command": "/gsd-progress --next",
     "label": "Advance to the next step (plan phase 19)",
-    "reason": "Phase 19 of 14 — needs a plan"
+    "reason": "Phase 19 of 15 — needs a plan"
   },
-  "updated_at": "2026-10-04T06:04:08.631Z"
+  "updated_at": "2026-10-04T12:51:52.470Z"
 }
