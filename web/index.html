@@ -50,6 +50,15 @@
           }
         }
       });
+      if ('caches' in window) {
+        caches.keys().then(function(keys) {
+          for (var j = 0; j < keys.length; j++) {
+            if (keys[j].indexOf('flutter-') === 0) {
+              caches.delete(keys[j]);
+            }
+          }
+        });
+      }
       navigator.serviceWorker.register('/sw-notifications.js').then(function(reg) {
         window.edusyncSwRegistration = reg;
       }).catch(function(err) {

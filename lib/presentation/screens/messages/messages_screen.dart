@@ -8,6 +8,7 @@ import '../../providers/school_providers.dart';
 import '../../providers/tasks_provider.dart';
 import '../tasks/widgets/task_form_modal.dart';
 import 'new_message_screen.dart';
+import 'widgets/archive_box_icon.dart';
 import 'package:go_router/go_router.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
@@ -59,6 +60,102 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     );
   }
 
+  Widget _buildArchiveFilterToggle(int archivedCount, {required bool isCompact}) {
+    final bgColor = _showArchived
+        ? const Color(0xFFFEF3C7)
+        : AppColors.surfaceContainerLowest;
+    final borderColor = _showArchived
+        ? const Color(0xFFF59E0B)
+        : AppColors.surfaceContainerHigh;
+    final fgColor = _showArchived
+        ? const Color(0xFF92400E)
+        : const Color(0xFFB45309);
+    final labelText = 'Pokaż zarchiwizowane ($archivedCount)';
+
+    final button = Material(
+      color: bgColor,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        key: const ValueKey('messages_archive_filter_chip'),
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => setState(() => _showArchived = !_showArchived),
+        child: Container(
+          height: 44,
+          padding: EdgeInsets.symmetric(horizontal: isCompact ? 10 : 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: borderColor,
+              width: _showArchived ? 1.5 : 1.0,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x05000000),
+                blurRadius: 4,
+                offset: Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ArchiveBoxIcon(
+                size: 16,
+                color: fgColor,
+                isUnarchive: false,
+              ),
+              if (isCompact) ...[
+                if (archivedCount > 0) ...[
+                  const SizedBox(width: 5),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 1,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _showArchived
+                          ? const Color(0xFFD97706)
+                          : const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '$archivedCount',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: _showArchived
+                            ? Colors.white
+                            : const Color(0xFFB45309),
+                      ),
+                    ),
+                  ),
+                ],
+              ] else ...[
+                const SizedBox(width: 7),
+                Text(
+                  labelText,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: _showArchived ? FontWeight.w800 : FontWeight.w700,
+                    color: fgColor,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (isCompact) {
+      return Tooltip(
+        message: labelText,
+        child: button,
+      );
+    }
+    return button;
+  }
+
   @override
   Widget build(BuildContext context) {
     final messagesAsync = ref.watch(messagesProvider);
@@ -106,146 +203,123 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
           ),
           const SizedBox(height: 12),
 
-          // 2. Search & Write Button Bar
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLowest,
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: const [
-                      BoxShadow(color: Color(0x05000000), blurRadius: 4, offset: Offset(0, 1)),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
-                    decoration: const InputDecoration(
-                      hintText: 'Szukaj wiadomości, nauczyciela...',
-                      hintStyle: TextStyle(fontSize: 13, color: AppColors.outline),
-                      prefixIcon: Icon(Icons.search, size: 20, color: AppColors.outline),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 12),
+          // 2. Search, Archive Filter Toggle & Write Button Bar
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isCompact = constraints.maxWidth < 600;
+              return Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLowest,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: const [
+                          BoxShadow(color: Color(0x05000000), blurRadius: 4, offset: Offset(0, 1)),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
+                        decoration: const InputDecoration(
+                          hintText: 'Szukaj wiadomości, nauczyciela...',
+                          hintStyle: TextStyle(fontSize: 13, color: AppColors.outline),
+                          prefixIcon: Icon(Icons.search, size: 20, color: AppColors.outline),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                height: 44,
-                child: FilledButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const NewMessageScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.edit_square, size: 18),
-                  label: const Text('Napisz', style: TextStyle(fontWeight: FontWeight.w700)),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  if (_activeTab == 0) ...[
+                    const SizedBox(width: 8),
+                    _buildArchiveFilterToggle(
+                      archivedMessages.length,
+                      isCompact: isCompact,
+                    ),
+                  ],
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 44,
+                    child: FilledButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const NewMessageScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.edit_square, size: 18),
+                      label: const Text('Napisz', style: TextStyle(fontWeight: FontWeight.w700)),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
 
           // 3. Tab Content
           if (_activeTab == 0) ...[
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  FilterChip(
-                    key: const ValueKey('messages_archive_filter_chip'),
-                    selected: _showArchived,
-                    showCheckmark: false,
-                    avatar: Icon(
-                      _showArchived ? Icons.inventory_2 : Icons.archive_outlined,
-                      size: 16,
-                      color: _showArchived ? AppColors.onPrimaryContainer : AppColors.onSurfaceVariant,
-                    ),
-                    label: Text(
-                      'Pokaż zarchiwizowane (${archivedMessages.length})',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: _showArchived ? FontWeight.w700 : FontWeight.w600,
-                        color: _showArchived ? AppColors.onPrimaryContainer : AppColors.onSurfaceVariant,
+            if (!_showArchived && unreadMessages > 0)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primary,
+                        shape: BoxShape.circle,
                       ),
                     ),
-                    selectedColor: AppColors.primaryContainer,
-                    backgroundColor: AppColors.surfaceContainerLowest,
-                    side: BorderSide(
-                      color: _showArchived ? AppColors.primary : AppColors.surfaceContainerHigh,
+                    const SizedBox(width: 6),
+                    Text(
+                      'Nowe: $unreadMessages',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurface,
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    onSelected: (val) => setState(() => _showArchived = val),
-                  ),
-                  if (!_showArchived && unreadMessages > 0)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Nowe: $unreadMessages',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.onSurface,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        TextButton.icon(
-                          onPressed: () async {
-                            await ref.read(schoolRepositoryProvider).markAllMessagesAsRead();
-                            ref.invalidate(messagesProvider);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Wszystkie wiadomości oznaczono jako przeczytane'),
-                                  duration: Duration(seconds: 2),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.done_all, size: 15, color: AppColors.primary),
-                          label: const Text(
-                            'Oznacz jako przeczytane',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
+                    const SizedBox(width: 4),
+                    TextButton.icon(
+                      onPressed: () async {
+                        await ref.read(schoolRepositoryProvider).markAllMessagesAsRead();
+                        ref.invalidate(messagesProvider);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Wszystkie wiadomości oznaczono jako przeczytane'),
+                              duration: Duration(seconds: 2),
+                              behavior: SnackBarBehavior.floating,
                             ),
-                          ),
-                          style: TextButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.done_all, size: 15, color: AppColors.primary),
+                      label: const Text(
+                        'Oznacz jako przeczytane',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
                         ),
-                      ],
+                      ),
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      ),
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
             messagesAsync.when(
               data: (threads) {
                 final baseList = _showArchived
@@ -573,18 +647,17 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.surfaceContainerHighest,
+                              color: const Color(0xFFFEF3C7),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
-                                  Icons.archive_outlined,
+                                const ArchiveBoxIcon(
                                   size: 12,
-                                  color: AppColors.onSurfaceVariant,
+                                  color: Color(0xFFB45309),
                                 ),
-                                const SizedBox(width: 3),
+                                const SizedBox(width: 4),
                                 Text(
                                   thread.isAutoArchived
                                       ? 'Auto-archiwum'
@@ -592,7 +665,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
-                                    color: AppColors.onSurfaceVariant,
+                                    color: Color(0xFFB45309),
                                   ),
                                 ),
                               ],
@@ -657,37 +730,45 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
 
   Widget _buildArchiveActionButton(MessageThread thread) {
     final isArchived = thread.isArchived;
+    final bgColor = isArchived
+        ? AppColors.successSurface
+        : const Color(0xFFFFFBEB);
+    final borderColor = isArchived
+        ? AppColors.success.withValues(alpha: 0.40)
+        : const Color(0xFFF59E0B).withValues(alpha: 0.45);
+    final fgColor = isArchived
+        ? AppColors.success
+        : const Color(0xFFB45309);
+
     return Material(
-      color: AppColors.surfaceContainerLow,
+      color: bgColor,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         key: ValueKey('archive_message_${thread.id}'),
         onTap: () => _toggleArchiveMessage(thread),
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          constraints: const BoxConstraints(minHeight: 32),
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          height: 30,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: AppColors.outlineVariant.withValues(alpha: 0.4),
-            ),
+            border: Border.all(color: borderColor),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                isArchived ? Icons.unarchive_outlined : Icons.archive_outlined,
+              ArchiveBoxIcon(
                 size: 14,
-                color: AppColors.onSurfaceVariant,
+                color: fgColor,
+                isUnarchive: isArchived,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 5),
               Text(
                 isArchived ? 'Przywróć' : 'Archiwizuj',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
-                  color: AppColors.onSurfaceVariant,
+                  color: fgColor,
                 ),
               ),
             ],
@@ -712,19 +793,26 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
       final isDone = existingTask.isCompleted;
       return Wrap(
         spacing: 8,
-        runSpacing: 4,
+        runSpacing: 6,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Material(
             color: AppColors.secondaryContainer.withValues(alpha: 0.75),
             borderRadius: BorderRadius.circular(8),
             child: InkWell(
+              key: ValueKey('task_action_${thread.id}'),
               onTap: () =>
                   TaskFormModal.show(context, existingTask: existingTask),
               borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Container(
+                height: 30,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.secondary.withValues(alpha: 0.30),
+                  ),
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -732,10 +820,10 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                       isDone
                           ? Icons.check_circle_rounded
                           : Icons.link_rounded,
-                      size: 13,
+                      size: 14,
                       color: AppColors.onSecondaryContainer,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 5),
                     Flexible(
                       child: Text(
                         isDone
@@ -778,15 +866,16 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
     final isSmart = suggestion.isHeuristicMatch;
     return Wrap(
       spacing: 8,
-      runSpacing: 4,
+      runSpacing: 6,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Material(
           color: isSmart
-              ? AppColors.primaryFixed.withValues(alpha: 0.65)
-              : AppColors.surfaceContainerLow,
+              ? AppColors.primaryFixed.withValues(alpha: 0.75)
+              : AppColors.primaryContainer.withValues(alpha: 0.55),
           borderRadius: BorderRadius.circular(8),
           child: InkWell(
+            key: ValueKey('task_action_${thread.id}'),
             onTap: () {
               TaskFormModal.show(
                 context,
@@ -803,13 +892,14 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
             },
             borderRadius: BorderRadius.circular(8),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+              height: 30,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isSmart
-                      ? AppColors.primary.withValues(alpha: 0.35)
-                      : AppColors.outlineVariant.withValues(alpha: 0.4),
+                  color: AppColors.primary.withValues(
+                    alpha: isSmart ? 0.40 : 0.28,
+                  ),
                 ),
               ),
               child: Row(
@@ -819,22 +909,22 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                     isSmart
                         ? Icons.auto_awesome_rounded
                         : Icons.add_task_rounded,
-                    size: 13,
-                    color: isSmart
-                        ? AppColors.primary
-                        : AppColors.onSurfaceVariant,
+                    size: 14,
+                    color: AppColors.primary,
                   ),
                   const SizedBox(width: 5),
-                  Text(
-                    isSmart
-                        ? '+ Utwórz zadanie: ${suggestion.detectedAmount != null ? "Opłata (${suggestion.detectedAmount})" : suggestion.suggestedSubject}'
-                        : '+ Utwórz zadanie z wiadomości',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: isSmart
-                          ? AppColors.primary
-                          : AppColors.onSurfaceVariant,
+                  Flexible(
+                    child: Text(
+                      isSmart
+                          ? '+ Utwórz zadanie: ${suggestion.detectedAmount != null ? "Opłata (${suggestion.detectedAmount})" : suggestion.suggestedSubject}'
+                          : '+ Utwórz zadanie z wiadomości',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ],

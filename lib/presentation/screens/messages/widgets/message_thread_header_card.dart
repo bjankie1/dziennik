@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/message_thread.dart';
+import 'archive_box_icon.dart';
 
 class MessageThreadHeaderCard extends StatelessWidget {
   final MessageThread thread;
@@ -130,24 +131,23 @@ class MessageThreadHeaderCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerHigh,
+                    color: const Color(0xFFFEF3C7),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.archive_outlined,
+                      const ArchiveBoxIcon(
                         size: 12,
-                        color: AppColors.onSurfaceVariant,
+                        color: Color(0xFFB45309),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         thread.isAutoArchived ? 'Auto-archiwum' : 'Zarchiwizowana',
                         style: const TextStyle(
                           fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFFB45309),
                         ),
                       ),
                     ],

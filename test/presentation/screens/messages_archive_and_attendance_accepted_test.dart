@@ -14,6 +14,7 @@ import 'package:edusync/presentation/providers/tasks_provider.dart';
 import 'package:edusync/presentation/screens/attendance/attendance_screen.dart';
 import 'package:edusync/presentation/screens/attendance/widgets/accepted_justifications_summary_card.dart';
 import 'package:edusync/presentation/screens/messages/messages_screen.dart';
+import 'package:edusync/presentation/screens/messages/widgets/archive_box_icon.dart';
 
 class _FakeParentNotifier extends AppUserNotifier {
   @override
@@ -91,7 +92,7 @@ void main() {
   });
 
   testWidgets(
-    'MessagesScreen hides archived messages by default, toggles Pokaż zarchiwizowane chip, and supports manual archiving with Undo',
+    'MessagesScreen hides archived messages by default, toggles Pokaż zarchiwizowane chip, matches 30px button heights, and supports manual archiving with Undo',
     (tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
@@ -149,12 +150,22 @@ void main() {
         findsNothing,
       );
 
-      // Filter chip shows count of archived messages
+      // Filter chip shows count of archived messages and vector ArchiveBoxIcon inline with search bar
       final archiveFilterChip = find.byKey(
         const ValueKey('messages_archive_filter_chip'),
       );
       expect(archiveFilterChip, findsOneWidget);
       expect(find.text('Pokaż zarchiwizowane (1)'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: archiveFilterChip,
+          matching: find.byType(ArchiveBoxIcon),
+        ),
+        findsOneWidget,
+      );
+      final searchCenterY = tester.getCenter(find.byType(TextField)).dy;
+      final filterChipCenterY = tester.getCenter(archiveFilterChip).dy;
+      expect((searchCenterY - filterChipCenterY).abs(), lessThan(4.0));
 
       // Tap filter chip to reveal archived messages
       await tester.tap(archiveFilterChip);
@@ -166,7 +177,7 @@ void main() {
       );
       expect(find.text('Auto-archiwum'), findsOneWidget);
 
-      // Hide archived again and manually archive the active message
+      // Hide archived again and verify equal 30px height on task and archive buttons
       await tester.tap(archiveFilterChip);
       await tester.pumpAndSettle();
       expect(
@@ -174,11 +185,26 @@ void main() {
         findsNothing,
       );
 
+      final taskActionBtn = find.byKey(
+        const ValueKey('task_action_msg_active_1'),
+      );
       final archiveActionBtn = find.byKey(
         const ValueKey('archive_message_msg_active_1'),
       );
+      expect(taskActionBtn, findsOneWidget);
       expect(archiveActionBtn, findsOneWidget);
-      expect(tester.getSize(archiveActionBtn).height, greaterThanOrEqualTo(32.0));
+      expect(
+        find.descendant(
+          of: archiveActionBtn,
+          matching: find.byType(ArchiveBoxIcon),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.getSize(archiveActionBtn).height, equals(30.0));
+      expect(
+        tester.getSize(archiveActionBtn).height,
+        equals(tester.getSize(taskActionBtn).height),
+      );
       await tester.tap(archiveActionBtn);
       await tester.pumpAndSettle();
 
@@ -193,6 +219,25 @@ void main() {
 
       expect(find.text('Wycieczka klasowa w Karkonosze'), findsOneWidget);
       expect(find.text('Pokaż zarchiwizowane (1)'), findsOneWidget);
+
+      // Verify compact icon+badge toggle on narrow viewport (< 600px)
+      tester.view.physicalSize = const Size(390, 844);
+      await tester.pumpAndSettle();
+      expect(find.text('Pokaż zarchiwizowane (1)'), findsNothing);
+      expect(
+        find.descendant(
+          of: archiveFilterChip,
+          matching: find.byType(ArchiveBoxIcon),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: archiveFilterChip,
+          matching: find.text('1'),
+        ),
+        findsOneWidget,
+      );
     },
   );
 

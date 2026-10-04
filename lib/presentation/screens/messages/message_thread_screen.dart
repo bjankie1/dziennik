@@ -7,6 +7,7 @@ import '../../../core/utils/calendar_browser_helper_stub.dart'
 import '../../../domain/models/message_thread.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/school_providers.dart';
+import 'widgets/archive_box_icon.dart';
 import 'widgets/drive_folder_picker_modal.dart';
 import 'widgets/message_accordion_tile.dart';
 import 'widgets/message_reply_composer.dart';
@@ -318,10 +319,12 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
           MessageAppBarTaskAction(thread: _currentThread),
           IconButton(
             key: const ValueKey('thread_archive_action_button'),
-            icon: Icon(
-              _currentThread.isArchived ? Icons.unarchive_outlined : Icons.archive_outlined,
-              color: _currentThread.isArchived ? AppColors.primary : AppColors.onSurfaceVariant,
-              size: 22,
+            icon: ArchiveBoxIcon(
+              size: 20,
+              color: _currentThread.isArchived
+                  ? AppColors.success
+                  : const Color(0xFFB45309),
+              isUnarchive: _currentThread.isArchived,
             ),
             tooltip: _currentThread.isArchived ? 'Przywróć do skrzynki' : 'Archiwizuj wiadomość',
             onPressed: _toggleArchiveStatus,
