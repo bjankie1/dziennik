@@ -107,6 +107,11 @@ class NotificationAlertsHistoryTab extends ConsumerWidget {
                     const Color(0xFFD97706),
                     '/plan-lekcji'
                   ),
+                'justification' => (
+                    Icons.fact_check_rounded,
+                    AppColors.success,
+                    '/frekwencja'
+                  ),
                 'family_chat' => (
                     Icons.forum_rounded,
                     const Color(0xFF7C3AED),

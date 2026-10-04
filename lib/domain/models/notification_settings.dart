@@ -55,6 +55,8 @@ class NotificationChannelSettings {
         return notifyMessages;
       case 'exam':
         return notifyExams;
+      case 'justification':
+        return true;
       case 'family_chat':
         return notifyFamilyChat;
       default:

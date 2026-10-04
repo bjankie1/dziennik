@@ -190,11 +190,12 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
   const prevDoc = await studentRef.get();
   const prevData = prevDoc.exists ? prevDoc.data() : null;
 
-  // Phase 20 (D-05): Preserve previously cached full message bodies & incrementally fetch up to 4 unindexed message bodies per sync cycle
+  // Phase 20 (D-05) & Phase 25 (D-03): Preserve previously cached full message bodies, archive overrides, and auto-archive justification confirmations
   if (Array.isArray(freshData.messages)) {
     freshData.messages = await mergeAndIndexMessages({
       freshMessages: freshData.messages,
       prevMessages: prevData?.messages || [],
+      prevArchivedOverrides: prevData?.archivedMessageOverrides || {},
       client
     });
   }
@@ -238,10 +239,10 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
       }
     });
 
-    // Detect new messages
+    // Detect new regular messages (excluding auto-archived justification confirmations, which become 'justification' notifications)
     const prevMsgIds = new Set((prevData.messages || []).map(m => m.id));
     (freshData.messages || []).forEach(m => {
-      if (!prevMsgIds.has(m.id)) {
+      if (!prevMsgIds.has(m.id) && !isJustificationApprovalMessage(m)) {
         newNotifications.push({
           id: `msg_${String(m.id).replace(/[^a-zA-Z0-9_-]/g, "_")}`,
           type: "message",
@@ -252,6 +253,14 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
         });
       }
     });
+
+    // Detect justification acceptances (from new system confirmation messages and attendance/justifications transitions - Phase 25 D-06)
+    const justificationNotifs = detectJustificationNotifications({
+      prevData,
+      freshData,
+      timestampValue: admin.firestore.FieldValue.serverTimestamp()
+    });
+    newNotifications.push(...justificationNotifs);
 
     // Detect new exams (Phase 18: REQ-NOTIF-02)
     const prevExamKeys = new Set(
@@ -293,7 +302,7 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
     await notifBatch.commit();
     console.log(`Saved ${newNotifications.length} new notification(s).`);
 
-    // Dispatch new notifications to paired Telegram Bot chats (Phase 18)
+    // Dispatch new notifications to paired Telegram Bot chats (Phase 18 & Phase 25)
     try {
       const tgResult = await dispatchTelegramNotificationsForStudent(
         db,
@@ -309,8 +318,8 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
     }
   }
 
-  // Save student snapshot
-  const unreadMessagesCount = (freshData.messages || []).filter(m => !m.isRead).length;
+  // Save student snapshot (D-04: exclude archived messages from unreadMessagesCount)
+  const unreadMessagesCount = (freshData.messages || []).filter(m => !m.isRead && !m.isArchived).length;
   await studentRef.set({
     ...freshData,
     unreadMessagesCount,
@@ -328,19 +337,190 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
   };
 }
 
+/**
+ * Phase 25 (D-03, REQ-MSG-ARCH-02): Detects Librus system messages confirming justification acceptance.
+ */
+function isJustificationApprovalMessage(msg) {
+  if (!msg || typeof msg !== "object") return false;
+  const sender = String(msg.sender || "").toLowerCase();
+  const subject = String(msg.subject || "").toLowerCase();
+  const body = String(msg.body || msg.preview || "").toLowerCase();
+
+  const isSystemSender =
+    sender.includes("usprawiedliwieni") || sender.includes("system librus");
+  const hasAcceptancePhrase =
+    subject.includes("zaakceptowano usprawiedliwienie") ||
+    subject.includes("usprawiedliwienie zostało zaakceptowane") ||
+    subject.includes("potwierdzenie usprawiedliwienia") ||
+    subject.includes("usprawiedliwienie nieobecności") ||
+    body.includes("zaakceptowano usprawiedliwienie") ||
+    body.includes("usprawiedliwienie zostało zaakceptowane") ||
+    body.includes("potwierdzenie usprawiedliwienia");
+
+  if (sender.includes("usprawiedliwieni")) return true;
+  if (isSystemSender && (hasAcceptancePhrase || subject.includes("usprawiedliwieni"))) {
+    return true;
+  }
+  return hasAcceptancePhrase;
+}
+
+/**
+ * Phase 25 (D-06, REQ-NOTIF-ACC-01): Detects newly accepted justifications from:
+ * 1) New system confirmation messages in `freshData.messages`
+ * 2) Attendance records transitioning from unexcused/requested to `excused`
+ * 3) `justifications` entries transitioning to accepted status
+ */
+function detectJustificationNotifications({
+  prevData,
+  freshData,
+  timestampValue = null
+}) {
+  if (!prevData || !freshData) return [];
+  const ts =
+    timestampValue !== null
+      ? timestampValue
+      : admin.firestore.FieldValue.serverTimestamp();
+  const notifications = [];
+  const notifiedDates = new Set();
+
+  // 1. Check new justification confirmation messages
+  const prevMsgIds = new Set((prevData.messages || []).map(m => String(m.id)));
+  for (const m of freshData.messages || []) {
+    if (!m || prevMsgIds.has(String(m.id))) continue;
+    if (!isJustificationApprovalMessage(m)) continue;
+
+    const safeId = String(m.id).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const dateMatch = String(`${m.subject || ""} ${m.body || ""}`).match(/\b(\d{4}-\d{2}-\d{2})\b/);
+    if (dateMatch) {
+      notifiedDates.add(dateMatch[1]);
+    }
+    notifications.push({
+      id: `just_msg_${safeId}`,
+      type: "justification",
+      title: `Zaakceptowano usprawiedliwienie: ${m.subject || "Potwierdzenie"}`,
+      body: `${m.sender || "System Librus"}${m.date ? " • " + m.date : ""}`,
+      timestamp: ts,
+      isRead: false
+    });
+  }
+
+  // 2. Check attendance records transitioning from unexcused/absent/requested to excused
+  const prevAttendance = Array.isArray(prevData.attendance) ? prevData.attendance : [];
+  const freshAttendance = Array.isArray(freshData.attendance) ? freshData.attendance : [];
+  if (prevAttendance.length > 0 && freshAttendance.length > 0) {
+    const isRecordExcused = (r) => {
+      if (!r) return false;
+      const t = String(r.type || "").toLowerCase();
+      const st = String(r.justificationStatus || "").toLowerCase();
+      const sym = String(r.symbol || "").toLowerCase();
+      return t === "excused" || st === "approved" || sym === "u" || sym.startsWith("u");
+    };
+
+    const prevNonExcusedKeys = new Set();
+    for (const pr of prevAttendance) {
+      if (!pr || isRecordExcused(pr)) continue;
+      const key = `${pr.date || ""}_${pr.lessonNumber ?? ""}`;
+      prevNonExcusedKeys.add(key);
+      if (pr.id != null) prevNonExcusedKeys.add(String(pr.id));
+    }
+
+    const newlyExcusedByDate = new Map();
+    for (const fr of freshAttendance) {
+      if (!fr || !isRecordExcused(fr)) continue;
+      const key = `${fr.date || ""}_${fr.lessonNumber ?? ""}`;
+      const wasNonExcused =
+        prevNonExcusedKeys.has(key) ||
+        (fr.id != null && prevNonExcusedKeys.has(String(fr.id)));
+      if (!wasNonExcused) continue;
+
+      const dateStr = String(fr.date || "Nieobecność");
+      if (!newlyExcusedByDate.has(dateStr)) {
+        newlyExcusedByDate.set(dateStr, []);
+      }
+      newlyExcusedByDate.get(dateStr).push(fr);
+    }
+
+    for (const [dateStr, recs] of newlyExcusedByDate.entries()) {
+      if (notifiedDates.has(dateStr)) continue;
+      notifiedDates.add(dateStr);
+      const safeDateSlug = dateStr.replace(/[^a-zA-Z0-9_-]/g, "_");
+      const lessons = recs
+        .map(r => r.lessonNumber)
+        .filter(n => n != null)
+        .sort((a, b) => Number(a) - Number(b));
+      const subjects = [
+        ...new Set(
+          recs
+            .map(r => (r.subjectName || r.subject || "").trim())
+            .filter(Boolean)
+        )
+      ];
+      const lessonsLabel =
+        lessons.length > 0 ? ` (lekcje: ${lessons.join(", ")})` : "";
+      const subjectsLabel =
+        subjects.length > 0 ? ` • ${subjects.join(", ")}` : "";
+
+      notifications.push({
+        id: `just_att_${safeDateSlug}`,
+        type: "justification",
+        title: `Zaakceptowano usprawiedliwienie (${dateStr})`,
+        body: `Usprawiedliwiono ${recs.length} godz.${lessonsLabel}${subjectsLabel}`,
+        timestamp: ts,
+        isRead: false
+      });
+    }
+  }
+
+  // 3. Check e-Usprawiedliwienia table entries transitioning to accepted
+  const prevJusts = Array.isArray(prevData.justifications) ? prevData.justifications : [];
+  const freshJusts = Array.isArray(freshData.justifications) ? freshData.justifications : [];
+  if (freshJusts.length > 0) {
+    const isJustApproved = (j) => {
+      const st = String(j?.status || "").toLowerCase();
+      return st.includes("uspr") || st.includes("zaakcept");
+    };
+    const prevApprovedPeriods = new Set(
+      prevJusts.filter(isJustApproved).map(j => String(j.period || "").trim())
+    );
+    for (const fj of freshJusts) {
+      if (!fj || !isJustApproved(fj)) continue;
+      const period = String(fj.period || "").trim();
+      if (!period || prevApprovedPeriods.has(period)) continue;
+
+      const dateMatch = period.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+      if (dateMatch && notifiedDates.has(dateMatch[1])) continue;
+      if (dateMatch) notifiedDates.add(dateMatch[1]);
+
+      const safeSlug = period.toLowerCase().replace(/[^a-z0-9]+/g, "_").substring(0, 48);
+      notifications.push({
+        id: `just_req_${safeSlug}`,
+        type: "justification",
+        title: `Zaakceptowano usprawiedliwienie (${period})`,
+        body: fj.content ? `Powód: ${fj.content}` : "Wniosek zaakceptowany przez wychowawcę",
+        timestamp: ts,
+        isRead: false
+      });
+    }
+  }
+
+  return notifications;
+}
+
 const defaultSleep = (minMs, maxMs) => new Promise(resolve => {
   const ms = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
   setTimeout(resolve, ms);
 });
 
 /**
- * Phase 20 (D-05): Preserves already-fetched full message bodies across sync cycles
+ * Phase 20 (D-05) & Phase 25 (D-03): Preserves already-fetched full message bodies across sync cycles,
+ * applies auto-archive & auto-read rules to system justification confirmations,
  * and incrementally fetches full bodies for up to `maxIncrementalFetch` unindexed
  * messages per sync cycle (within the top `maxIndexDepth` messages).
  */
 async function mergeAndIndexMessages({
   freshMessages = [],
   prevMessages = [],
+  prevArchivedOverrides = {},
   client = null,
   maxIncrementalFetch = 4,
   maxIndexDepth = 40,
@@ -382,25 +562,28 @@ async function mergeAndIndexMessages({
         m.attachments = prev.attachments || prev.attachmentFiles.map(a => a.name);
         m.hasAttachments = true;
       }
+      if (typeof prev.isRead === "boolean" && prev.isRead === true) {
+        m.isRead = true;
+        m.unread = false;
+      }
     }
-    if (m.bodyLoaded === true) continue;
-    if (!prev) continue;
+    if (m.bodyLoaded !== true && prev) {
+      const hasCachedFullBody =
+        prev.bodyLoaded === true ||
+        (typeof prev.body === "string" &&
+          prev.body.trim().length > 0 &&
+          prev.body.trim() !== (prev.subject || "").trim());
 
-    const hasCachedFullBody =
-      prev.bodyLoaded === true ||
-      (typeof prev.body === "string" &&
-        prev.body.trim().length > 0 &&
-        prev.body.trim() !== (prev.subject || "").trim());
-
-    if (hasCachedFullBody) {
-      m.body = prev.body;
-      m.preview =
-        prev.preview && prev.preview !== prev.subject
-          ? prev.preview
-          : prev.body.replace(/\s+/g, " ").substring(0, 90);
-      m.bodyLoaded = true;
-    } else {
-      m.bodyLoaded = false;
+      if (hasCachedFullBody) {
+        m.body = prev.body;
+        m.preview =
+          prev.preview && prev.preview !== prev.subject
+            ? prev.preview
+            : prev.body.replace(/\s+/g, " ").substring(0, 90);
+        m.bodyLoaded = true;
+      } else {
+        m.bodyLoaded = false;
+      }
     }
   }
 
@@ -435,6 +618,37 @@ async function mergeAndIndexMessages({
     }
   }
 
+  // Step 3 (Phase 25 D-03): Apply auto-archive & auto-read rules and preserve manual archive overrides
+  for (const m of merged) {
+    const idStr = String(m.id);
+    const prev = prevById.get(idStr);
+    const autoArch = isJustificationApprovalMessage(m);
+    if (autoArch) {
+      m.isAutoArchived = true;
+    }
+    const explicitOverride =
+      prevArchivedOverrides && typeof prevArchivedOverrides[idStr] === "boolean"
+        ? prevArchivedOverrides[idStr]
+        : typeof prev?.isArchived === "boolean" && !autoArch
+          ? prev.isArchived
+          : typeof prev?.isArchived === "boolean" && prev.isArchived === false
+            ? false
+            : undefined;
+
+    if (typeof explicitOverride === "boolean") {
+      m.isArchived = explicitOverride;
+    } else if (autoArch) {
+      m.isArchived = true;
+    } else {
+      m.isArchived = false;
+    }
+
+    if (autoArch && m.isArchived) {
+      m.isRead = true;
+      m.unread = false;
+    }
+  }
+
   return merged;
 }
 
@@ -442,5 +656,7 @@ module.exports = {
   syncStudentData,
   resolveCacheDocumentId,
   shouldDispatchLibrusScrape,
-  mergeAndIndexMessages
+  mergeAndIndexMessages,
+  isJustificationApprovalMessage,
+  detectJustificationNotifications
 };

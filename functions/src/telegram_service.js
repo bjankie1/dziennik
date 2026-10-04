@@ -39,6 +39,13 @@ function formatNotificationForTelegram(notif, studentName = "Oskar") {
         (safeBody ? `📝 ${safeBody}\n` : "") +
         `\n🔗 <a href="https://lepsza-szkola.web.app/plan-lekcji">Zobacz w Planie Lekcji</a>`
       );
+    case "justification":
+      return (
+        `✅ <b>Zaakceptowano usprawiedliwienie!</b> (${safeStudent})\n\n` +
+        `📌 <b>${safeTitle}</b>\n` +
+        (safeBody ? `📝 ${safeBody}\n` : "") +
+        `\n🔗 <a href="https://lepsza-szkola.web.app/frekwencja">Zobacz w module Frekwencji</a>`
+      );
     case "family_chat":
       return (
         `💬 <b>Czat rodzinny • EduSync</b>\n\n` +
@@ -96,6 +103,8 @@ function isCategoryEnabled(settings, notifType) {
       return settings.notifyMessages !== false;
     case "exam":
       return settings.notifyExams !== false;
+    case "justification":
+      return true;
     case "family_chat":
       return settings.notifyFamilyChat !== false;
     default:
@@ -273,6 +282,7 @@ async function verifyAndPairCodeFromUpdates(db, { botToken, pairingCode, familyI
 module.exports = {
   escapeHtml,
   formatNotificationForTelegram,
+  isCategoryEnabled,
   sendTelegramMessage,
   dispatchTelegramNotificationsForStudent,
   verifyAndPairCodeFromUpdates,
