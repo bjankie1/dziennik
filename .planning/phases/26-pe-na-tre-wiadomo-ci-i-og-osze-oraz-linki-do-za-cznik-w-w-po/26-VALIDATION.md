@@ -1,8 +1,8 @@
 ---
 phase: "26"
 slug: "pe-na-tre-wiadomo-ci-i-og-osze-oraz-linki-do-za-cznik-w-w-po"
-status: draft
-nyquist_compliant: false
+status: ready
+nyquist_compliant: true
 wave_0_complete: false
 created: "2026-10-04"
 ---
@@ -38,8 +38,8 @@ created: "2026-10-04"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 26-01-01 | 01 | 1 | REQ-NOTIF-TG-MSG-01, REQ-NOTIF-TG-ANN-01, REQ-NOTIF-TG-ATT-01 | T-26-01 | Pre-hydration of message details & multiline extraction without breaking `maxIncrementalFetch` | unit | `node --test functions/test/message_body_indexing.test.js functions/test/justification_notifications.test.js` | ✅ | ⬜ pending |
-| 26-01-02 | 01 | 1 | REQ-NOTIF-TG-MSG-01, REQ-NOTIF-TG-ANN-01, REQ-NOTIF-TG-ATT-01 | T-26-01, T-26-02 | Escapes `<`, `>`, `&` after plain-text truncation, formats `/api/downloadAttachment` links, keeps total HTML <= 4096 chars | unit | `node --test functions/test/telegram_notifications.test.js` | ❌ W0 | ⬜ pending |
+| 26-01-01 | 01 | 1 | REQ-NOTIF-TG-MSG-01, REQ-NOTIF-TG-ANN-01, REQ-NOTIF-TG-ATT-01 | T-26-01, T-26-03 | Pre-hydration of message details & multiline extraction without breaking `maxIncrementalFetch` | unit | `node --test functions/test/message_body_indexing.test.js functions/test/justification_notifications.test.js` | ✅ | ⬜ pending |
+| 26-01-02 | 01 | 1 | REQ-NOTIF-TG-MSG-01, REQ-NOTIF-TG-ANN-01, REQ-NOTIF-TG-ATT-01 | T-26-01, T-26-02 | Escapes `<`, `>`, `&` after plain-text truncation, formats `/api/downloadAttachment` links, keeps total HTML <= 4096 chars | unit | `node --test functions/test/telegram_notifications.test.js functions/test/justification_notifications.test.js functions/test/message_body_indexing.test.js` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
