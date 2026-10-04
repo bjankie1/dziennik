@@ -38,7 +38,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 23: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków** — Możliwość podglądu konkretnych dni, numerów lekcji, przedmiotów, godzin i powodów zarówno na banerze prośby o usprawiedliwienie („6 lekcji • Choroba” na Pulpicie i we Frekwencji), jak i na banerze oczekujących wniosków („7 wnioski czekają na wychowawcę”). (completed 2026-10-02)
 - [x] **Phase 24: Dekompozycja monolitycznego FirestoreSchoolRepository (2 691 LOC) na serwisy domenowe i izolacja warstwy cache** — Podział `FirestoreSchoolRepository` na wyspecjalizowane klasy domenowe (`SchoolDataCacheManager`, `FirestoreGradesDataSource`, `FirestoreAttendanceDataSource`, `FirestoreJustificationsDataSource`, `FirestoreMessagesDataSource`, `FirestoreScheduleDataSource`) z eliminacją statycznych map globalnych i zachowaniem fasady `SchoolRepository`. (completed 2026-10-03)
 - [x] **Phase 25: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień i powiadomienia o akceptacji** — Ręczna archiwizacja i przywracanie wiadomości z zakładką „Archiwum”, automatyczna archiwizacja systemowych potwierdzeń akceptacji usprawiedliwień z podglądem zaakceptowanych usprawiedliwień we Frekwencji oraz powiadomienia Telegram / Web Push o zaakceptowaniu usprawiedliwienia przez wychowawcę. (completed 2026-10-04)
-- [ ] **Phase 26: Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram** — Powiadomienia o nowej wiadomości i ogłoszeniu na Telegramie zawierające pełną treść wiadomości/ogłoszenia oraz listę załączników wraz z bezpośrednimi linkami do ich pobrania.
+- [x] **Phase 26: Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram** — Powiadomienia o nowej wiadomości i ogłoszeniu na Telegramie zawierające pełną treść wiadomości/ogłoszenia oraz listę załączników wraz z bezpośrednimi linkami do ich pobrania. (completed 2026-10-04)
 
 ---
 
@@ -358,7 +358,7 @@ Plans:
 3. Jeśli nowa wiadomość posiada załączniki (`attachmentFiles`), powiadomienie na Telegramie wypisuje listę nazw załączników wraz z klikalnymi linkami pozwalającymi na ich pobranie (np. przez endpoint `/api/downloadAttachment?path=...` na domenie aplikacji `https://lepsza-szkola.web.app`).
 4. Formatowanie HTML/tekstowe powiadomień Telegram jest odporne na znaki specjalne (`<`, `>`, `&`) oraz respektuje limit długości wiadomości Telegram Bot API (4096 znaków).
 
-**Plans:** 1/1 plans executed
+**Plans:** 1/1 plans complete
 
 Plans:
 

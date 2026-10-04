@@ -3,17 +3,6 @@ phase: 26-pe-na-tre-wiadomo-ci-i-og-osze-oraz-linki-do-za-cznik-w-w-po
 verified: 2026-10-04T14:48:00+02:00
 status: passed
 score: 5/5 must-haves verified
-covered_files:
-  - ".planning/phases/26-pe-na-tre-wiadomo-ci-i-og-osze-oraz-linki-do-za-cznik-w-w-po/26-01-PLAN.md"
-  - ".planning/phases/26-pe-na-tre-wiadomo-ci-i-og-osze-oraz-linki-do-za-cznik-w-w-po/26-01-SUMMARY.md"
-  - "functions/src/librus_client.js"
-  - "functions/src/sync_service.js"
-  - "functions/src/telegram_service.js"
-  - "functions/test/message_body_indexing.test.js"
-  - "functions/test/telegram_notifications.test.js"
-covered_digest: "v2:sha256:c9ff1dacc0d01045535d21db47d088c824aedc3e8df7761f1f19259a50f9737e"
-behavior_unverified: 0
-overrides_applied: 0
 ---
 
 # Phase 26: Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram Verification Report
