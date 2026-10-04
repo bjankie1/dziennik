@@ -334,9 +334,14 @@ Plans:
 3. W module Frekwencji (`AttendanceScreen`) użytkownik może w przejrzysty sposób zobaczyć, które nieobecności zostały zaakceptowane/usprawiedliwione (dedykowany filtr lub podgląd zaakceptowanych usprawiedliwień wraz z powiązanymi godzinami lekcyjnymi).
 4. Wykrycie nowej akceptacji usprawiedliwienia (zmiana statusu nieobecności na usprawiedliwioną lub nadejście wiadomości systemowej o akceptacji usprawiedliwienia) generuje natychmiastowe powiadomienie (Telegram Bot, Web Push oraz wpis w zakładce „Ostatnie alerty”).
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
+**Wave 1**
 
-- [ ] TBD (run `/gsd-plan-phase 25` to break down)
+- [ ] 25-01-PLAN.md: Message Archiving & Auto-Archive Domain/Repository Support + Cloud Functions Justification Acceptance Detection & Telegram/Push/Alerts Notifications
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 25-02-PLAN.md: `MessagesScreen` Archive Filter Chip & Manual Archive/Restore Controls + `AttendanceScreen` `'Usprawiedliwione (X)'` Accepted Justifications Summary & Badges
 
