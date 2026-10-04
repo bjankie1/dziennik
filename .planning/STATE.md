@@ -104,6 +104,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 261004-bpl | Zaaplikuj rekomendacje UI dla Fazy 25 (25-UI-REVIEW.md): minHeight 32px dla przycisku Archiwizuj/Przywróć, ujednolicenie SnackBar (4s), pełna polska odmiana liczebników w AcceptedJustificationsSummaryCard, plakietki 11px i tokeny M3 | 2026-10-04 | 26cda74 | [261004-bpl-zaaplikuj-rekomendacje-ui-dla-fazy-25](./quick/261004-bpl-zaaplikuj-rekomendacje-ui-dla-fazy-25/) |
 | 261004-c2e | Wektorowe ikony archiwum (ArchiveBoxIcon), przełącznik Pokaż zarchiwizowane w linii wyszukiwarki (kompaktowa ikona <600px), wyrównana wysokość 30px i rozróżnienie kolorystyczne przycisków Utwórz zadanie vs Archiwizuj | 2026-10-04 | 3b47a8d | [261004-c2e-popraw-ikony-wyrownanie-wysokosci-kolory](./quick/261004-c2e-popraw-ikony-wyrownanie-wysokosci-kolory/) |
 | 261004-d04 | Zachowanie znaków końca linii (<br>, \n) w ogłoszeniach szkolnych z Librusa oraz automatyczne formatowanie wypunktowań (•) i sekcji numerowanych (1., 2., ...) | 2026-10-04 | 9f21a74 | [261004-d04-og-oszenia-s-wy-wietlane-jako-jeden-zbit](./quick/261004-d04-og-oszenia-s-wy-wietlane-jako-jeden-zbit/) |
+| 261004-h22 | Wyraźny przycisk Archiwizuj w podglądzie wiadomości (MessageThreadScreen i MessageThreadHeaderCard) z automatycznym powrotem do listy wiadomości i Cofnij | 2026-10-04 | 0a55acf | [261004-h22-archiwizacja-wiadomo-ci-z-poziomu-podgl-](./quick/261004-h22-archiwizacja-wiadomo-ci-z-poziomu-podgl-/) |
 
 ## Session
 
