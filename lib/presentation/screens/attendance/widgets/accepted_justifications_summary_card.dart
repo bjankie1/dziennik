@@ -12,6 +12,16 @@ class AcceptedJustificationsSummaryCard extends StatefulWidget {
     required this.excusedList,
   });
 
+  static String formatLessonsCount(int count) {
+    if (count == 1) return '1 lekcja';
+    final mod10 = count % 10;
+    final mod100 = count % 100;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+      return '$count lekcje';
+    }
+    return '$count lekcji';
+  }
+
   @override
   State<AcceptedJustificationsSummaryCard> createState() =>
       _AcceptedJustificationsSummaryCardState();
@@ -31,6 +41,9 @@ class _AcceptedJustificationsSummaryCardState
       descendingDays: true,
     );
     final daysCount = groupedByDay.length;
+    final lessonsLabel = AcceptedJustificationsSummaryCard.formatLessonsCount(
+      excusedList.length,
+    );
 
     return Container(
       key: const ValueKey('accepted_justifications_summary_card'),
@@ -79,11 +92,11 @@ class _AcceptedJustificationsSummaryCardState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Zaakceptowane usprawiedliwienia (${excusedList.length} ${excusedList.length == 1 ? "lekcja" : (excusedList.length < 5 ? "lekcje" : "lekcji")} • $daysCount ${daysCount == 1 ? "dzień" : "dni"})',
+                            'Zaakceptowane usprawiedliwienia ($lessonsLabel • $daysCount ${daysCount == 1 ? "dzień" : "dni"})',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.slate900,
+                              color: AppColors.onSurface,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -161,7 +174,7 @@ class _AcceptedJustificationsSummaryCardState
                                 vertical: 8,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: AppColors.surfaceContainerLowest,
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color: AppColors.success.withValues(alpha: 0.25),
@@ -180,7 +193,7 @@ class _AcceptedJustificationsSummaryCardState
                                           style: const TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.w800,
-                                            color: AppColors.slate900,
+                                            color: AppColors.onSurface,
                                           ),
                                         ),
                                       ),
@@ -196,7 +209,7 @@ class _AcceptedJustificationsSummaryCardState
                                         child: const Text(
                                           'Zaakceptowano przez wychowawcę',
                                           style: TextStyle(
-                                            fontSize: 10,
+                                            fontSize: 11,
                                             fontWeight: FontWeight.w800,
                                             color: AppColors.success,
                                           ),
@@ -210,7 +223,7 @@ class _AcceptedJustificationsSummaryCardState
                                     style: const TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
-                                      color: AppColors.slate600,
+                                      color: AppColors.onSurfaceVariant,
                                     ),
                                   ),
                                   if (reasons.isNotEmpty) ...[

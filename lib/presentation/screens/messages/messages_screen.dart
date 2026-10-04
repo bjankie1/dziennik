@@ -44,7 +44,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
               ? 'Wiadomość przeniesiona do archiwum'
               : 'Przywrócono wiadomość do skrzynki odbiorczej',
         ),
-        duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 4),
         behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
           label: 'Cofnij',
@@ -581,7 +581,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                               children: [
                                 const Icon(
                                   Icons.archive_outlined,
-                                  size: 10,
+                                  size: 12,
                                   color: AppColors.onSurfaceVariant,
                                 ),
                                 const SizedBox(width: 3),
@@ -590,7 +590,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                                       ? 'Auto-archiwum'
                                       : 'Zarchiwizowana',
                                   style: const TextStyle(
-                                    fontSize: 10,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.onSurfaceVariant,
                                   ),
@@ -665,7 +665,8 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
         onTap: () => _toggleArchiveMessage(thread),
         borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          constraints: const BoxConstraints(minHeight: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
@@ -677,7 +678,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
             children: [
               Icon(
                 isArchived ? Icons.unarchive_outlined : Icons.archive_outlined,
-                size: 13,
+                size: 14,
                 color: AppColors.onSurfaceVariant,
               ),
               const SizedBox(width: 4),

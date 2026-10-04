@@ -12,6 +12,7 @@ import 'package:edusync/presentation/providers/auth_providers.dart';
 import 'package:edusync/presentation/providers/school_providers.dart';
 import 'package:edusync/presentation/providers/tasks_provider.dart';
 import 'package:edusync/presentation/screens/attendance/attendance_screen.dart';
+import 'package:edusync/presentation/screens/attendance/widgets/accepted_justifications_summary_card.dart';
 import 'package:edusync/presentation/screens/messages/messages_screen.dart';
 
 class _FakeParentNotifier extends AppUserNotifier {
@@ -177,6 +178,7 @@ void main() {
         const ValueKey('archive_message_msg_active_1'),
       );
       expect(archiveActionBtn, findsOneWidget);
+      expect(tester.getSize(archiveActionBtn).height, greaterThanOrEqualTo(32.0));
       await tester.tap(archiveActionBtn);
       await tester.pumpAndSettle();
 
@@ -200,6 +202,13 @@ void main() {
       tester.view.physicalSize = const Size(1280, 1000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
+
+      expect(AcceptedJustificationsSummaryCard.formatLessonsCount(1), '1 lekcja');
+      expect(AcceptedJustificationsSummaryCard.formatLessonsCount(2), '2 lekcje');
+      expect(AcceptedJustificationsSummaryCard.formatLessonsCount(5), '5 lekcji');
+      expect(AcceptedJustificationsSummaryCard.formatLessonsCount(12), '12 lekcji');
+      expect(AcceptedJustificationsSummaryCard.formatLessonsCount(22), '22 lekcje');
+      expect(AcceptedJustificationsSummaryCard.formatLessonsCount(25), '25 lekcji');
 
       final repo = _ArchiveTestRepository(
         threads: const [],

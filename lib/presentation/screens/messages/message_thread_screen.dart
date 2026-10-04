@@ -89,7 +89,9 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
       );
       ref.invalidate(messagesProvider);
       _showSnackBar(
-        newIsArchived ? 'Wiadomość zarchiwizowana' : 'Przywrócono wiadomość do skrzynki',
+        newIsArchived
+            ? 'Wiadomość przeniesiona do archiwum'
+            : 'Przywrócono wiadomość do skrzynki odbiorczej',
         duration: const Duration(seconds: 4),
         action: SnackBarAction(
           label: 'Cofnij',
