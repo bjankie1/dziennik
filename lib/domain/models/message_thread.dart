@@ -499,4 +499,57 @@ class Announcement {
     required this.tags,
     this.isRead = false,
   });
+
+  /// Formats announcement content so that native newlines and HTML `<br>` /
+  /// block tags are respected, and flattened single-line announcements from
+  /// older cache entries have their bullet lists (`•`) and numbered sections
+  /// (`1. ...`, `2. ...`) cleanly separated into readable lines.
+  static String formatContent(String raw) {
+    if (raw.trim().isEmpty) return '';
+
+    var text = raw
+        .replaceAll(RegExp(r'<br\s*/?>\s*\r?\n?', caseSensitive: false), '\n')
+        .replaceAll(
+          RegExp(r'</(p|div|li|tr|h[1-6])>\s*\r?\n?', caseSensitive: false),
+          '\n',
+        )
+        .replaceAll(RegExp(r'<[^>]+>'), '')
+        .replaceAll('\r\n', '\n')
+        .replaceAll('\r', '\n');
+
+    // Place inline bullet points (•, ▪, ◦) on their own lines.
+    text = text.replaceAllMapped(
+      RegExp(r'([^\n])\s*([•▪◦])\s+'),
+      (m) => '${m[1]}\n${m[2]} ',
+    );
+
+    // Separate short intro headers ending with ':' right before a bullet list.
+    text = text.replaceAllMapped(
+      RegExp(r'([.!?])\s+([A-ZĄĆĘŁŃÓŚŹŻ][^\n.!?]{2,50}:)\n([•▪◦])'),
+      (m) => '${m[1]}\n\n${m[2]}\n${m[3]}',
+    );
+
+    // Separate numbered section headings (e.g. "1. Postanowienia ogólne",
+    // "2. Cele konkursu") when preceded by sentence punctuation or quotes,
+    // without breaking dates ("28.09.2026 r.") or lowercase ordinals ("6. godzinę").
+    text = text.replaceAllMapped(
+      RegExp(r'([."”!)])\s+(\d+\.\s+[A-ZĄĆĘŁŃÓŚŹŻ])'),
+      (m) => '${m[1]}\n\n${m[2]}',
+    );
+
+    // Separate closing contact/signature lines glued to the end of a bullet item.
+    text = text.replaceAllMapped(
+      RegExp(
+        r'(\n[•▪◦][^\n]+?[.!?])\s+((?:W przypadku dodatkowych pytań|Nauczyciele|Organizatorzy|Osoby zainteresowane|Zapraszam|Z poważaniem|Pozdrawiam)[^\n]*)$',
+      ),
+      (m) => '${m[1]}\n\n${m[2]}',
+    );
+
+    final lines = text
+        .split('\n')
+        .map((line) => line.replaceAll(RegExp(r'[^\S\n]+'), ' ').trim())
+        .toList();
+
+    return lines.join('\n').replaceAll(RegExp(r'\n{3,}'), '\n\n').trim();
+  }
 }

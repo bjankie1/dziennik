@@ -306,6 +306,23 @@ class LibrusClient {
     };
   }
 
+  _extractMultilineElementText($, element) {
+    const rawHtml = $(element).html() || "";
+    const normalizedHtml = rawHtml
+      .replace(/<br\s*\/?>\s*\r?\n?/gi, "\n")
+      .replace(/<\/(p|div|li|tr|h[1-6])>\s*\r?\n?/gi, "\n");
+    const decoded = cheerio.load(`<div>${normalizedHtml}</div>`)("div").text();
+    return decoded
+      .replace(/\r\n?/g, "\n")
+      .replace(/([^\n])\s*([•▪◦])\s+/g, "$1\n$2 ")
+      .replace(/([."”!)])\s+(\d+\.\s+[A-ZĄĆĘŁŃÓŚŹŻ])/g, "$1\n\n$2")
+      .split("\n")
+      .map(line => line.replace(/[^\S\n]+/g, " ").trim())
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
   async fetchAnnouncements() {
     const res = await this.client.get("https://synergia.librus.pl/ogloszenia");
     const $ = cheerio.load(res.data);
@@ -320,7 +337,7 @@ class LibrusClient {
       if (rows.length >= 3) {
         const author = $(rows[0]).find("td").text().trim();
         const date = $(rows[1]).find("td").text().trim();
-        const content = $(rows[2]).find("td").text().trim().replace(/\s+/g, " ");
+        const content = this._extractMultilineElementText($, $(rows[2]).find("td").first());
         announcements.push({
           id: `${date}_${title.slice(0, 20)}`.replace(/[^a-zA-Z0-9]/g, "_"),
           title,

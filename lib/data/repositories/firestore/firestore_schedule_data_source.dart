@@ -603,7 +603,7 @@ class FirestoreScheduleDataSource {
         author: a['author'] ?? 'Szkoła',
         authorRole: 'Nauczyciel / Dyrekcja',
         publishedDate: dt,
-        content: a['content'] ?? '',
+        content: Announcement.formatContent((a['content'] ?? '').toString()),
         tags: const ['Ogłoszenie szkolne', 'Ważne'],
       );
     }).toList();

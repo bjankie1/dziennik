@@ -329,4 +329,83 @@ void main() {
       expect(find.text('Powód: Wizyta lekarska'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'Announcement.formatContent preserves line breaks and restores structure for flattened bullet and numbered announcements in MessagesScreen',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      const rawAuditions =
+          'We wtorek 6 października 2026 roku w auli szkolnej odbędą się przesłuchania do „Utalentowanej Dziesiątki" – zajęć pozalekcyjnych. '
+          'Szczegóły organizacyjne: • Czas: Zapraszamy na 6. godzinę lekcyjną (w razie potrzeby przesłuchania zostaną przedłużone na 7. godzinę). '
+          '• Zgłoszenia: Zaraz przy wejściu na aulę będzie znajdował się stolik z listą chętnych. '
+          '• Wokaliści: Osoby śpiewające do podkładu muzycznego proszone są o zabranie go ze sobą. '
+          'W przypadku dodatkowych pytań przed przesłuchaniami, zapraszamy do kontaktu w gabinecie C202 – pedagog Anita Piechnik.';
+
+      final formattedAuditions = Announcement.formatContent(rawAuditions);
+      expect(
+        formattedAuditions,
+        contains('\n\nSzczegóły organizacyjne:\n• Czas: Zapraszamy na 6. godzinę lekcyjną'),
+      );
+      expect(formattedAuditions, contains('\n• Zgłoszenia: Zaraz przy wejściu'));
+      expect(
+        formattedAuditions,
+        contains('\n\nW przypadku dodatkowych pytań przed przesłuchaniami'),
+      );
+
+      const rawRules =
+          'REGULAMIN SZKOLNEGO KONKURSU: „Jesieniara" 1. Postanowienia ogólne '
+          '• Organizatorem konkursu jest Biblioteka Szkolna LO nr X we Wrocławiu. '
+          '2. Cele konkursu • Promowanie czytelnictwa. '
+          '5. Terminy • Konkurs trwa od dnia 28.09.2026 r. do dnia 5.10.2026 r. '
+          '• Rozstrzygnięcie konkursu nastąpi 9.10.2026 r. 6. Ocena prac i nagrody '
+          '• Laureaci otrzymają nagrody. Nauczyciele bibliotekarze: Marta Kruk Magdalena Wilkocka';
+
+      final formattedRules = Announcement.formatContent(rawRules);
+      expect(formattedRules, contains('\n\n1. Postanowienia ogólne\n• Organizatorem'));
+      expect(formattedRules, contains('\n\n2. Cele konkursu\n• Promowanie'));
+      expect(formattedRules, contains('od dnia 28.09.2026 r. do dnia 5.10.2026 r.'));
+      expect(formattedRules, contains('\n\n6. Ocena prac i nagrody\n• Laureaci'));
+      expect(formattedRules, contains('\n\nNauczyciele bibliotekarze: Marta Kruk'));
+
+      final repo = _ArchiveTestRepository(threads: const [], records: const []);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            schoolRepositoryProvider.overrideWithValue(repo),
+            announcementsProvider.overrideWith(
+              (ref) async => [
+                Announcement(
+                  id: 'ann_1',
+                  title: "Przesłuchania 'Utalentowana X\"",
+                  author: 'Anita Piechnik',
+                  authorRole: 'Nauczyciel / Dyrekcja',
+                  publishedDate: DateTime(2026, 9, 29),
+                  content: rawAuditions,
+                  tags: const ['Ogłoszenie szkolne', 'Ważne'],
+                ),
+              ],
+            ),
+            tasksStreamProvider.overrideWith((ref) => Stream.value(const [])),
+          ],
+          child: const MaterialApp(
+            home: MessagesScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Ogłoszenia'));
+      await tester.pumpAndSettle();
+
+      final selectable = tester.widget<SelectableText>(
+        find.byType(SelectableText).first,
+      );
+      final renderedText = selectable.textSpan!.toPlainText();
+      expect(renderedText, contains('\n• Czas:'));
+      expect(renderedText, contains('\n• Zgłoszenia:'));
+    },
+  );
 }

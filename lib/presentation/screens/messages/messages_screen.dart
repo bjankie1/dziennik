@@ -6,6 +6,7 @@ import '../../../domain/models/message_thread.dart';
 import '../../../domain/models/school_task.dart';
 import '../../providers/school_providers.dart';
 import '../../providers/tasks_provider.dart';
+import '../../widgets/linkified_text.dart';
 import '../tasks/widgets/task_form_modal.dart';
 import 'new_message_screen.dart';
 import 'widgets/archive_box_icon.dart';
@@ -977,9 +978,13 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
-          Text(
-            ann.content,
-            style: const TextStyle(fontSize: 13, height: 1.4, color: AppColors.onSurface),
+          LinkifiedSelectableText(
+            Announcement.formatContent(ann.content),
+            style: const TextStyle(
+              fontSize: 13,
+              height: 1.55,
+              color: AppColors.onSurface,
+            ),
           ),
           const SizedBox(height: 10),
           Wrap(
