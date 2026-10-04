@@ -1,9 +1,9 @@
 ---
 phase: "26"
 slug: "pe-na-tre-wiadomo-ci-i-og-osze-oraz-linki-do-za-cznik-w-w-po"
-status: ready
+status: complete
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: "2026-10-04"
 ---
 
@@ -38,8 +38,8 @@ created: "2026-10-04"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 26-01-01 | 01 | 1 | REQ-NOTIF-TG-MSG-01, REQ-NOTIF-TG-ANN-01, REQ-NOTIF-TG-ATT-01 | T-26-01, T-26-03 | Pre-hydration of message details & multiline extraction without breaking `maxIncrementalFetch` | unit | `node --test functions/test/message_body_indexing.test.js functions/test/justification_notifications.test.js` | ✅ | ⬜ pending |
-| 26-01-02 | 01 | 1 | REQ-NOTIF-TG-MSG-01, REQ-NOTIF-TG-ANN-01, REQ-NOTIF-TG-ATT-01 | T-26-01, T-26-02 | Escapes `<`, `>`, `&` after plain-text truncation, formats `/api/downloadAttachment` links, keeps total HTML <= 4096 chars | unit | `node --test functions/test/telegram_notifications.test.js functions/test/justification_notifications.test.js functions/test/message_body_indexing.test.js` | ❌ W0 | ⬜ pending |
+| 26-01-01 | 01 | 1 | REQ-NOTIF-TG-MSG-01, REQ-NOTIF-TG-ANN-01, REQ-NOTIF-TG-ATT-01 | T-26-01, T-26-03 | Pre-hydration of message details & multiline extraction without breaking `maxIncrementalFetch` | unit | `node --test functions/test/message_body_indexing.test.js functions/test/justification_notifications.test.js` | ✅ | ✅ green |
+| 26-01-02 | 01 | 1 | REQ-NOTIF-TG-MSG-01, REQ-NOTIF-TG-ANN-01, REQ-NOTIF-TG-ATT-01 | T-26-01, T-26-02 | Escapes `<`, `>`, `&` after plain-text truncation, formats `/api/downloadAttachment` links, keeps total HTML <= 4096 chars | unit | `node --test functions/test/telegram_notifications.test.js functions/test/justification_notifications.test.js functions/test/message_body_indexing.test.js` | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -47,7 +47,7 @@ created: "2026-10-04"
 
 ## Wave 0 Requirements
 
-- [ ] `functions/test/telegram_notifications.test.js` — unit tests for `REQ-NOTIF-TG-MSG-01`, `REQ-NOTIF-TG-ANN-01`, `REQ-NOTIF-TG-ATT-01`, HTML escaping, truncation within 4096 chars, and `LibrusClient` multiline message extraction
+- [x] `functions/test/telegram_notifications.test.js` — unit tests for `REQ-NOTIF-TG-MSG-01`, `REQ-NOTIF-TG-ANN-01`, `REQ-NOTIF-TG-ATT-01`, HTML escaping, truncation within 4096 chars, and `LibrusClient` multiline message extraction
 
 ---
 
@@ -59,11 +59,12 @@ created: "2026-10-04"
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 5s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 5s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved
+

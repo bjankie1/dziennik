@@ -358,8 +358,8 @@ Plans:
 3. Jeśli nowa wiadomość posiada załączniki (`attachmentFiles`), powiadomienie na Telegramie wypisuje listę nazw załączników wraz z klikalnymi linkami pozwalającymi na ich pobranie (np. przez endpoint `/api/downloadAttachment?path=...` na domenie aplikacji `https://lepsza-szkola.web.app`).
 4. Formatowanie HTML/tekstowe powiadomień Telegram jest odporne na znaki specjalne (`<`, `>`, `&`) oraz respektuje limit długości wiadomości Telegram Bot API (4096 znaków).
 
-**Plans:** 1 plan
+**Plans:** 1/1 plans executed
 
 Plans:
 
-- [ ] 26-01-PLAN.md — Multiline Message Scraping & Pre-Notification Detail/Attachment Hydration (`librus_client.js`, `sync_service.js`) + Full-Content & Attachment-Link Telegram HTML Formatter with 4096-Char Truncation & Unit Tests (`telegram_service.js`, `telegram_notifications.test.js`)
+- [x] 26-01-PLAN.md — Multiline Message Scraping & Pre-Notification Detail/Attachment Hydration (`librus_client.js`, `sync_service.js`) + Full-Content & Attachment-Link Telegram HTML Formatter with 4096-Char Truncation & Unit Tests (`telegram_service.js`, `telegram_notifications.test.js`)

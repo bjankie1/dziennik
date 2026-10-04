@@ -3,19 +3,18 @@ gsd_state_version: "1.0"
 milestone: v3.0
 current_phase: 26
 current_phase_name: Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram
-current_plan: Not started
-status: executing
-stopped_at: Phase 26 context gathered
-last_updated: "2026-10-04T11:53:53.527Z"
+current_plan: 1
+status: verifying
+stopped_at: Completed 26-01-PLAN.md
+last_updated: "2026-10-04T12:39:50.276Z"
 last_activity: 2026-10-04
-last_activity_desc: Phase 25 complete, transitioned to Phase 19
-state_head: 4bafe0b3aa1a75c2a1dd3090a4849f08b7f314c0
+state_head: 2282922a089e15aab8f51714dbd78dd72d999c5b
 progress:
   total_phases: 15
   completed_phases: 8
   total_plans: 26
-  completed_plans: 23
-  percent: 20
+  completed_plans: 24
+  percent: 53
 milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ---
 
@@ -23,7 +22,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 **Current Milestone:** Milestone v3.0 (Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia)  
 **Active Phase:** Phase 23: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków — COMPLETED  
-**Status:** Ready to execute
+**Status:** Phase complete — ready for verification
 **Last Updated:** 2026-10-02  
 
 ## Milestone v3.0 Roadmap
@@ -109,19 +108,19 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 ## Session
 
-**Last session:** 2026-10-04T11:19:46.529Z
-**Stopped at:** Phase 26 context gathered
-**Resume file:** .planning/phases/26-pe-na-tre-wiadomo-ci-i-og-osze-oraz-linki-do-za-cznik-w-w-po/26-CONTEXT.md
-Last activity: 2026-10-04 — Phase 25 complete, transitioned to Phase 19
+**Last session:** 2026-10-04T12:39:50.090Z
+**Stopped at:** Completed 26-01-PLAN.md
+**Resume file:** None
+Last activity: 2026-10-04
 
 ## Current Position
 
-Phase: 26 (Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram) — READY TO EXECUTE
-Current Plan: Not started
+Phase: 26 (Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram) — EXECUTING
+Current Plan: 1
 Total Plans in Phase: 1
 Next Phase: 19 (Raporty tygodniowe)
-Status: Ready to execute
-Last activity: 2026-10-03 — Completed 24-01-PLAN.md
+Status: Phase complete — ready for verification
+Last activity: 2026-10-04 — Phase 26 execution started
 
 ## Performance Metrics
 
@@ -135,6 +134,7 @@ Last activity: 2026-10-03 — Completed 24-01-PLAN.md
 | Phase 21 P04 | 7 min | 2 tasks | 7 files |
 | Phase 24 P01 | 6 min | 2 tasks | 5 files |
 | Phase 24 P02 | 9 min | 2 tasks | 4 files |
+| Phase 26 P01 | 24min | 2 tasks | 5 files |
 
 ## Decisions
 
@@ -145,3 +145,4 @@ Last activity: 2026-10-03 — Completed 24-01-PLAN.md
 - [Phase 21]: [Phase 21-04]: Decomposed NotificationSettingsModal (1 643 -> 333 LOC) into 6 focused sub-widgets in lib/presentation/widgets/modals/notification_settings/ with Dart 3 record .select(...) subscriptions and GlobalKey pending-config flush
 - [Phase 24-01]: Extracted instance-scoped SchoolDataCacheManager (eliminating all static override maps and counters) and domain data sources FirestoreGradesDataSource, FirestoreAttendanceDataSource, and FirestoreJustificationsDataSource with lazy FirebaseFirestore resolution and injectable http.Client
 - [Phase 24]: [Phase 24-02]: Extracted FirestoreMessagesDataSource and FirestoreScheduleDataSource and reduced FirestoreSchoolRepository (2 691 -> 242 LOC) to a clean SchoolRepository facade with shared instance-scoped SchoolDataCacheManager and zero static mutable maps
+- [Phase 26-01]: Enriched Telegram message and announcement notifications with full multiline content, pre-notification fetchMessageDetails hydration, clickable /api/downloadAttachment?path=... links, /wiadomosci/:id deep links, and word-boundary truncation before HTML escaping within 4096 chars while keeping notif.body compact for in-app alerts
