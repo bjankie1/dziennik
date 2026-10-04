@@ -13,8 +13,10 @@ import 'package:edusync/presentation/providers/school_providers.dart';
 import 'package:edusync/presentation/providers/tasks_provider.dart';
 import 'package:edusync/presentation/screens/attendance/attendance_screen.dart';
 import 'package:edusync/presentation/screens/attendance/widgets/accepted_justifications_summary_card.dart';
+import 'package:edusync/presentation/screens/messages/message_thread_screen.dart';
 import 'package:edusync/presentation/screens/messages/messages_screen.dart';
 import 'package:edusync/presentation/screens/messages/widgets/archive_box_icon.dart';
+import 'package:go_router/go_router.dart';
 
 class _FakeParentNotifier extends AppUserNotifier {
   @override
@@ -406,6 +408,97 @@ void main() {
       final renderedText = selectable.textSpan!.toPlainText();
       expect(renderedText, contains('\n• Czas:'));
       expect(renderedText, contains('\n• Zgłoszenia:'));
+    },
+  );
+
+  testWidgets(
+    'MessageThreadScreen displays labeled Archiwizuj buttons and returns to MessagesScreen upon archiving with working Undo',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final repo = _ArchiveTestRepository(
+        threads: [
+          MessageThread(
+            id: 'msg_detail_1',
+            senderName: 'mgr Krzysztof Wiśniewski',
+            senderInitials: 'KW',
+            senderRole: 'Wychowawca',
+            subject: 'Zebranie z rodzicami',
+            preview: 'Zapraszam na zebranie we wtorek o 17:30.',
+            body: 'Zapraszam na zebranie we wtorek o 17:30.',
+            timestamp: DateTime(2026, 10, 4, 10, 0),
+            isUnread: false,
+            isArchived: false,
+          ),
+        ],
+        records: const [],
+      );
+
+      final router = GoRouter(
+        initialLocation: '/wiadomosci',
+        routes: [
+          GoRoute(
+            path: '/wiadomosci',
+            builder: (context, state) => const MessagesScreen(),
+            routes: [
+              GoRoute(
+                path: ':threadId',
+                builder: (context, state) {
+                  final extra = state.extra as MessageThread;
+                  return MessageThreadScreen(thread: extra);
+                },
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            schoolRepositoryProvider.overrideWithValue(repo),
+            announcementsProvider.overrideWith((ref) async => const []),
+            tasksStreamProvider.overrideWith((ref) => Stream.value(const [])),
+          ],
+          child: MaterialApp.router(
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Open the message thread detail view
+      expect(find.text('Zebranie z rodzicami'), findsOneWidget);
+      await tester.tap(find.text('Zebranie z rodzicami'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MessageThreadScreen), findsOneWidget);
+      final appBarArchiveBtn = find.byKey(
+        const ValueKey('thread_archive_action_button'),
+      );
+      final headerArchiveBtn = find.byKey(
+        const ValueKey('header_archive_action_button'),
+      );
+      expect(appBarArchiveBtn, findsOneWidget);
+      expect(headerArchiveBtn, findsOneWidget);
+
+      // Tap the header card's Archiwizuj button
+      await tester.tap(headerArchiveBtn);
+      await tester.pumpAndSettle();
+
+      // Should automatically return to MessagesScreen and hide the archived message
+      expect(find.byType(MessageThreadScreen), findsNothing);
+      expect(find.byType(MessagesScreen), findsOneWidget);
+      expect(find.text('Zebranie z rodzicami'), findsNothing);
+      expect(find.text('Pokaż zarchiwizowane (1)'), findsOneWidget);
+      expect(find.text('Wiadomość przeniesiona do archiwum'), findsOneWidget);
+
+      // Undo from SnackBar restores the message on the list
+      await tester.tap(find.text('Cofnij'));
+      await tester.pumpAndSettle();
+      expect(find.text('Zebranie z rodzicami'), findsOneWidget);
     },
   );
 }

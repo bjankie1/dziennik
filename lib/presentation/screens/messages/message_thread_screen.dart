@@ -75,8 +75,27 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
     } catch (_) {}
   }
 
+  void _navigateBackToMessagesList() {
+    if (!mounted) return;
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      if (router.canPop()) {
+        router.pop();
+      } else {
+        router.go('/wiadomosci');
+      }
+      return;
+    }
+    Navigator.of(context).maybePop();
+  }
+
   Future<void> _toggleArchiveStatus() async {
     final newIsArchived = !_currentThread.isArchived;
+    final threadId = _currentThread.id;
+    final repo = ref.read(schoolRepositoryProvider);
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final container = ProviderScope.containerOf(context, listen: false);
+
     setState(() {
       _currentThread = _currentThread.copyWith(
         isArchived: newIsArchived,
@@ -84,30 +103,35 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
       );
     });
     try {
-      await ref.read(schoolRepositoryProvider).archiveMessage(
-        _currentThread.id,
+      await repo.archiveMessage(
+        threadId,
         isArchived: newIsArchived,
       );
-      ref.invalidate(messagesProvider);
-      _showSnackBar(
-        newIsArchived
-            ? 'Wiadomość przeniesiona do archiwum'
-            : 'Przywrócono wiadomość do skrzynki odbiorczej',
-        duration: const Duration(seconds: 4),
-        action: SnackBarAction(
-          label: 'Cofnij',
-          onPressed: () async {
-            await ref.read(schoolRepositoryProvider).archiveMessage(
-              _currentThread.id,
-              isArchived: !newIsArchived,
-            );
-            if (mounted) {
-              setState(() => _currentThread = _currentThread.copyWith(isArchived: !newIsArchived));
-            }
-            ref.invalidate(messagesProvider);
-          },
-        ),
-      );
+      container.invalidate(messagesProvider);
+      _navigateBackToMessagesList();
+      messenger
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              newIsArchived
+                  ? 'Wiadomość przeniesiona do archiwum'
+                  : 'Przywrócono wiadomość do skrzynki odbiorczej',
+            ),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Cofnij',
+              onPressed: () async {
+                await repo.archiveMessage(
+                  threadId,
+                  isArchived: !newIsArchived,
+                );
+                container.invalidate(messagesProvider);
+              },
+            ),
+          ),
+        );
     } catch (_) {}
   }
 
@@ -306,7 +330,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.onSurface),
-          onPressed: () => context.canPop() ? context.pop() : context.go('/wiadomosci'),
+          onPressed: _navigateBackToMessagesList,
           tooltip: 'Wróć',
         ),
         title: Text(
@@ -317,17 +341,56 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         ),
         actions: [
           MessageAppBarTaskAction(thread: _currentThread),
-          IconButton(
-            key: const ValueKey('thread_archive_action_button'),
-            icon: ArchiveBoxIcon(
-              size: 20,
-              color: _currentThread.isArchived
-                  ? AppColors.success
-                  : const Color(0xFFB45309),
-              isUnarchive: _currentThread.isArchived,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Center(
+              child: Material(
+                color: _currentThread.isArchived
+                    ? AppColors.successSurface
+                    : const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  key: const ValueKey('thread_archive_action_button'),
+                  onTap: _toggleArchiveStatus,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    height: 32,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: _currentThread.isArchived
+                            ? AppColors.success.withValues(alpha: 0.45)
+                            : const Color(0xFFF59E0B).withValues(alpha: 0.55),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ArchiveBoxIcon(
+                          size: 15,
+                          color: _currentThread.isArchived
+                              ? AppColors.success
+                              : const Color(0xFFB45309),
+                          isUnarchive: _currentThread.isArchived,
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          _currentThread.isArchived ? 'Przywróć' : 'Archiwizuj',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: _currentThread.isArchived
+                                ? AppColors.success
+                                : const Color(0xFFB45309),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
-            tooltip: _currentThread.isArchived ? 'Przywróć do skrzynki' : 'Archiwizuj wiadomość',
-            onPressed: _toggleArchiveStatus,
           ),
           IconButton(
             icon: Icon(
@@ -352,7 +415,10 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         children: [
-          MessageThreadHeaderCard(thread: _currentThread),
+          MessageThreadHeaderCard(
+            thread: _currentThread,
+            onToggleArchive: _toggleArchiveStatus,
+          ),
           const SizedBox(height: 12),
           MessageTaskBanner(thread: _currentThread),
           const SizedBox(height: 16),
