@@ -476,11 +476,11 @@ All claims, design tokens, file paths, and architectural conventions in this res
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Starter / Seed Tasks when `family_tasks/{familyId}/tasks` is empty**
+1. **Starter / Seed Tasks when `family_tasks/{familyId}/tasks` is empty** — **RESOLVED** (in `15-01-PLAN.md` Task 2):
    - What we know: `15-CONTEXT.md` (`Antigravity's Discretion`) and `15-UI-SPEC.md` specify seeding starter tasks when Firestore is empty so the Parent ↔ Oskar collaboration is immediately visible on first launch.
-   - Recommendation: Seed 4 realistic starter tasks in `TasksRepository._fallbackTasks` (e.g., 1 overdue or high-priority exam prep task for Oskar created by Tata, 1 today biology/math task for Oskar, 1 parent task „Opłata za Radę Rodziców / wycieczkę”, and 1 completed shared task with `"Dodał: Tata • Ukończył: Oskar"` attribution).
+   - Resolution: Seed 4 realistic starter tasks in `TasksRepository._fallbackTasks` (1 high-priority Biology exam prep task for Oskar created by Tata, 1 today Math task for Oskar, 1 parent task „Opłacić składkę na Radę Rodziców i wycieczkę klasową”, and 1 completed shared task with `"Dodał: Tata • Ukończył: Oskar"` attribution).
 
 ---
 

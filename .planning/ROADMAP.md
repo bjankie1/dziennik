@@ -37,7 +37,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 22: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail** — Zapisywanie pojedynczych lub wszystkich załączników wiadomości Librus na żądanie użytkownika bezpośrednio na jego koncie Google Drive (do dedykowanego folderu np. `EduSync / Załączniki szkolne`) z wizualnym statusem zapisania i bezpośrednim linkiem „Otwórz w Google Drive” na wzór Gmaila. (completed 2026-09-29)
 - [x] **Phase 23: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków** — Możliwość podglądu konkretnych dni, numerów lekcji, przedmiotów, godzin i powodów zarówno na banerze prośby o usprawiedliwienie („6 lekcji • Choroba” na Pulpicie i we Frekwencji), jak i na banerze oczekujących wniosków („7 wnioski czekają na wychowawcę”). (completed 2026-10-02)
 - [x] **Phase 24: Dekompozycja monolitycznego FirestoreSchoolRepository (2 691 LOC) na serwisy domenowe i izolacja warstwy cache** — Podział `FirestoreSchoolRepository` na wyspecjalizowane klasy domenowe (`SchoolDataCacheManager`, `FirestoreGradesDataSource`, `FirestoreAttendanceDataSource`, `FirestoreJustificationsDataSource`, `FirestoreMessagesDataSource`, `FirestoreScheduleDataSource`) z eliminacją statycznych map globalnych i zachowaniem fasady `SchoolRepository`. (completed 2026-10-03)
-- [ ] **Phase 25: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień i powiadomienia o akceptacji** — Ręczna archiwizacja i przywracanie wiadomości z zakładką „Archiwum”, automatyczna archiwizacja systemowych potwierdzeń akceptacji usprawiedliwień z podglądem zaakceptowanych usprawiedliwień we Frekwencji oraz powiadomienia Telegram / Web Push o zaakceptowaniu usprawiedliwienia przez wychowawcę.
+- [x] **Phase 25: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień i powiadomienia o akceptacji** — Ręczna archiwizacja i przywracanie wiadomości z zakładką „Archiwum”, automatyczna archiwizacja systemowych potwierdzeń akceptacji usprawiedliwień z podglądem zaakceptowanych usprawiedliwień we Frekwencji oraz powiadomienia Telegram / Web Push o zaakceptowaniu usprawiedliwienia przez wychowawcę. (completed 2026-10-04)
 
 ---
 
@@ -334,14 +334,13 @@ Plans:
 3. W module Frekwencji (`AttendanceScreen`) użytkownik może w przejrzysty sposób zobaczyć, które nieobecności zostały zaakceptowane/usprawiedliwione (dedykowany filtr lub podgląd zaakceptowanych usprawiedliwień wraz z powiązanymi godzinami lekcyjnymi).
 4. Wykrycie nowej akceptacji usprawiedliwienia (zmiana statusu nieobecności na usprawiedliwioną lub nadejście wiadomości systemowej o akceptacji usprawiedliwienia) generuje natychmiastowe powiadomienie (Telegram Bot, Web Push oraz wpis w zakładce „Ostatnie alerty”).
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 **Wave 1**
 
-- [ ] 25-01-PLAN.md: Message Archiving & Auto-Archive Domain/Repository Support + Cloud Functions Justification Acceptance Detection & Telegram/Push/Alerts Notifications
+- [x] 25-01-PLAN.md: Message Archiving & Auto-Archive Domain/Repository Support + Cloud Functions Justification Acceptance Detection & Telegram/Push/Alerts Notifications
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 25-02-PLAN.md: `MessagesScreen` Archive Filter Chip & Manual Archive/Restore Controls + `AttendanceScreen` `'Usprawiedliwione (X)'` Accepted Justifications Summary & Badges
-
+- [x] 25-02-PLAN.md: `MessagesScreen` Archive Filter Chip & Manual Archive/Restore Controls + `AttendanceScreen` `'Usprawiedliwione (X)'` Accepted Justifications Summary & Badges
