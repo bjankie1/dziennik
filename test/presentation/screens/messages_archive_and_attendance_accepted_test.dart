@@ -1,0 +1,278 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:edusync/data/repositories/mock_school_repository.dart';
+import 'package:edusync/domain/models/attendance_record.dart';
+import 'package:edusync/domain/models/justification_request.dart';
+import 'package:edusync/domain/models/message_thread.dart';
+import 'package:edusync/domain/models/student_profile.dart';
+import 'package:edusync/domain/models/user_role.dart';
+import 'package:edusync/presentation/providers/auth_providers.dart';
+import 'package:edusync/presentation/providers/school_providers.dart';
+import 'package:edusync/presentation/providers/tasks_provider.dart';
+import 'package:edusync/presentation/screens/attendance/attendance_screen.dart';
+import 'package:edusync/presentation/screens/messages/messages_screen.dart';
+
+class _FakeParentNotifier extends AppUserNotifier {
+  @override
+  AppUser? build() {
+    return const AppUser(
+      displayName: 'Bartosz Jankiewicz',
+      email: 'parent@example.com',
+      role: UserRole.parent,
+      studentLogin: '1234567u',
+      primaryLogin: '7654321r',
+      familyId: 'jankiewicz_family',
+    );
+  }
+}
+
+class _ArchiveTestRepository extends MockSchoolRepository {
+  List<MessageThread> threads;
+  List<AttendanceRecord> records;
+
+  _ArchiveTestRepository({
+    required this.threads,
+    required this.records,
+  });
+
+  @override
+  Future<List<MessageThread>> getMessages() async {
+    return List.unmodifiable(threads);
+  }
+
+  @override
+  Future<void> archiveMessage(String id, {bool isArchived = true}) async {
+    final index = threads.indexWhere((m) => m.id == id);
+    if (index != -1) {
+      threads[index] = threads[index].copyWith(
+        isArchived: isArchived,
+        isUnread: isArchived ? false : threads[index].isUnread,
+      );
+    }
+  }
+
+  @override
+  Future<List<AttendanceRecord>> getAttendanceRecords() async {
+    return List.unmodifiable(records);
+  }
+
+  @override
+  Future<List<JustificationRequest>> getJustificationRequests() async {
+    return const [];
+  }
+
+  @override
+  Future<StudentProfile> getStudentProfile() async {
+    return const StudentProfile(
+      id: '1234567u',
+      name: 'Oskar Jankiewicz',
+      className: '4 k Lic',
+      schoolName: 'LO X Wrocław',
+      avatarUrl: '',
+      attendancePercentage: 95.0,
+      overallAverage: 4.9,
+      previousPeriodAverage: 4.8,
+      classRank: 1,
+      totalStudentsInClass: 28,
+      unreadMessagesCount: 1,
+      currentWeek: 'Tydzień A',
+      luckyNumber: 15,
+    );
+  }
+}
+
+void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('pl_PL', null);
+    await initializeDateFormatting('pl', null);
+  });
+
+  testWidgets(
+    'MessagesScreen hides archived messages by default, toggles Pokaż zarchiwizowane chip, and supports manual archiving with Undo',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final repo = _ArchiveTestRepository(
+        threads: [
+          MessageThread(
+            id: 'msg_active_1',
+            senderName: 'mgr Krzysztof Wiśniewski',
+            senderInitials: 'KW',
+            senderRole: 'Wychowawca',
+            subject: 'Wycieczka klasowa w Karkonosze',
+            preview: 'Przypominam o wpłacie zaliczki.',
+            body: 'Przypominam o wpłacie zaliczki.',
+            timestamp: DateTime(2026, 10, 3, 10, 30),
+            isUnread: true,
+            isArchived: false,
+          ),
+          MessageThread(
+            id: 'msg_archived_1',
+            senderName: 'e-Usprawiedliwienia',
+            senderInitials: 'EU',
+            senderRole: 'System Librus',
+            subject: 'Potwierdzenie usprawiedliwienia nieobecności',
+            preview: 'Usprawiedliwienie nieobecności ucznia zostało zaakceptowane.',
+            body: 'Usprawiedliwienie nieobecności ucznia zostało zaakceptowane.',
+            timestamp: DateTime(2026, 10, 1, 14, 0),
+            isUnread: false,
+            isArchived: true,
+            isAutoArchived: true,
+          ),
+        ],
+        records: const [],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            schoolRepositoryProvider.overrideWithValue(repo),
+            announcementsProvider.overrideWith((ref) async => const []),
+            tasksStreamProvider.overrideWith((ref) => Stream.value(const [])),
+          ],
+          child: const MaterialApp(
+            home: MessagesScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // By default, active message is visible and auto-archived message is hidden
+      expect(find.text('Wycieczka klasowa w Karkonosze'), findsOneWidget);
+      expect(
+        find.text('Potwierdzenie usprawiedliwienia nieobecności'),
+        findsNothing,
+      );
+
+      // Filter chip shows count of archived messages
+      final archiveFilterChip = find.byKey(
+        const ValueKey('messages_archive_filter_chip'),
+      );
+      expect(archiveFilterChip, findsOneWidget);
+      expect(find.text('Pokaż zarchiwizowane (1)'), findsOneWidget);
+
+      // Tap filter chip to reveal archived messages
+      await tester.tap(archiveFilterChip);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Potwierdzenie usprawiedliwienia nieobecności'),
+        findsOneWidget,
+      );
+      expect(find.text('Auto-archiwum'), findsOneWidget);
+
+      // Hide archived again and manually archive the active message
+      await tester.tap(archiveFilterChip);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Potwierdzenie usprawiedliwienia nieobecności'),
+        findsNothing,
+      );
+
+      final archiveActionBtn = find.byKey(
+        const ValueKey('archive_message_msg_active_1'),
+      );
+      expect(archiveActionBtn, findsOneWidget);
+      await tester.tap(archiveActionBtn);
+      await tester.pumpAndSettle();
+
+      // Now both messages are archived, so active view shows empty state and chip shows (2)
+      expect(find.text('Wycieczka klasowa w Karkonosze'), findsNothing);
+      expect(find.text('Pokaż zarchiwizowane (2)'), findsOneWidget);
+      expect(find.text('Wiadomość przeniesiona do archiwum'), findsOneWidget);
+
+      // Tap Cofnij on SnackBar to restore the message
+      await tester.tap(find.text('Cofnij'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Wycieczka klasowa w Karkonosze'), findsOneWidget);
+      expect(find.text('Pokaż zarchiwizowane (1)'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'AttendanceScreen shows Usprawiedliwione (X) count, AcceptedJustificationsSummaryCard, and teacher approval badges on excused lessons',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final repo = _ArchiveTestRepository(
+        threads: const [],
+        records: [
+          AttendanceRecord(
+            id: 'att_exc_1',
+            date: DateTime(2026, 10, 2),
+            lessonNumber: 2,
+            subjectName: 'Matematyka',
+            classroom: '204',
+            teacherName: 'dr A. Nowak',
+            type: AttendanceType.excused,
+            timeSlot: '08:50 — 09:35',
+            justificationStatus: JustificationStatus.approved,
+            justificationReason: 'Wizyta lekarska',
+          ),
+          AttendanceRecord(
+            id: 'att_exc_2',
+            date: DateTime(2026, 10, 2),
+            lessonNumber: 3,
+            subjectName: 'Fizyka',
+            classroom: '14',
+            teacherName: 'mgr J. Wiśniewski',
+            type: AttendanceType.excused,
+            timeSlot: '09:45 — 10:30',
+            justificationStatus: JustificationStatus.approved,
+            justificationReason: 'Wizyta lekarska',
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            schoolRepositoryProvider.overrideWithValue(repo),
+            appUserProvider.overrideWith(_FakeParentNotifier.new),
+          ],
+          child: const MaterialApp(
+            home: AttendanceScreen(initialFilter: 2),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Filter chip shows count: Usprawiedliwione (2)
+      expect(find.text('Usprawiedliwione (2)'), findsOneWidget);
+
+      // Summary card is visible when Usprawiedliwione filter is active
+      final summaryCard = find.byKey(
+        const ValueKey('accepted_justifications_summary_card'),
+      );
+      expect(summaryCard, findsOneWidget);
+      expect(
+        find.textContaining('Zaakceptowane usprawiedliwienia (2 lekcje • 1 dzień)'),
+        findsOneWidget,
+      );
+
+      // Lesson rows display explicit teacher approval status and reason
+      expect(
+        find.text(
+          'Usprawiedliwiona • Zaakceptowano przez wychowawcę (Wizyta lekarska)',
+        ),
+        findsNWidgets(2),
+      );
+
+      // Expand the summary card to see day breakdown
+      await tester.tap(
+        find.byKey(const ValueKey('accepted_justifications_banner_toggle')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('L2 Matematyka, L3 Fizyka'), findsOneWidget);
+      expect(find.text('Powód: Wizyta lekarska'), findsOneWidget);
+    },
+  );
+}

@@ -5,6 +5,7 @@ import '../../../domain/models/attendance_record.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/school_providers.dart';
 import '../../widgets/common/justification_request_banner.dart';
+import 'widgets/accepted_justifications_summary_card.dart';
 import 'widgets/attendance_day_group_card.dart';
 import 'widgets/attendance_filter_bar.dart';
 import 'widgets/attendance_semester_kpi_card.dart';
@@ -162,12 +163,24 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                         (id) => _selectedIds.contains(id),
                       );
 
+                  Widget? bannerSlot;
+                  if (_activeFilter == 2 && excusedList.isNotEmpty) {
+                    bannerSlot = AcceptedJustificationsSummaryCard(
+                      excusedList: excusedList,
+                    );
+                  } else if (pendingList.isNotEmpty) {
+                    bannerSlot = PendingTeacherAccordionBanner(
+                      pendingList: pendingList,
+                    );
+                  }
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       AttendanceFilterBar(
                         activeFilter: _activeFilter,
                         unexcusedCount: unexcused.length,
+                        excusedCount: excusedList.length,
                         pendingCount: pendingList.length,
                         allSelected: allSelected,
                         onFilterChanged: (index) =>
@@ -181,11 +194,7 @@ class _AttendanceScreenState extends ConsumerState<AttendanceScreen> {
                             }
                           });
                         },
-                        bannerSlot: pendingList.isNotEmpty
-                            ? PendingTeacherAccordionBanner(
-                                pendingList: pendingList,
-                              )
-                            : null,
+                        bannerSlot: bannerSlot,
                       ),
                       if (sortedDates.isEmpty)
                         Container(

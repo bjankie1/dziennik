@@ -272,18 +272,20 @@ class AttendanceLessonRow extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          Text(
-                            isUnexcused
-                                ? 'Nieobecność nieusprawiedliwiona'
-                                : (isRequested
-                                    ? 'Oczekuje na wychowawcę${record.justificationReason != null && record.justificationReason!.isNotEmpty ? " (${record.justificationReason})" : ""}'
-                                    : (isExempted
-                                        ? 'Zwolnienie z zajęć'
-                                        : 'Usprawiedliwiona${record.justificationReason != null ? " (${record.justificationReason})" : ""}')),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: accentColor,
+                          Expanded(
+                            child: Text(
+                              isUnexcused
+                                  ? 'Nieobecność nieusprawiedliwiona'
+                                  : (isRequested
+                                      ? 'Oczekuje na wychowawcę${record.justificationReason != null && record.justificationReason!.isNotEmpty ? " (${record.justificationReason})" : ""}'
+                                      : (isExempted
+                                          ? 'Zwolnienie z zajęć'
+                                          : 'Usprawiedliwiona • Zaakceptowano przez wychowawcę${record.justificationReason != null && record.justificationReason!.trim().isNotEmpty ? " (${record.justificationReason!.trim()})" : ""}')),
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: accentColor,
+                              ),
                             ),
                           ),
                         ],

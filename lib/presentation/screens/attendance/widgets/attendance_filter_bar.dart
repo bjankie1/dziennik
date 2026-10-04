@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 class AttendanceFilterBar extends StatelessWidget {
   final int activeFilter;
   final int unexcusedCount;
+  final int excusedCount;
   final int pendingCount;
   final bool allSelected;
   final ValueChanged<int> onFilterChanged;
@@ -14,6 +15,7 @@ class AttendanceFilterBar extends StatelessWidget {
     super.key,
     required this.activeFilter,
     required this.unexcusedCount,
+    this.excusedCount = 0,
     required this.pendingCount,
     required this.allSelected,
     required this.onFilterChanged,
@@ -37,7 +39,7 @@ class AttendanceFilterBar extends StatelessWidget {
                 'Do usprawiedliwienia ($unexcusedCount)',
                 isAlert: unexcusedCount > 0,
               ),
-              _buildFilterChip(2, 'Usprawiedliwione'),
+              _buildFilterChip(2, 'Usprawiedliwione ($excusedCount)'),
               _buildFilterChip(3, 'Oczekujące ($pendingCount)'),
             ],
           ),
