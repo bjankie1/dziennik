@@ -68,7 +68,8 @@ class DashboardScreen extends ConsumerWidget {
 
     final student = studentAsync.value;
     final grades = recentGradesAsync.value ?? [];
-    final allMessages = messagesAsync.value ?? [];
+    final allMessages =
+        (messagesAsync.value ?? []).where((m) => !m.isArchived).toList();
     final unreadMessages = allMessages.where((m) => m.isUnread).toList();
     final announcementMessages = allMessages.where((m) {
       final s = m.subject.toLowerCase();

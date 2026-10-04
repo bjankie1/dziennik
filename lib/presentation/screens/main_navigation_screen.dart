@@ -108,6 +108,7 @@ class MainNavigationScreen extends ConsumerWidget {
           'grade' => '/oceny',
           'message' || 'announcement' => '/wiadomosci',
           'exam' => '/plan-lekcji',
+          'justification' => '/frekwencja',
           _ => '/pulpit',
         };
         service.triggerWebPush(
@@ -199,9 +200,11 @@ class MainNavigationScreen extends ConsumerWidget {
         .where((r) => r.type == AttendanceType.absent && r.justificationStatus == JustificationStatus.none)
         .length;
 
-    // Unread messages count for Wiadomości badge
+    // Unread messages count for Wiadomości badge (excluding archived messages)
     final messageBadgeCount = messagesAsync.hasValue
-        ? (messagesAsync.value ?? []).where((m) => m.isUnread).length
+        ? (messagesAsync.value ?? [])
+            .where((m) => m.isUnread && !m.isArchived)
+            .length
         : (studentAsync.value?.unreadMessagesCount ?? 0);
 
     final screens = const [

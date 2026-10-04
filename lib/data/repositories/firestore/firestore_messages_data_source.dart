@@ -23,20 +23,35 @@ class FirestoreMessagesDataSource {
 
   Future<List<MessageThread>> getMessages() async {
     await cacheManager.ensureReadOverridesLoaded();
+    await cacheManager.ensureArchiveOverridesLoaded();
     final data = await cacheManager.getStudentData();
     if (data == null || data['messages'] == null) {
       final mockList = await mockFallback.getMessages();
       return mockList.map((m) {
-        final override = cacheManager.getReadOverride(m.id);
-        if (override != null) {
-          return m.copyWith(isUnread: !override);
-        }
-        return m;
+        final readOverride = cacheManager.getReadOverride(m.id);
+        final archiveOverride = cacheManager.getArchiveOverride(m.id);
+        final isAutoArch = m.isAutoArchived ||
+            MessageThread.isSystemJustificationConfirmation(
+              sender: '${m.senderName} ${m.senderRole}',
+              subject: m.subject,
+              body: m.body,
+            );
+        final effectiveArchived = archiveOverride ?? (m.isArchived || isAutoArch);
+        final effectiveUnread = readOverride != null
+            ? !readOverride
+            : (isAutoArch && effectiveArchived ? false : m.isUnread);
+        return m.copyWith(
+          isUnread: effectiveUnread,
+          isArchived: effectiveArchived,
+          isAutoArchived: isAutoArch,
+        );
       }).toList();
     }
 
     final rawList = data['messages'] as List<dynamic>? ?? [];
     if (rawList.isEmpty) return [];
+
+    final remoteArchiveMap = data['archivedMessageOverrides'];
 
     return rawList.map((item) {
       final senderRaw = (item['sender'] as String? ?? 'Nauczyciel').trim();
@@ -105,8 +120,24 @@ class FirestoreMessagesDataSource {
 
       final dt = parseMessageDate(item['date'] ?? item['timestamp']);
 
-      final id = item['id'] as String? ?? cacheManager.generateUniqueId();
+      final id = item['id']?.toString() ?? cacheManager.generateUniqueId();
       final localOverride = cacheManager.getReadOverride(id);
+      final isAutoArchived = item['isAutoArchived'] == true ||
+          MessageThread.isSystemJustificationConfirmation(
+            sender: '$senderRaw $role',
+            subject: subject,
+            body: bodyText,
+          );
+      bool? remoteArchiveOverride;
+      if (remoteArchiveMap is Map && remoteArchiveMap[id] is bool) {
+        remoteArchiveOverride = remoteArchiveMap[id] as bool;
+      } else if (item['isArchived'] is bool) {
+        remoteArchiveOverride = item['isArchived'] as bool;
+      }
+      final archiveOverride =
+          cacheManager.getArchiveOverride(id) ?? remoteArchiveOverride;
+      final bool isArchived = archiveOverride ?? isAutoArchived;
+
       final now = DateTime.now();
       final isToday =
           dt.year == now.year && dt.month == now.month && dt.day == now.day;
@@ -115,6 +146,9 @@ class FirestoreMessagesDataSource {
       if (localOverride != null) {
         // User explicit action inside EduSync (read / unread toggle) has highest authority
         isUnread = !localOverride;
+      } else if (isAutoArchived && isArchived) {
+        // D-03: Auto-archived justification confirmations are automatically marked as read
+        isUnread = false;
       } else {
         final backendIsRead = item['isRead'] == true && item['unread'] != true;
         if (!backendIsRead) {
@@ -185,6 +219,8 @@ class FirestoreMessagesDataSource {
         timestamp: dt,
         isUnread: isUnread,
         isImportant: isImportant,
+        isArchived: isArchived,
+        isAutoArchived: isAutoArchived,
         attachments: attachments,
         attachmentUrls: attachmentUrls,
         hasAttachments: hasAttachments,
@@ -420,6 +456,36 @@ class FirestoreMessagesDataSource {
             if (m is Map) m['isRead'] = true;
           }
           await docRef.update({'messages': rawMsgs});
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> archiveMessage(String msgId, {bool isArchived = true}) async {
+    await cacheManager.setArchiveOverride(msgId, isArchived);
+    await mockFallback.archiveMessage(msgId, isArchived: isArchived);
+
+    try {
+      final targetLogin = await cacheManager.getTargetStudentDocLogin();
+      if (targetLogin != null && targetLogin.isNotEmpty) {
+        final docRef = _firestore.collection('students').doc(targetLogin);
+        final doc = await docRef.get();
+        if (doc.exists) {
+          final docData = doc.data() ?? {};
+          final rawMsgs = List<dynamic>.from(docData['messages'] ?? []);
+          for (final m in rawMsgs) {
+            if (m is Map && (m['id'] == msgId || m['id']?.toString() == msgId)) {
+              m['isArchived'] = isArchived;
+            }
+          }
+          final overrides = Map<String, dynamic>.from(
+            (docData['archivedMessageOverrides'] as Map?) ?? const {},
+          );
+          overrides[msgId] = isArchived;
+          await docRef.update({
+            'messages': rawMsgs,
+            'archivedMessageOverrides': overrides,
+          });
         }
       }
     } catch (_) {}

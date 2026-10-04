@@ -41,6 +41,7 @@ abstract class SchoolRepository {
   Future<MessageDetailsResult?> getMessageDetails(String msgId, {String? url});
   Future<void> markMessageAsRead(String msgId, {bool isRead = true});
   Future<void> markAllMessagesAsRead();
+  Future<void> archiveMessage(String msgId, {bool isArchived = true});
   Future<DriveAttachmentInfo> saveAttachmentToDrive({
     required String msgId,
     required String attachmentName,

@@ -519,6 +519,14 @@ class MockSchoolRepository implements SchoolRepository {
   }
 
   @override
+  Future<void> archiveMessage(String msgId, {bool isArchived = true}) async {
+    final idx = _messages.indexWhere((t) => t.id == msgId);
+    if (idx != -1) {
+      _messages[idx] = _messages[idx].copyWith(isArchived: isArchived);
+    }
+  }
+
+  @override
   Future<DriveFolderOption> getDefaultDriveFolder() async {
     return _defaultDriveFolder;
   }

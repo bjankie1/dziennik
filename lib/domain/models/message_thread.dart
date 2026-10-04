@@ -175,6 +175,8 @@ class MessageThread {
   final DateTime timestamp;
   final bool isUnread;
   final bool isImportant;
+  final bool isArchived;
+  final bool isAutoArchived;
   final List<String> attachments;
   final Map<String, String> attachmentUrls;
   final bool hasAttachments;
@@ -192,6 +194,8 @@ class MessageThread {
     required this.timestamp,
     this.isUnread = false,
     this.isImportant = false,
+    this.isArchived = false,
+    this.isAutoArchived = false,
     this.attachments = const [],
     this.attachmentUrls = const {},
     bool? hasAttachments,
@@ -215,6 +219,34 @@ class MessageThread {
               ),
             ];
 
+  /// Detects Librus system justification confirmation messages (D-03, REQ-MSG-ARCH-02).
+  static bool isSystemJustificationConfirmation({
+    required String sender,
+    required String subject,
+    String body = '',
+  }) {
+    final s = sender.toLowerCase();
+    final subj = subject.toLowerCase();
+    final b = body.toLowerCase();
+
+    final isSystemJustificationSender =
+        s.contains('usprawiedliwieni') || s.contains('system librus');
+    final hasAcceptancePhrase = subj.contains('zaakceptowano usprawiedliwienie') ||
+        subj.contains('usprawiedliwienie zostało zaakceptowane') ||
+        subj.contains('potwierdzenie usprawiedliwienia') ||
+        subj.contains('usprawiedliwienie nieobecności') ||
+        b.contains('zaakceptowano usprawiedliwienie') ||
+        b.contains('usprawiedliwienie zostało zaakceptowane') ||
+        b.contains('potwierdzenie usprawiedliwienia');
+
+    if (s.contains('usprawiedliwieni')) return true;
+    if (isSystemJustificationSender &&
+        (hasAcceptancePhrase || subj.contains('usprawiedliwieni'))) {
+      return true;
+    }
+    return hasAcceptancePhrase;
+  }
+
   MessageThread copyWith({
     String? id,
     String? senderName,
@@ -226,6 +258,8 @@ class MessageThread {
     DateTime? timestamp,
     bool? isUnread,
     bool? isImportant,
+    bool? isArchived,
+    bool? isAutoArchived,
     List<String>? attachments,
     Map<String, String>? attachmentUrls,
     bool? hasAttachments,
@@ -267,6 +301,8 @@ class MessageThread {
       timestamp: timestamp ?? this.timestamp,
       isUnread: isUnread ?? this.isUnread,
       isImportant: isImportant ?? this.isImportant,
+      isArchived: isArchived ?? this.isArchived,
+      isAutoArchived: isAutoArchived ?? this.isAutoArchived,
       attachments: nextAttachments,
       attachmentUrls: nextAttachmentUrls,
       hasAttachments: nextHasAttachments,

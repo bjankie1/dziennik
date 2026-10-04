@@ -112,44 +112,23 @@ class FirestoreSchoolRepository implements SchoolRepository {
   Future<List<Announcement>> getAnnouncements() => _s.getAnnouncements();
 
   @override
-  Future<void> submitJustification(
-    List<String> recordIds,
-    String reason, {
-    DateTime? date,
-  }) =>
+  Future<void> submitJustification(List<String> recordIds, String reason, {DateTime? date}) =>
       _a.submitJustification(recordIds, reason, date: date);
   @override
-  Future<void> cancelJustification(List<String> ids) =>
-      _a.cancelJustification(ids);
+  Future<void> cancelJustification(List<String> ids) => _a.cancelJustification(ids);
   @override
-  Future<void> requestJustification(
-    List<String> recordIds,
-    String reason, {
-    DateTime? date,
-  }) =>
+  Future<void> requestJustification(List<String> recordIds, String reason, {DateTime? date}) =>
       _j.requestJustification(recordIds, reason, date: date);
   @override
-  Future<List<JustificationRequest>> getJustificationRequests() =>
-      _j.getJustificationRequests();
+  Future<List<JustificationRequest>> getJustificationRequests() => _j.getJustificationRequests();
   @override
-  Future<bool> approveJustificationRequest(
-    String requestId,
-    String pin, {
-    List<String>? selectedRecordIds,
-  }) =>
-      _j.approveJustificationRequest(
-        requestId,
-        pin,
-        selectedRecordIds: selectedRecordIds,
-      );
+  Future<bool> approveJustificationRequest(String requestId, String pin, {List<String>? selectedRecordIds}) =>
+      _j.approveJustificationRequest(requestId, pin, selectedRecordIds: selectedRecordIds);
   @override
   Future<bool> rejectJustificationRequest(String id, {String? reason}) =>
       _j.rejectJustificationRequest(id, reason: reason);
   @override
-  Future<bool> respondJustificationRequest(
-    String id, {
-    required String responseText,
-  }) =>
+  Future<bool> respondJustificationRequest(String id, {required String responseText}) =>
       _j.respondJustificationRequest(id, responseText: responseText);
 
   @override
@@ -161,23 +140,18 @@ class FirestoreSchoolRepository implements SchoolRepository {
     required String body,
     String? replyToId,
   }) =>
-      _m.sendMessage(
-        recipientNames: recipientNames,
-        subject: subject,
-        body: body,
-        replyToId: replyToId,
-      );
+      _m.sendMessage(recipientNames: recipientNames, subject: subject, body: body, replyToId: replyToId);
   @override
-  Future<String?> getMessageBody(String msgId, {String? url}) =>
-      _m.getMessageBody(msgId, url: url);
+  Future<String?> getMessageBody(String msgId, {String? url}) => _m.getMessageBody(msgId, url: url);
   @override
-  Future<MessageDetailsResult?> getMessageDetails(String id, {String? url}) =>
-      _m.getMessageDetails(id, url: url);
+  Future<MessageDetailsResult?> getMessageDetails(String id, {String? url}) => _m.getMessageDetails(id, url: url);
   @override
-  Future<void> markMessageAsRead(String msgId, {bool isRead = true}) =>
-      _m.markMessageAsRead(msgId, isRead: isRead);
+  Future<void> markMessageAsRead(String msgId, {bool isRead = true}) => _m.markMessageAsRead(msgId, isRead: isRead);
   @override
   Future<void> markAllMessagesAsRead() => _m.markAllMessagesAsRead();
+  @override
+  Future<void> archiveMessage(String msgId, {bool isArchived = true}) =>
+      _m.archiveMessage(msgId, isArchived: isArchived);
 
   @override
   Future<DriveAttachmentInfo> saveAttachmentToDrive({

@@ -8,6 +8,8 @@ import '../../../domain/models/user_role.dart';
 
 class SchoolDataCacheManager {
   static const String prefReadOverrides = 'edusync_read_messages_overrides';
+  static const String prefArchiveOverrides =
+      'edusync_archived_messages_overrides';
   static const String prefJustificationOverrides =
       'edusync_justifications_overrides';
   static const String prefDefaultDriveFolderId =
@@ -29,6 +31,9 @@ class SchoolDataCacheManager {
 
   final Map<String, bool> _localReadOverrides = {};
   bool _readOverridesLoaded = false;
+
+  final Map<String, bool> _localArchiveOverrides = {};
+  bool _archiveOverridesLoaded = false;
 
   final Map<String, String> _localJustificationOverrides = {};
   bool _justificationOverridesLoaded = false;
@@ -144,6 +149,57 @@ class SchoolDataCacheManager {
       final rawMsgs = _memoryCache!['messages'] as List<dynamic>;
       for (final m in rawMsgs) {
         if (m is Map) m['isRead'] = true;
+      }
+    }
+  }
+
+  Future<void> ensureArchiveOverridesLoaded() async {
+    if (_archiveOverridesLoaded) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(prefArchiveOverrides);
+      if (jsonStr != null) {
+        final decoded = json.decode(jsonStr) as Map<String, dynamic>;
+        decoded.forEach((key, val) {
+          if (val is bool) _localArchiveOverrides[key] = val;
+        });
+      }
+      _archiveOverridesLoaded = true;
+    } catch (_) {}
+  }
+
+  bool? getArchiveOverride(String msgId) => _localArchiveOverrides[msgId];
+
+  Future<void> _saveArchiveOverrides() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        prefArchiveOverrides,
+        json.encode(_localArchiveOverrides),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> setArchiveOverride(String msgId, bool isArchived) async {
+    await ensureArchiveOverridesLoaded();
+    _localArchiveOverrides[msgId] = isArchived;
+    await _saveArchiveOverrides();
+
+    if (_memoryCache != null) {
+      if (_memoryCache!['archivedMessageOverrides'] is Map) {
+        (_memoryCache!['archivedMessageOverrides'] as Map)[msgId] = isArchived;
+      } else {
+        _memoryCache!['archivedMessageOverrides'] = <String, dynamic>{
+          msgId: isArchived,
+        };
+      }
+      if (_memoryCache!['messages'] is List) {
+        final msgs = _memoryCache!['messages'] as List<dynamic>;
+        for (final m in msgs) {
+          if (m is Map && (m['id'] == msgId || m['id']?.toString() == msgId)) {
+            m['isArchived'] = isArchived;
+          }
+        }
       }
     }
   }

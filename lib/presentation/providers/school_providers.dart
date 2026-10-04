@@ -342,7 +342,10 @@ final teachersProvider = FutureProvider<List<TeacherContact>>((ref) async {
 
 final unreadMessagesCountProvider = Provider<int>((ref) {
   final messagesAsync = ref.watch(messagesProvider);
-  return messagesAsync.value?.where((m) => m.isUnread).length ?? 0;
+  return messagesAsync.value
+          ?.where((m) => m.isUnread && !m.isArchived)
+          .length ??
+      0;
 });
 
 // ==========================================

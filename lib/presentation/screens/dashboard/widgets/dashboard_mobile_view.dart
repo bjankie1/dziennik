@@ -28,7 +28,8 @@ class DashboardMobileView extends ConsumerWidget {
     final unreadMessagesCount = ref.watch(unreadMessagesCountProvider);
     final syncState = ref.watch(syncProvider);
 
-    final messages = messagesAsync.value ?? [];
+    final messages =
+        (messagesAsync.value ?? []).where((m) => !m.isArchived).toList();
 
     final now = DateTime.now();
     final isWeekend =
