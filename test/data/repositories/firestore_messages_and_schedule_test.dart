@@ -12,6 +12,7 @@ import 'package:edusync/data/repositories/firestore/firestore_schedule_data_sour
 import 'package:edusync/data/repositories/firestore/school_data_cache_manager.dart';
 import 'package:edusync/domain/models/attendance_record.dart';
 import 'package:edusync/domain/models/lesson_slot.dart';
+import 'package:edusync/domain/models/message_thread.dart';
 
 void main() {
   setUp(() {
@@ -267,6 +268,182 @@ void main() {
         final defaultFolder = await dataSource.getDefaultDriveFolder();
         expect(defaultFolder.id, 'folder_xyz');
         expect(defaultFolder.name, 'Dokumenty Oskara');
+      },
+    );
+
+    test(
+      'getMessages hydrates thread.messages from Firestore replies and local replies, and sendMessage persists replies across cache reloads with Cloud Function fallback',
+      () async {
+        final postedUrls = <String>[];
+        final postedBodies = <Map<String, dynamic>>[];
+
+        final mockClient = MockClient((request) async {
+          postedUrls.add(request.url.toString());
+          if (request.body.isNotEmpty) {
+            postedBodies.add(
+              json.decode(request.body) as Map<String, dynamic>,
+            );
+          }
+          // Simulate /api/sendMessage returning 502 so fallback to cloudfunctions.net is exercised
+          if (request.url.path == '/api/sendMessage') {
+            return http.Response('Bad Gateway', 502);
+          }
+          if (request.url.toString().contains('cloudfunctions.net/sendMessage')) {
+            return http.Response(jsonEncode({'status': 'sent'}), 200);
+          }
+          return http.Response('Not Found', 404);
+        });
+
+        final cache = SchoolDataCacheManager(httpClient: mockClient);
+        cache.seedMemoryCache({
+          'login': '11010033',
+          'parent': {'name': 'Bartosz Jankiewicz', 'role': 'rodzic'},
+          'timetable': [
+            {'dayOfWeek': 1, 'lessonNumber': 1, 'subject': 'Matematyka'},
+          ],
+          'messages': [
+            {
+              'id': '2722626',
+              'sender': 'Sobota Łukasz [Wychowawca]',
+              'subject': 'składka 21 zł na maturę próbną z Operonem',
+              'body': 'Proszę o wpłatę 21 zł na maturę próbną z Operonem.',
+              'date': '2026-10-01 10:00:00',
+              'isRead': true,
+              'replies': [
+                {
+                  'id': '88001',
+                  'senderName': 'Bartosz Jankiewicz',
+                  'senderRole': 'Rodzic',
+                  'content': 'Pierwsza odpowiedź wysłana wcześniej.',
+                  'date': '2026-10-02 09:15:00',
+                  'isMe': true,
+                },
+              ],
+            },
+          ],
+        });
+
+        final dataSource = FirestoreMessagesDataSource(
+          cacheManager: cache,
+          httpClient: mockClient,
+        );
+
+        // 1. Initial getMessages() hydrates existing reply from rawMsg['replies']
+        var threads = await dataSource.getMessages();
+        var operonThread = threads.firstWhere((m) => m.id == '2722626');
+        expect(operonThread.messages, hasLength(2));
+        expect(operonThread.messages[0].isFromMe, isFalse);
+        expect(
+          operonThread.messages[0].body,
+          'Proszę o wpłatę 21 zł na maturę próbną z Operonem.',
+        );
+        expect(operonThread.messages[1].isFromMe, isTrue);
+        expect(
+          operonThread.messages[1].body,
+          'Pierwsza odpowiedź wysłana wcześniej.',
+        );
+        expect(operonThread.messages[1].senderName, 'Bartosz Jankiewicz');
+        expect(operonThread.messages[1].senderRole, 'Rodzic');
+
+        // 2. Send a second reply in the thread
+        await dataSource.sendMessage(
+          recipientNames: ['Sobota Łukasz'],
+          subject: 'Re: składka 21 zł na maturę próbną z Operonem',
+          body: 'Druga odpowiedź: potwierdzam przelew.',
+          replyToId: '2722626',
+        );
+
+        // Verify /api/sendMessage was tried first, then Cloud Function fallback was called
+        expect(postedUrls, hasLength(2));
+        expect(postedUrls[0], '/api/sendMessage');
+        expect(
+          postedUrls[1],
+          'https://europe-west3-lepsza-szkola.cloudfunctions.net/sendMessage',
+        );
+        expect(postedBodies.last['replyToMsgId'], '2722626');
+        expect(
+          postedBodies.last['body'],
+          'Druga odpowiedź: potwierdzam przelew.',
+        );
+
+        // 3. Subsequent getMessages() returns the thread with BOTH replies intact
+        threads = await dataSource.getMessages();
+        operonThread = threads.firstWhere((m) => m.id == '2722626');
+        expect(operonThread.messages, hasLength(3));
+        expect(
+          operonThread.messages[1].body,
+          'Pierwsza odpowiedź wysłana wcześniej.',
+        );
+        expect(
+          operonThread.messages[2].body,
+          'Druga odpowiedź: potwierdzam przelew.',
+        );
+        expect(operonThread.messages[2].isFromMe, isTrue);
+
+        // 4. Even if a fresh cache instance is created (simulating page reload where backend snapshot has not synced yet),
+        // SharedPreferences 'local_message_replies_v1' restores the second reply and deduplicates the first
+        final reloadedCache = SchoolDataCacheManager(httpClient: mockClient);
+        reloadedCache.seedMemoryCache({
+          'login': '11010033',
+          'timetable': [
+            {'dayOfWeek': 1, 'lessonNumber': 1, 'subject': 'Matematyka'},
+          ],
+          'messages': [
+            {
+              'id': '2722626',
+              'sender': 'Sobota Łukasz [Wychowawca]',
+              'subject': 'składka 21 zł na maturę próbną z Operonem',
+              'body': 'Proszę o wpłatę 21 zł na maturę próbną z Operonem.',
+              'date': '2026-10-01 10:00:00',
+              'isRead': true,
+              'replies': [
+                {
+                  'id': '88001',
+                  'senderName': 'Bartosz Jankiewicz',
+                  'senderRole': 'Rodzic',
+                  'content': 'Pierwsza odpowiedź wysłana wcześniej.',
+                  'date': '2026-10-02 09:15:00',
+                  'isMe': true,
+                },
+              ],
+            },
+          ],
+        });
+        final reloadedDS = FirestoreMessagesDataSource(
+          cacheManager: reloadedCache,
+          httpClient: mockClient,
+        );
+        final reloadedThreads = await reloadedDS.getMessages();
+        final reloadedOperon =
+            reloadedThreads.firstWhere((m) => m.id == '2722626');
+        expect(reloadedOperon.messages, hasLength(3));
+        expect(
+          reloadedOperon.messages[2].body,
+          'Druga odpowiedź: potwierdzam przelew.',
+        );
+
+        // 5. MessageThread.withMergedDetails preserves all replies while updating initial message details
+        final mergedDetailsThread = reloadedOperon.withMergedDetails(
+          const MessageDetailsResult(
+            body: 'Zaktualizowana pełna treść od wychowawcy.',
+            attachments: ['operon.pdf'],
+            attachmentUrls: {'operon.pdf': '/pobierz/operon'},
+          ),
+        );
+        expect(mergedDetailsThread.messages, hasLength(3));
+        expect(
+          mergedDetailsThread.messages.first.body,
+          'Zaktualizowana pełna treść od wychowawcy.',
+        );
+        expect(mergedDetailsThread.messages.first.attachments, ['operon.pdf']);
+        expect(
+          mergedDetailsThread.messages[1].body,
+          'Pierwsza odpowiedź wysłana wcześniej.',
+        );
+        expect(
+          mergedDetailsThread.messages[2].body,
+          'Druga odpowiedź: potwierdzam przelew.',
+        );
       },
     );
   });

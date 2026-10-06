@@ -21,9 +21,124 @@ class FirestoreMessagesDataSource {
   http.Client get _httpClient => _httpClientOverride ?? cacheManager.httpClient;
   FirebaseFirestore get _firestore => cacheManager.firestore;
 
+  static String _computeInitials(String name) {
+    final words = name
+        .replaceAll(RegExp(r'[()\[\]]'), '')
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.length >= 2) {
+      return '${words[0][0]}${words[1][0]}'.toUpperCase();
+    }
+    if (words.isNotEmpty && words[0].isNotEmpty) {
+      return words[0][0].toUpperCase();
+    }
+    return 'R';
+  }
+
+  List<MessageItem> _buildReplyItems({
+    required String threadId,
+    required DateTime fallbackDate,
+    required dynamic rawReplies,
+    required List<Map<String, dynamic>> localReplies,
+  }) {
+    final combinedMaps = <Map<String, dynamic>>[];
+
+    void addOrMerge(Map<String, dynamic> incoming) {
+      final content =
+          (incoming['content'] ?? incoming['body'] ?? '').toString().trim();
+      if (content.isEmpty) return;
+      final incomingId = (incoming['id'] ?? '').toString().trim();
+      final normContent =
+          content.replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+
+      final existingIdx = combinedMaps.indexWhere((existing) {
+        final existingId = (existing['id'] ?? '').toString().trim();
+        final existingContent = (existing['content'] ?? existing['body'] ?? '')
+            .toString()
+            .trim()
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .toLowerCase();
+        if (incomingId.isNotEmpty &&
+            existingId.isNotEmpty &&
+            incomingId == existingId) {
+          return true;
+        }
+        return existingContent.isNotEmpty && existingContent == normContent;
+      });
+
+      if (existingIdx == -1) {
+        combinedMaps.add(Map<String, dynamic>.from(incoming));
+      } else {
+        final existing = combinedMaps[existingIdx];
+        final existingSender = (existing['senderName'] ?? '').toString().trim();
+        final incomingSender = (incoming['senderName'] ?? '').toString().trim();
+        if ((existingSender.isEmpty || existingSender == 'Ty') &&
+            incomingSender.isNotEmpty &&
+            incomingSender != 'Ty') {
+          existing['senderName'] = incomingSender;
+          if ((incoming['senderRole'] ?? '').toString().trim().isNotEmpty) {
+            existing['senderRole'] = incoming['senderRole'];
+          }
+        }
+      }
+    }
+
+    if (rawReplies is List) {
+      for (final r in rawReplies) {
+        if (r is Map) {
+          addOrMerge(Map<String, dynamic>.from(r));
+        }
+      }
+    }
+    for (final lr in localReplies) {
+      addOrMerge(lr);
+    }
+
+    final items = <MessageItem>[];
+    for (var i = 0; i < combinedMaps.length; i++) {
+      final reply = combinedMaps[i];
+      final replyContent =
+          (reply['content'] ?? reply['body'] ?? '').toString().trim();
+      if (replyContent.isEmpty) continue;
+      final replySenderRole =
+          (reply['senderRole'] ?? '').toString().trim().isNotEmpty
+              ? reply['senderRole'].toString().trim()
+              : 'Rodzic';
+      final rawSenderName = (reply['senderName'] ?? '').toString().trim();
+      final replySenderName = rawSenderName.isNotEmpty
+          ? rawSenderName
+          : replySenderRole;
+      final replyId = (reply['id'] ?? '').toString().trim().isNotEmpty
+          ? reply['id'].toString().trim()
+          : '${threadId}_reply_${i + 1}';
+      final replyDate = parseMessageDate(
+        reply['date'] ?? reply['timestamp'],
+        fallback: fallbackDate,
+      );
+      final isMe = (reply['isMe'] ?? reply['isFromMe']) != false;
+
+      items.add(
+        MessageItem(
+          id: replyId,
+          senderName: replySenderName,
+          senderRole: replySenderRole,
+          senderInitials: _computeInitials(replySenderName),
+          timestamp: replyDate,
+          body: replyContent,
+          isFromMe: isMe,
+        ),
+      );
+    }
+    items.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return items;
+  }
+
   Future<List<MessageThread>> getMessages() async {
     await cacheManager.ensureReadOverridesLoaded();
     await cacheManager.ensureArchiveOverridesLoaded();
+    await cacheManager.ensureLocalRepliesLoaded();
     final data = await cacheManager.getStudentData();
     if (data == null || data['messages'] == null) {
       final mockList = await mockFallback.getMessages();
@@ -40,10 +155,32 @@ class FirestoreMessagesDataSource {
         final effectiveUnread = readOverride != null
             ? !readOverride
             : (isAutoArch && effectiveArchived ? false : m.isUnread);
+        final localReplies = cacheManager.getLocalReplies(m.id);
+        List<MessageItem>? updatedMessages;
+        if (localReplies.isNotEmpty) {
+          final extraItems = _buildReplyItems(
+            threadId: m.id,
+            fallbackDate: m.timestamp,
+            rawReplies: const [],
+            localReplies: localReplies,
+          );
+          final mergedItems = List<MessageItem>.from(m.messages);
+          for (final item in extraItems) {
+            final dup = mergedItems.any(
+              (existing) =>
+                  existing.id == item.id ||
+                  (existing.isFromMe &&
+                      existing.body.trim() == item.body.trim()),
+            );
+            if (!dup) mergedItems.add(item);
+          }
+          updatedMessages = mergedItems;
+        }
         return m.copyWith(
           isUnread: effectiveUnread,
           isArchived: effectiveArchived,
           isAutoArchived: isAutoArch,
+          messages: updatedMessages,
         );
       }).toList();
     }
@@ -208,6 +345,27 @@ class FirestoreMessagesDataSource {
       final driveAttachments =
           cacheManager.parseDriveAttachments(item['driveAttachments'], id);
 
+      final initialItem = MessageItem(
+        id: '${id}_0',
+        senderName: cleanName,
+        senderRole: role,
+        senderInitials: initials,
+        timestamp: dt,
+        body: bodyText,
+        isFromMe: false,
+        attachments: attachments,
+        attachmentUrls: attachmentUrls,
+        hasAttachments: hasAttachments,
+        driveAttachments: driveAttachments,
+      );
+
+      final replyItems = _buildReplyItems(
+        threadId: id,
+        fallbackDate: dt,
+        rawReplies: item['replies'],
+        localReplies: cacheManager.getLocalReplies(id),
+      );
+
       return MessageThread(
         id: id,
         senderName: cleanName,
@@ -225,6 +383,7 @@ class FirestoreMessagesDataSource {
         attachmentUrls: attachmentUrls,
         hasAttachments: hasAttachments,
         driveAttachments: driveAttachments,
+        messages: [initialItem, ...replyItems],
       );
     }).toList();
   }
@@ -307,30 +466,157 @@ class FirestoreMessagesDataSource {
     required String subject,
     required String body,
     String? replyToId,
+    String? senderName,
+    String? senderRole,
   }) async {
     final connectedLogin =
         await cacheManager.connectionService.getConnectedLogin();
+    final appUser = await cacheManager.connectionService.getSavedAppUser();
+
+    String? prefsRole;
+    String? prefsName;
     try {
-      await _httpClient
+      final prefs = await SharedPreferences.getInstance();
+      prefsRole = prefs.getString('app_user_role');
+      prefsName = prefs.getString('app_user_name');
+    } catch (_) {}
+
+    final isStudentRole =
+        (senderRole?.trim().toLowerCase() == 'uczeń') ||
+        (senderRole == null &&
+            ((appUser?.isStudent ?? false) ||
+                (prefsRole?.trim().toLowerCase() == 'student')));
+
+    final resolvedSenderRole = (senderRole != null && senderRole.trim().isNotEmpty)
+        ? senderRole.trim()
+        : (isStudentRole ? 'Uczeń' : 'Rodzic');
+
+    String resolvedSenderName = (senderName ?? '').trim();
+    if (resolvedSenderName.isEmpty) {
+      final candidateName = (appUser?.displayName ?? prefsName ?? '').trim();
+      if (candidateName.isNotEmpty && candidateName != 'Użytkownik') {
+        resolvedSenderName = candidateName;
+      } else if (isStudentRole) {
+        resolvedSenderName = await cacheManager.resolveStudentFullName();
+      } else {
+        final parentMap = cacheManager.memoryCache?['parent'];
+        final cachedParentName = parentMap is Map
+            ? (parentMap['name'] ?? '').toString().trim()
+            : '';
+        resolvedSenderName =
+            cachedParentName.isNotEmpty ? cachedParentName : 'Rodzic';
+      }
+    }
+
+    final nowIso = DateTime.now().toIso8601String();
+    final replyId = 'reply_${DateTime.now().millisecondsSinceEpoch}';
+    final cleanReplyToId = replyToId?.trim();
+
+    if (cleanReplyToId != null && cleanReplyToId.isNotEmpty) {
+      await cacheManager.addLocalReply(cleanReplyToId, {
+        'id': replyId,
+        'senderName': resolvedSenderName,
+        'senderRole': resolvedSenderRole,
+        'content': body.trim(),
+        'date': nowIso,
+        'isMe': true,
+      });
+    }
+
+    final payloadStr = json.encode({
+      'login': connectedLogin ?? '',
+      'role': isStudentRole ? 'student' : 'parent',
+      'recipients': recipientNames,
+      'subject': subject,
+      'body': body,
+      'replyToId': cleanReplyToId,
+      'replyToMsgId': cleanReplyToId,
+      'replyId': replyId,
+      'senderName': resolvedSenderName,
+      'senderRole': resolvedSenderRole,
+      'date': nowIso,
+    });
+
+    var sentToBackend = false;
+    try {
+      final res = await _httpClient
           .post(
             Uri.parse('/api/sendMessage'),
             headers: {'Content-Type': 'application/json'},
-            body: json.encode({
-              'login': connectedLogin ?? '',
-              'recipients': recipientNames,
-              'subject': subject,
-              'body': body,
-              'replyToId': replyToId,
-            }),
+            body: payloadStr,
           )
           .timeout(const Duration(seconds: 5));
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        sentToBackend = true;
+      }
     } catch (_) {}
+
+    if (!sentToBackend) {
+      try {
+        await _httpClient
+            .post(
+              Uri.parse(
+                'https://europe-west3-lepsza-szkola.cloudfunctions.net/sendMessage',
+              ),
+              headers: {'Content-Type': 'application/json'},
+              body: payloadStr,
+            )
+            .timeout(const Duration(seconds: 6));
+      } catch (_) {}
+    }
+
+    if (cleanReplyToId != null && cleanReplyToId.isNotEmpty) {
+      try {
+        final targetLogin = await cacheManager.getTargetStudentDocLogin();
+        if (targetLogin != null && targetLogin.isNotEmpty) {
+          final docRef = _firestore.collection('students').doc(targetLogin);
+          final doc = await docRef.get();
+          if (doc.exists) {
+            final msgs = List<dynamic>.from(doc.data()?['messages'] ?? []);
+            var changed = false;
+            for (final m in msgs) {
+              if (m is Map &&
+                  (m['id'] == cleanReplyToId ||
+                      m['id']?.toString() == cleanReplyToId)) {
+                final existingReplies = m['replies'] is List
+                    ? List<dynamic>.from(m['replies'] as List)
+                    : <dynamic>[];
+                final alreadyExists = existingReplies.any(
+                  (r) =>
+                      r is Map &&
+                      (r['id']?.toString() == replyId ||
+                          (r['content'] ?? '').toString().trim() ==
+                              body.trim()),
+                );
+                if (!alreadyExists) {
+                  existingReplies.add({
+                    'id': replyId,
+                    'senderName': resolvedSenderName,
+                    'senderRole': resolvedSenderRole,
+                    'content': body.trim(),
+                    'date': nowIso,
+                    'isMe': true,
+                  });
+                  m['replies'] = existingReplies;
+                  changed = true;
+                }
+              }
+            }
+            if (changed) {
+              await docRef.update({'messages': msgs});
+            }
+          }
+        }
+      } catch (_) {}
+    }
 
     await mockFallback.sendMessage(
       recipientNames: recipientNames,
       subject: subject,
       body: body,
-      replyToId: replyToId,
+      replyToId: cleanReplyToId,
+      senderName: resolvedSenderName,
+      senderRole: resolvedSenderRole,
     );
   }
 

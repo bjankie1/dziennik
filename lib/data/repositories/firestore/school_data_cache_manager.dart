@@ -16,6 +16,7 @@ class SchoolDataCacheManager {
       'edusync_drive_default_folder_id';
   static const String prefDefaultDriveFolderName =
       'edusync_drive_default_folder_name';
+  static const String prefLocalReplies = 'local_message_replies_v1';
 
   final FirebaseFirestore? _firestoreOverride;
   final LibrusConnectionService connectionService;
@@ -37,6 +38,9 @@ class SchoolDataCacheManager {
 
   final Map<String, String> _localJustificationOverrides = {};
   bool _justificationOverridesLoaded = false;
+
+  final Map<String, List<Map<String, dynamic>>> _localReplies = {};
+  bool _localRepliesLoaded = false;
 
   final Map<String, Map<String, DriveAttachmentInfo>>
       _localDriveAttachmentsOverrides = {};
@@ -258,6 +262,148 @@ class SchoolDataCacheManager {
     await _saveJustificationOverrides();
   }
 
+  String _currentStudentScopeLogin() {
+    final fromData = _memoryCache?['login']?.toString().trim() ?? '';
+    if (fromData.isNotEmpty) return fromData;
+    return (_cachedTargetLogin ?? '').trim();
+  }
+
+  Future<void> ensureLocalRepliesLoaded() async {
+    if (_localRepliesLoaded) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(prefLocalReplies);
+      if (jsonStr != null && jsonStr.isNotEmpty) {
+        final decoded = json.decode(jsonStr);
+        if (decoded is Map) {
+          decoded.forEach((key, val) {
+            if (val is List) {
+              final list = <Map<String, dynamic>>[];
+              for (final entry in val) {
+                if (entry is Map) {
+                  list.add(Map<String, dynamic>.from(entry));
+                }
+              }
+              if (list.isNotEmpty) {
+                _localReplies[key.toString()] = list;
+              }
+            }
+          });
+        }
+      }
+      _localRepliesLoaded = true;
+    } catch (_) {}
+  }
+
+  List<Map<String, dynamic>> getLocalReplies(String msgId) {
+    final list = _localReplies[msgId];
+    if (list == null || list.isEmpty) return const [];
+    final activeLogin = _currentStudentScopeLogin();
+    return list
+        .where((r) {
+          final replyLogin = (r['targetLogin'] ?? '').toString().trim();
+          if (activeLogin.isNotEmpty &&
+              replyLogin.isNotEmpty &&
+              replyLogin != activeLogin) {
+            return false;
+          }
+          return true;
+        })
+        .map((r) => Map<String, dynamic>.from(r))
+        .toList();
+  }
+
+  Future<void> _saveLocalReplies() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        prefLocalReplies,
+        json.encode(_localReplies),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> addLocalReply(
+    String msgId,
+    Map<String, dynamic> replyMap,
+  ) async {
+    await ensureLocalRepliesLoaded();
+    final cleanMsgId = msgId.trim();
+    if (cleanMsgId.isEmpty) return;
+
+    final activeLogin = _currentStudentScopeLogin();
+    final normalized = <String, dynamic>{
+      ...replyMap,
+      if (activeLogin.isNotEmpty) 'targetLogin': activeLogin,
+    };
+    final incomingId = (normalized['id'] ?? '').toString().trim();
+    final incomingContent =
+        (normalized['content'] ?? normalized['body'] ?? '').toString().trim();
+
+    final listForMsg = _localReplies.putIfAbsent(
+      cleanMsgId,
+      () => <Map<String, dynamic>>[],
+    );
+    final alreadyInLocal = listForMsg.any((existing) {
+      final existingId = (existing['id'] ?? '').toString().trim();
+      final existingContent =
+          (existing['content'] ?? existing['body'] ?? '').toString().trim();
+      return (incomingId.isNotEmpty && existingId == incomingId) ||
+          (incomingContent.isNotEmpty && existingContent == incomingContent);
+    });
+    if (!alreadyInLocal) {
+      listForMsg.add(normalized);
+      await _saveLocalReplies();
+    }
+
+    if (_memoryCache != null) {
+      _applyLocalRepliesToData(_memoryCache!);
+    }
+  }
+
+  void _applyLocalRepliesToData(Map<String, dynamic> data) {
+    final rawMsgs = data['messages'];
+    if (rawMsgs is! List) return;
+    final dataLogin = (data['login'] ?? _cachedTargetLogin ?? '').toString().trim();
+
+    for (final m in rawMsgs) {
+      if (m is! Map) continue;
+      final msgId = (m['id'] ?? '').toString().trim();
+      if (msgId.isEmpty) continue;
+      final localForMsg = _localReplies[msgId];
+      if (localForMsg == null || localForMsg.isEmpty) continue;
+
+      final existingReplies = m['replies'] is List
+          ? List<dynamic>.from(m['replies'] as List)
+          : <dynamic>[];
+
+      for (final localReply in localForMsg) {
+        final replyLogin = (localReply['targetLogin'] ?? '').toString().trim();
+        if (dataLogin.isNotEmpty &&
+            replyLogin.isNotEmpty &&
+            replyLogin != dataLogin) {
+          continue;
+        }
+        final localId = (localReply['id'] ?? '').toString().trim();
+        final localContent =
+            (localReply['content'] ?? localReply['body'] ?? '').toString().trim();
+
+        final exists = existingReplies.any((er) {
+          if (er is! Map) return false;
+          final erId = (er['id'] ?? '').toString().trim();
+          final erContent =
+              (er['content'] ?? er['body'] ?? '').toString().trim();
+          return (localId.isNotEmpty && erId == localId) ||
+              (localContent.isNotEmpty && erContent == localContent);
+        });
+        if (!exists) {
+          existingReplies.add(Map<String, dynamic>.from(localReply));
+        }
+      }
+      m['replies'] = existingReplies;
+    }
+  }
+
   Future<String?> getTargetStudentDocLogin() async {
     final appUser = await connectionService.getSavedAppUser();
     final connectedLogin = await connectionService.getConnectedLogin();
@@ -269,6 +415,7 @@ class SchoolDataCacheManager {
   }
 
   Future<Map<String, dynamic>?> getStudentData() async {
+    await ensureLocalRepliesLoaded();
     final isDemo = await connectionService.isDemoMode();
     if (isDemo) return null;
 
@@ -303,6 +450,7 @@ class SchoolDataCacheManager {
         _cachedTargetLogin == targetLogin &&
         _memoryCache!['timetable'] != null) {
       if (DateTime.now().difference(_lastCacheTime!) < cacheTtl) {
+        _applyLocalRepliesToData(_memoryCache!);
         return _memoryCache;
       }
     }
@@ -319,7 +467,8 @@ class SchoolDataCacheManager {
           _memoryCache = decoded;
           _lastCacheTime = DateTime.now();
           _cachedTargetLogin = targetLogin;
-          return decoded;
+          _applyLocalRepliesToData(_memoryCache!);
+          return _memoryCache;
         }
       }
     } catch (_) {}
@@ -340,7 +489,8 @@ class SchoolDataCacheManager {
           _memoryCache = decoded;
           _lastCacheTime = DateTime.now();
           _cachedTargetLogin = targetLogin;
-          return decoded;
+          _applyLocalRepliesToData(_memoryCache!);
+          return _memoryCache;
         }
       }
     } catch (_) {}
@@ -361,7 +511,8 @@ class SchoolDataCacheManager {
           _memoryCache = data;
           _lastCacheTime = DateTime.now();
           _cachedTargetLogin = targetLogin;
-          return data;
+          _applyLocalRepliesToData(_memoryCache!);
+          return _memoryCache;
         }
       } catch (_) {}
     }
@@ -373,12 +524,16 @@ class SchoolDataCacheManager {
         _memoryCache = data;
         _lastCacheTime = DateTime.now();
         _cachedTargetLogin = targetLogin;
-        return data;
+        _applyLocalRepliesToData(_memoryCache!);
+        return _memoryCache;
       }
     } catch (_) {}
 
     // Method 4: Return cached if available
-    if (_memoryCache != null) return _memoryCache;
+    if (_memoryCache != null) {
+      _applyLocalRepliesToData(_memoryCache!);
+      return _memoryCache;
+    }
 
     // Default real Oskar profile if network hiccup
     return {

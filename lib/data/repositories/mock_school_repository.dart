@@ -423,14 +423,26 @@ class MockSchoolRepository implements SchoolRepository {
     required String subject,
     required String body,
     String? replyToId,
+    String? senderName,
+    String? senderRole,
   }) async {
     await Future.delayed(const Duration(milliseconds: 150));
     final now = DateTime.now();
+    final effectiveSenderName = (senderName != null && senderName.trim().isNotEmpty)
+        ? senderName.trim()
+        : MockData.student.name;
+    final effectiveSenderRole = (senderRole != null && senderRole.trim().isNotEmpty)
+        ? senderRole.trim()
+        : 'Uczeń';
+    final nameParts = effectiveSenderName.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    final initials = nameParts.isNotEmpty
+        ? nameParts.take(2).map((p) => p[0].toUpperCase()).join()
+        : 'OJ';
     final newMsgItem = MessageItem(
       id: 'msg_${now.millisecondsSinceEpoch}',
-      senderName: MockData.student.name,
-      senderRole: 'Uczeń',
-      senderInitials: 'OJ',
+      senderName: effectiveSenderName,
+      senderRole: effectiveSenderRole,
+      senderInitials: initials,
       timestamp: now,
       body: body,
       isFromMe: true,

@@ -419,6 +419,10 @@ class MessageThread {
     return copyWith(senderName: resolvedSender, messages: fixedMessages);
   }
 
+  MessageThread copyWithMessages(List<MessageItem> updatedMessages) {
+    return copyWith(messages: updatedMessages);
+  }
+
   MessageThread withMergedDetails(MessageDetailsResult details) {
     final firstMsg = messages.firstOrNull;
     final fullBody = details.body.trim().isNotEmpty
@@ -435,19 +439,38 @@ class MessageThread {
       ...details.driveAttachments,
     };
     final resolvedSender = resolveSenderName(overrideBody: fullBody);
-    final updatedMessages = messages.map((m) {
-      if (m == messages.first) {
-        return m.copyWith(
-          senderName: m.senderName.trim().isNotEmpty ? m.senderName : resolvedSender,
-          body: fullBody,
-          attachments: mergedAttachments,
-          attachmentUrls: mergedUrls,
-          hasAttachments: mergedHasAttachments,
-          driveAttachments: {...m.driveAttachments, ...mergedDriveAttachments},
-        );
-      }
-      return m;
-    }).toList();
+    final List<MessageItem> updatedMessages = messages.isEmpty
+        ? [
+            MessageItem(
+              id: '${id}_0',
+              senderName: resolvedSender,
+              senderRole: senderRole,
+              senderInitials: senderInitials,
+              timestamp: timestamp,
+              body: fullBody,
+              attachments: mergedAttachments,
+              attachmentUrls: mergedUrls,
+              hasAttachments: mergedHasAttachments,
+              driveAttachments: mergedDriveAttachments,
+              isFromMe: false,
+            ),
+          ]
+        : [
+            messages.first.copyWith(
+              senderName: messages.first.senderName.trim().isNotEmpty
+                  ? messages.first.senderName
+                  : resolvedSender,
+              body: fullBody,
+              attachments: mergedAttachments,
+              attachmentUrls: mergedUrls,
+              hasAttachments: mergedHasAttachments,
+              driveAttachments: {
+                ...messages.first.driveAttachments,
+                ...mergedDriveAttachments,
+              },
+            ),
+            ...messages.skip(1),
+          ];
 
     return copyWith(
       senderName: resolvedSender,

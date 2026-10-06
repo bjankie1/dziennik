@@ -36,6 +36,8 @@ abstract class SchoolRepository {
     required String subject,
     required String body,
     String? replyToId,
+    String? senderName,
+    String? senderRole,
   });
   Future<String?> getMessageBody(String msgId, {String? url});
   Future<MessageDetailsResult?> getMessageDetails(String msgId, {String? url});

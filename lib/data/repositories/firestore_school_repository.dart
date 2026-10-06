@@ -139,8 +139,9 @@ class FirestoreSchoolRepository implements SchoolRepository {
     required String subject,
     required String body,
     String? replyToId,
-  }) =>
-      _m.sendMessage(recipientNames: recipientNames, subject: subject, body: body, replyToId: replyToId);
+    String? senderName,
+    String? senderRole,
+  }) => _m.sendMessage(recipientNames: recipientNames, subject: subject, body: body, replyToId: replyToId, senderName: senderName, senderRole: senderRole);
   @override
   Future<String?> getMessageBody(String msgId, {String? url}) => _m.getMessageBody(msgId, url: url);
   @override
