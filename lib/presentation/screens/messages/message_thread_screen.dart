@@ -33,11 +33,77 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
   void initState() {
     super.initState();
     _currentThread = widget.thread.withNormalizedSenderName();
+    _expandInitialAndReplyMessages(_currentThread);
+    if (_currentThread.isUnread) _markAsReadOnOpen();
+    _fetchBodyIfNeeded();
+  }
+
+  void _expandInitialAndReplyMessages(MessageThread thread) {
+    if (thread.messages.isEmpty) return;
+    _expandedMessageIds.add(thread.messages.first.id);
+    _expandedMessageIds.add(thread.messages.last.id);
+    for (final msg in thread.messages.skip(1)) {
+      if (msg.isFromMe) {
+        _expandedMessageIds.add(msg.id);
+      }
+    }
+  }
+
+  MessageThread _mergeThreadWithIncoming(
+    MessageThread base,
+    MessageThread incoming,
+  ) {
+    if (base.messages.isEmpty) return incoming.withNormalizedSenderName();
+    if (incoming.messages.isEmpty) return base;
+
+    final baseFirst = base.messages.first;
+    final incFirst = incoming.messages.first;
+    final firstMsg = baseFirst.body.length >= incFirst.body.length
+        ? baseFirst
+        : incFirst;
+
+    final mergedReplies = <MessageItem>[];
+    void addReplyIfNew(MessageItem item) {
+      final exists = mergedReplies.any(
+        (existing) =>
+            existing.id == item.id ||
+            (existing.isFromMe == item.isFromMe &&
+                existing.body.trim().isNotEmpty &&
+                existing.body.trim() == item.body.trim()),
+      );
+      if (!exists) {
+        mergedReplies.add(item);
+      }
+    }
+
+    for (final r in base.messages.skip(1)) {
+      addReplyIfNew(r);
+    }
+    for (final r in incoming.messages.skip(1)) {
+      addReplyIfNew(r);
+    }
+    mergedReplies.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
+    return base.copyWithMessages([firstMsg, ...mergedReplies]);
+  }
+
+  @override
+  void didUpdateWidget(covariant MessageThreadScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final incomingNormalized = widget.thread.withNormalizedSenderName();
+    if (incomingNormalized.id != _currentThread.id) {
+      _currentThread = incomingNormalized;
+      _expandedMessageIds.clear();
+      _expandInitialAndReplyMessages(_currentThread);
+      return;
+    }
+    _currentThread = _mergeThreadWithIncoming(
+      _currentThread,
+      incomingNormalized,
+    );
     if (_currentThread.messages.isNotEmpty) {
       _expandedMessageIds.add(_currentThread.messages.last.id);
     }
-    if (_currentThread.isUnread) _markAsReadOnOpen();
-    _fetchBodyIfNeeded();
   }
 
   void _showSnackBar(String message, {Color? backgroundColor, SnackBarAction? action, Duration? duration}) {
@@ -322,6 +388,23 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final latestFromProvider = ref.watch(
+      messagesProvider.select(
+        (asyncVal) => asyncVal.value
+            ?.where((m) => m.id == _currentThread.id)
+            .firstOrNull,
+      ),
+    );
+    if (latestFromProvider != null) {
+      final merged = _mergeThreadWithIncoming(
+        _currentThread,
+        latestFromProvider.withNormalizedSenderName(),
+      );
+      if (merged.messages.length > _currentThread.messages.length) {
+        _currentThread = merged;
+        _expandInitialAndReplyMessages(_currentThread);
+      }
+    }
     final messages = _currentThread.messages;
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -443,8 +526,20 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
           MessageReplyComposer(
             thread: _currentThread,
             onReplySent: (newMsg) => setState(() {
-              _currentThread = _currentThread.copyWith(messages: [..._currentThread.messages, newMsg]);
+              final existingReplies = _currentThread.messages.skip(1).toList();
+              final alreadyExists = existingReplies.any(
+                (r) =>
+                    r.id == newMsg.id ||
+                    (r.isFromMe == newMsg.isFromMe &&
+                        r.body.trim().isNotEmpty &&
+                        r.body.trim() == newMsg.body.trim()),
+              );
+              final updatedMessages = alreadyExists
+                  ? _currentThread.messages
+                  : [..._currentThread.messages, newMsg];
+              _currentThread = _currentThread.copyWithMessages(updatedMessages);
               _expandedMessageIds.add(newMsg.id);
+              _expandInitialAndReplyMessages(_currentThread);
             }),
           ),
           const SizedBox(height: 36),

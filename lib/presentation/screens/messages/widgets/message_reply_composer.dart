@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/message_thread.dart';
+import '../../../../domain/models/user_role.dart';
+import '../../../providers/auth_providers.dart';
 import '../../../providers/school_providers.dart';
 
 class MessageReplyComposer extends ConsumerStatefulWidget {
@@ -67,7 +69,25 @@ class _MessageReplyComposerState extends ConsumerState<MessageReplyComposer> {
 
     try {
       final repo = ref.read(schoolRepositoryProvider);
+      final appUser = ref.read(appUserProvider);
       final profile = await repo.getStudentProfile();
+
+      final isStudentRole = appUser?.role == UserRole.student;
+      final String senderRole = isStudentRole ? 'Uczeń' : 'Rodzic';
+      final String senderName = isStudentRole
+          ? (profile.name.trim().isNotEmpty ? profile.name.trim() : 'Uczeń')
+          : ((appUser != null &&
+                  appUser.displayName.trim().isNotEmpty &&
+                  appUser.displayName.trim() != 'Użytkownik')
+              ? appUser.displayName.trim()
+              : 'Rodzic');
+      final nameParts = senderName
+          .split(RegExp(r'\s+'))
+          .where((p) => p.isNotEmpty)
+          .toList();
+      final senderInitials = nameParts.isNotEmpty
+          ? nameParts.take(2).map((p) => p[0].toUpperCase()).join()
+          : 'JA';
 
       await repo.sendMessage(
         recipientNames: recipients,
@@ -76,18 +96,16 @@ class _MessageReplyComposerState extends ConsumerState<MessageReplyComposer> {
             : 'Re: ${widget.thread.subject}',
         body: text,
         replyToId: widget.thread.id,
+        senderName: senderName,
+        senderRole: senderRole,
       );
 
       final now = DateTime.now();
       final newMsg = MessageItem(
         id: 'reply_${now.millisecondsSinceEpoch}',
-        senderName: profile.name,
-        senderRole: 'Uczeń',
-        senderInitials: profile.name
-            .split(' ')
-            .map((p) => p.isNotEmpty ? p[0] : '')
-            .take(2)
-            .join(),
+        senderName: senderName,
+        senderRole: senderRole,
+        senderInitials: senderInitials,
         timestamp: now,
         body: text,
         isFromMe: true,

@@ -593,6 +593,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                     const SizedBox(height: 4),
                     Wrap(
                       spacing: 6,
+                      runSpacing: 4,
                       children: [
                         if (thread.isUnread)
                           Container(
@@ -621,6 +622,29 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                             style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
                           ),
                         ),
+                        if (thread.messages.length > 1)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryFixed,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.reply, size: 10, color: AppColors.primary),
+                                const SizedBox(width: 3),
+                                Text(
+                                  'Odpowiedzi: ${thread.messages.length - 1}',
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         if (thread.isImportant)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -687,7 +711,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      thread.preview,
+                      thread.messages.length > 1 && thread.messages.last.isFromMe
+                          ? 'Ty: ${thread.messages.last.body.replaceAll('\n', ' ')}'
+                          : thread.preview,
                       style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant, height: 1.3),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

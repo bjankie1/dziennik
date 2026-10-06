@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:edusync/data/repositories/firestore_school_repository.dart';
 import 'package:edusync/data/repositories/firestore/firestore_attendance_data_source.dart';
@@ -13,8 +16,33 @@ import 'package:edusync/data/repositories/firestore/school_data_cache_manager.da
 import 'package:edusync/domain/models/attendance_record.dart';
 import 'package:edusync/domain/models/lesson_slot.dart';
 import 'package:edusync/domain/models/message_thread.dart';
+import 'package:edusync/domain/models/user_role.dart';
+import 'package:edusync/presentation/providers/auth_providers.dart';
+import 'package:edusync/presentation/providers/school_providers.dart';
+import 'package:edusync/presentation/providers/tasks_provider.dart';
+import 'package:edusync/presentation/screens/messages/message_thread_screen.dart';
+import 'package:edusync/presentation/screens/messages/messages_screen.dart';
+
+class _TestParentAppUserNotifier extends AppUserNotifier {
+  @override
+  AppUser? build() {
+    return const AppUser(
+      displayName: 'Bartosz Jankiewicz',
+      email: 'parent@example.com',
+      role: UserRole.parent,
+      studentLogin: '11010033u',
+      primaryLogin: '11010033',
+      familyId: 'jankiewicz_family',
+    );
+  }
+}
 
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('pl_PL', null);
+    await initializeDateFormatting('pl', null);
+  });
+
   setUp(() {
     SharedPreferences.setMockInitialValues({
       'librus_is_connected': true,
@@ -752,6 +780,111 @@ void main() {
         expect(
           parsed,
           FirestoreMessagesDataSource.parseMessageDate('2026-09-28 09:54:12'),
+        );
+      },
+    );
+  });
+
+  group('MessageThreadScreen & MessagesScreen Reply Synchronization', () {
+    testWidgets(
+      'renders thread with 2 sent replies, attributes Parent role correctly, and preserves replies across messagesProvider invalidation',
+      (tester) async {
+        tester.view.physicalSize = const Size(1280, 900);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final mockClient = MockClient((request) async {
+          return http.Response(
+            jsonEncode({'success': true, 'sentId': 'sent_2'}),
+            200,
+          );
+        });
+        final repo = FirestoreSchoolRepository(httpClient: mockClient);
+        repo.cacheManager.seedMemoryCache({
+          'login': '11010033',
+          'educator': 'Sobota Łukasz',
+          'student': {'name': 'Oskar Jankiewicz', 'className': '4 k Lic'},
+          'timetable': <Map<String, dynamic>>[],
+          'messages': [
+            {
+              'id': '3001',
+              'sender': 'Sobota Łukasz',
+              'subject': 'składka 21 zł na maturę próbną z Operonem',
+              'body': 'Proszę o wpłatę 21 zł do piątku.',
+              'date': '2026-10-05 10:00:00',
+              'isRead': true,
+              'replies': [
+                {
+                  'id': 'sent_1',
+                  'senderName': 'Bartosz Jankiewicz',
+                  'senderRole': 'Rodzic',
+                  'date': '2026-10-05 12:15:00',
+                  'body': 'Dzień dobry, przelałem 21 zł.',
+                  'isFromMe': true,
+                },
+              ],
+            },
+          ],
+        });
+
+        final initialThreads = await repo.getMessages();
+        expect(initialThreads.single.messages, hasLength(2));
+
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              schoolRepositoryProvider.overrideWithValue(repo),
+              appUserProvider.overrideWith(_TestParentAppUserNotifier.new),
+              tasksStreamProvider.overrideWith((ref) => Stream.value(const [])),
+            ],
+            child: MaterialApp(
+              home: MessageThreadScreen(thread: initialThreads.single),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Proszę o wpłatę 21 zł do piątku.'), findsOneWidget);
+        expect(find.text('Dzień dobry, przelałem 21 zł.'), findsOneWidget);
+
+        // Open reply composer and send second reply as Parent
+        await tester.tap(find.textContaining('Odpowiedz do'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(
+          find.byType(TextField),
+          'Potwierdzenie przelewu w załączeniu.',
+        );
+        await tester.tap(find.text('Wyślij odpowiedź'));
+        await tester.pumpAndSettle();
+
+        // All 3 messages (1 incoming + 2 replies) are visible in the thread
+        expect(find.text('Proszę o wpłatę 21 zł do piątku.'), findsOneWidget);
+        expect(find.text('Dzień dobry, przelałem 21 zł.'), findsOneWidget);
+        expect(find.text('Potwierdzenie przelewu w załączeniu.'), findsOneWidget);
+        expect(find.textContaining('Ja (Bartosz Jankiewicz)'), findsNWidgets(2));
+        expect(find.textContaining('Rodzic •'), findsNWidgets(2));
+
+        // Verify MessagesScreen also shows Odpowiedzi: 2 badge and Ty: preview
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              schoolRepositoryProvider.overrideWithValue(repo),
+              appUserProvider.overrideWith(_TestParentAppUserNotifier.new),
+              tasksStreamProvider.overrideWith((ref) => Stream.value(const [])),
+            ],
+            child: const MaterialApp(
+              home: MessagesScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Odpowiedzi: 2'), findsOneWidget);
+        expect(
+          find.text('Ty: Potwierdzenie przelewu w załączeniu.'),
+          findsOneWidget,
         );
       },
     );
