@@ -628,7 +628,8 @@ class LibrusClient {
     const text = String(rawText || "").replace(/\r\n?/g, "\n");
     const markers = [
       /\n*-{3,}\s*Wiadomość oryginalna\s*-{3,}[\s\S]*$/i,
-      /(?:^|\n)\s*Użytkownik\s+[^\n]*napisał\s*:[\s\S]*$/i
+      /\n*-{3,}\s*\n+\s*Użytkownik:?[^\n]*napisał\s*:[\s\S]*$/i,
+      /(?:^|\n)\s*Użytkownik:?[^\n]*napisał\s*:[\s\S]*$/i
     ];
     let cleaned = text;
     for (const marker of markers) {
@@ -965,13 +966,13 @@ class LibrusClient {
           const payload = new URLSearchParams({
             requestkey,
             filtrUzytkownikow: getField("filtrUzytkownikow") || "0",
-            idPojemnika: getField("idPojemnika") || "5",
-            poprzednia: getField("poprzednia") || "6",
+            idPojemnika: getField("idPojemnika"),
+            poprzednia: getField("poprzednia") || "5",
             DoKogo: doKogo,
             Wid: getField("Wid") || String(replyToMsgId),
             idWiadomosciOrg: getField("idWiadomosciOrg") || String(replyToMsgId),
             idOdpowiadajacego: getField("idOdpowiadajacego") || "0",
-            typ: getField("typ") || "odpowiedz",
+            typ: getField("typ") || "odp",
             fileStorageIdentifier: getField("fileStorageIdentifier"),
             temat: subject || defaultTemat,
             tresc: combinedTresc,
