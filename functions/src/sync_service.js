@@ -490,6 +490,112 @@ const defaultSleep = (minMs, maxMs) => new Promise(resolve => {
   setTimeout(resolve, ms);
 });
 
+function mergeMessageReplies(prevReplies, freshReplies) {
+  const prevList = Array.isArray(prevReplies) ? prevReplies : [];
+  const freshList = Array.isArray(freshReplies) ? freshReplies : [];
+  if (prevList.length === 0 && freshList.length === 0) {
+    return [];
+  }
+
+  const normalizeContent = (r) =>
+    String(r?.content || r?.body || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+
+  const normalizeMinutePrefix = (r) =>
+    String(r?.date || "")
+      .trim()
+      .replace("T", " ")
+      .slice(0, 16);
+
+  const normalizeDayPrefix = (r) =>
+    String(r?.date || "")
+      .trim()
+      .replace("T", " ")
+      .slice(0, 10);
+
+  const result = [];
+
+  const addOrMergeReply = (incoming) => {
+    if (!incoming || typeof incoming !== "object") return;
+    const contentText = String(incoming.content || incoming.body || "").trim();
+    if (!contentText) return;
+
+    const incomingId = incoming.id != null ? String(incoming.id).trim() : "";
+    const normContent = normalizeContent(incoming);
+    const minPrefix = normalizeMinutePrefix(incoming);
+    const dayPrefix = normalizeDayPrefix(incoming);
+
+    const existingIdx = result.findIndex((existing) => {
+      const existingId = existing.id != null ? String(existing.id).trim() : "";
+      if (incomingId && existingId && incomingId === existingId) {
+        return true;
+      }
+      if (normContent && normalizeContent(existing) === normContent) {
+        const existingMin = normalizeMinutePrefix(existing);
+        if (minPrefix && existingMin && minPrefix === existingMin) {
+          return true;
+        }
+        const existingIsSynthetic = existingId.startsWith("reply_");
+        const incomingIsSynthetic = incomingId.startsWith("reply_");
+        if (
+          existingIsSynthetic !== incomingIsSynthetic &&
+          (!dayPrefix || !normalizeDayPrefix(existing) || dayPrefix === normalizeDayPrefix(existing))
+        ) {
+          return true;
+        }
+      }
+      return false;
+    });
+
+    if (existingIdx === -1) {
+      result.push({
+        id: incomingId || `reply_${result.length + 1}`,
+        senderName: incoming.senderName || "Rodzic",
+        senderRole: incoming.senderRole || "Rodzic",
+        content: contentText,
+        date: incoming.date || "",
+        isMe: incoming.isMe !== false
+      });
+    } else {
+      const existing = result[existingIdx];
+      const preferExistingSender =
+        existing.senderName &&
+        existing.senderName !== "Ty" &&
+        (!incoming.senderName || incoming.senderName === "Ty");
+      const preferIncomingId =
+        incomingId && !incomingId.startsWith("reply_") && String(existing.id || "").startsWith("reply_");
+
+      result[existingIdx] = {
+        ...existing,
+        ...incoming,
+        id: preferIncomingId ? incomingId : (existing.id || incomingId),
+        senderName: preferExistingSender ? existing.senderName : (incoming.senderName || existing.senderName),
+        senderRole: preferExistingSender ? existing.senderRole : (incoming.senderRole || existing.senderRole),
+        content: existing.content || contentText,
+        date: existing.date || incoming.date || "",
+        isMe: existing.isMe !== false && incoming.isMe !== false
+      };
+    }
+  };
+
+  for (const r of prevList) {
+    addOrMergeReply(r);
+  }
+  for (const r of freshList) {
+    addOrMergeReply(r);
+  }
+
+  result.sort((a, b) =>
+    String(a.date || "")
+      .replace("T", " ")
+      .localeCompare(String(b.date || "").replace("T", " "))
+  );
+
+  return result;
+}
+
 /**
  * Phase 20 (D-05) & Phase 25 (D-03): Preserves already-fetched full message bodies across sync cycles,
  * applies auto-archive & auto-read rules to system justification confirmations,
@@ -522,9 +628,13 @@ async function mergeAndIndexMessages({
 
   const merged = freshMessages.map(m => ({ ...m }));
 
-  // Step 1: Preserve already-loaded full message bodies and Drive attachment metadata from previous Firestore snapshot
+  // Step 1: Preserve already-loaded full message bodies, replies, and Drive attachment metadata from previous Firestore snapshot
   for (const m of merged) {
     const prev = prevById.get(String(m.id));
+    const mergedReplies = mergeMessageReplies(prev?.replies, m.replies);
+    if (mergedReplies.length > 0 || Array.isArray(prev?.replies) || Array.isArray(m.replies)) {
+      m.replies = mergedReplies;
+    }
     if (prev) {
       if (prev.driveAttachments && typeof prev.driveAttachments === "object") {
         m.driveAttachments = {
@@ -747,9 +857,11 @@ module.exports = {
   syncStudentData,
   resolveCacheDocumentId,
   shouldDispatchLibrusScrape,
+  mergeMessageReplies,
   mergeAndIndexMessages,
   isJustificationApprovalMessage,
   detectJustificationNotifications,
   buildMessageAndAnnouncementNotifications
 };
+
 

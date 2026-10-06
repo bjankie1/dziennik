@@ -624,6 +624,32 @@ class LibrusClient {
     };
   }
 
+  _stripQuotedReplyBody(rawText) {
+    const text = String(rawText || "").replace(/\r\n?/g, "\n");
+    const markers = [
+      /\n*-{3,}\s*Wiadomość oryginalna\s*-{3,}[\s\S]*$/i,
+      /(?:^|\n)\s*Użytkownik\s+[^\n]*napisał\s*:[\s\S]*$/i
+    ];
+    let cleaned = text;
+    for (const marker of markers) {
+      cleaned = cleaned.replace(marker, "");
+    }
+    return cleaned
+      .split("\n")
+      .map(line => line.replace(/[^\S\n]+/g, " ").trim())
+      .join("\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  _normalizeMessageSubject(subject) {
+    return String(subject || "")
+      .replace(/^(?:\s*(?:re|odp|fw|fwd)\s*:\s*)+/i, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
   async fetchMessages() {
     const res = await this.client.get("https://synergia.librus.pl/wiadomosci/1/5");
     const cheerio = require("cheerio");
@@ -692,6 +718,7 @@ class LibrusClient {
           hasAttachments: hasAttachmentIcon,
           attachments: [],
           attachmentFiles: [],
+          replies: [],
           preview: subject,
           body: subject,
           bodyLoaded: false,
@@ -740,6 +767,89 @@ class LibrusClient {
           console.warn(`Could not fetch body for message ${m.id}:`, e.message);
         }
       }
+    }
+
+    // Scrape /wiadomosci/6 (Wysłane) to correlate sent replies with parent inbox threads
+    try {
+      const sentRes = await this.client.get("https://synergia.librus.pl/wiadomosci/6");
+      const $sent = cheerio.load(sentRes.data);
+      const sentRows = [];
+      $sent("table.decorated tr.line0, table.decorated tr.line1").each((i, tr) => {
+        const tds = $sent(tr).find("td");
+        if (tds.length >= 5) {
+          const link = $sent(tds[3]).find("a").attr("href") || "";
+          const idMatch = link.match(/\/wiadomosci\/\d+\/\d+\/(\d+)/);
+          if (!idMatch) return;
+          const sentId = idMatch[1];
+          const recipient = $sent(tds[2]).text().trim().replace(/\s+/g, " ");
+          const subject = $sent(tds[3]).text().trim().replace(/\s+/g, " ");
+          const sentDate = $sent(tds[4]).text().trim().replace(/\s+/g, " ");
+          sentRows.push({
+            sentId,
+            recipient,
+            subject,
+            normalizedSubject: this._normalizeMessageSubject(subject),
+            sentDate,
+            link: link.startsWith("http") ? link : `https://synergia.librus.pl${link}`
+          });
+        }
+      });
+
+      const topSent = sentRows.slice(0, 10);
+      for (const sRow of topSent) {
+        if (!sRow.normalizedSubject) continue;
+        const recipientClean = sRow.recipient
+          .replace(/\[.*?\]/g, "")
+          .replace(/\(.*?\)/g, "")
+          .trim()
+          .toLowerCase();
+
+        const targetMsg =
+          messages.find(m => {
+            if (this._normalizeMessageSubject(m.subject) !== sRow.normalizedSubject) return false;
+            if (!recipientClean) return true;
+            const senderClean = String(m.sender || "").toLowerCase();
+            return senderClean.includes(recipientClean) || recipientClean.includes(senderClean.replace(/\[.*?\]/g, "").trim());
+          }) ||
+          messages.find(m => this._normalizeMessageSubject(m.subject) === sRow.normalizedSubject);
+
+        if (!targetMsg) continue;
+
+        try {
+          const sentDetailRes = await this.client.get(sRow.link);
+          const $sd = cheerio.load(sentDetailRes.data);
+          const contentEl = $sd("div.container-message-content").first();
+          const rawSentBody = contentEl.length
+            ? this._extractMultilineElementText($sd, contentEl)
+            : "";
+          const cleanBody = this._stripQuotedReplyBody(rawSentBody);
+          if (cleanBody) {
+            if (!Array.isArray(targetMsg.replies)) {
+              targetMsg.replies = [];
+            }
+            if (!targetMsg.replies.some(r => String(r.id) === String(sRow.sentId))) {
+              targetMsg.replies.push({
+                id: String(sRow.sentId),
+                senderName: "Ty",
+                senderRole: "Rodzic",
+                content: cleanBody,
+                date: sRow.sentDate,
+                isMe: true
+              });
+            }
+          }
+        } catch (sentDetailErr) {
+          console.warn(`[LibrusClient] Could not fetch sent message ${sRow.sentId}:`, sentDetailErr.message);
+        }
+      }
+
+      for (const m of messages) {
+        if (Array.isArray(m.replies) && m.replies.length > 1) {
+          m.replies.sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+        }
+      }
+    } catch (sentErr) {
+      console.warn("[LibrusClient] Could not fetch /wiadomosci/6 sent messages:", sentErr.message);
     }
 
     const unreadCount = messages.filter(m => !m.isRead).length;
@@ -832,29 +942,95 @@ class LibrusClient {
 
   async sendMessage({ recipients, subject, body, replyToMsgId }) {
     try {
+      const cheerio = require("cheerio");
       if (replyToMsgId) {
-        const viewRes = await this.client.get(`https://synergia.librus.pl/wiadomosci/1/5/${replyToMsgId}`);
-        const cheerio = require("cheerio");
-        const $ = cheerio.load(viewRes.data);
-        console.log(`[LibrusClient] Reply initiated for message ${replyToMsgId}`);
-      } else {
-        console.log(`[LibrusClient] New message initiated to ${Array.isArray(recipients) ? recipients.join(", ") : recipients}`);
+        const replyUrl = `https://synergia.librus.pl/wiadomosci/3/5/${replyToMsgId}`;
+        const formRes = await this.client.get(replyUrl);
+        const $ = cheerio.load(formRes.data);
+        const form = $("#formWiadomosci").length ? $("#formWiadomosci") : $("form");
+
+        const getField = (name) => {
+          const val = form.find(`input[name="${name}"]`).val();
+          return val !== undefined ? String(val) : "";
+        };
+
+        const requestkey = getField("requestkey");
+        const doKogo = getField("DoKogo");
+
+        if (requestkey && doKogo) {
+          const defaultTemat = getField("temat");
+          const defaultTresc = form.find('textarea[name="tresc"]').val() || "";
+          const combinedTresc = `${String(body || "").trim()}\n\n${String(defaultTresc).trim()}`.trim();
+
+          const payload = new URLSearchParams({
+            requestkey,
+            filtrUzytkownikow: getField("filtrUzytkownikow") || "0",
+            idPojemnika: getField("idPojemnika") || "5",
+            poprzednia: getField("poprzednia") || "6",
+            DoKogo: doKogo,
+            Wid: getField("Wid") || String(replyToMsgId),
+            idWiadomosciOrg: getField("idWiadomosciOrg") || String(replyToMsgId),
+            idOdpowiadajacego: getField("idOdpowiadajacego") || "0",
+            typ: getField("typ") || "odpowiedz",
+            fileStorageIdentifier: getField("fileStorageIdentifier"),
+            temat: subject || defaultTemat,
+            tresc: combinedTresc,
+            wyslij: "Wyślij"
+          });
+
+          await this.client.post(
+            "https://synergia.librus.pl/wiadomosci",
+            payload.toString(),
+            {
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Referer": replyUrl
+              }
+            }
+          );
+
+          const nowIso = new Date().toISOString();
+          return {
+            success: true,
+            sentViaLibrus: true,
+            timestamp: nowIso,
+            sentAt: nowIso,
+            recipients: Array.isArray(recipients) ? recipients : [recipients],
+            subject: subject || defaultTemat
+          };
+        }
+
+        const nowIso = new Date().toISOString();
+        return {
+          success: true,
+          sentViaLibrus: false,
+          timestamp: nowIso,
+          sentAt: nowIso,
+          recipients: Array.isArray(recipients) ? recipients : [recipients],
+          subject
+        };
       }
 
+      const nowIso = new Date().toISOString();
       return {
         success: true,
-        sentAt: new Date().toISOString(),
+        sentViaLibrus: false,
+        timestamp: nowIso,
+        sentAt: nowIso,
         recipients: Array.isArray(recipients) ? recipients : [recipients],
-        subject,
+        subject
       };
     } catch (err) {
       console.warn("[LibrusClient] sendMessage warning:", err.message);
+      const nowIso = new Date().toISOString();
       return {
         success: true,
         simulated: true,
-        sentAt: new Date().toISOString(),
+        sentViaLibrus: false,
+        timestamp: nowIso,
+        sentAt: nowIso,
         recipients: Array.isArray(recipients) ? recipients : [recipients],
-        subject,
+        subject
       };
     }
   }

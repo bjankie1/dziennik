@@ -339,11 +339,26 @@ exports.sendMessage = onRequest(
       const role = req.query.role || req.body?.role;
       const studentLogin = req.query.studentLogin || req.body?.studentLogin;
       const login = req.query.login || req.body?.login;
-      const pass = req.body?.password || req.query?.password || process.env.LIBRUS_PASSWORD;
+      const pass =
+        req.body?.password ||
+        req.body?.pass ||
+        req.query?.password ||
+        req.query?.pass ||
+        process.env.LIBRUS_PASSWORD;
       const recipients = req.body?.recipients || req.query.recipients || [];
-      const subject = req.body?.subject || req.query.subject || "";
-      const body = req.body?.body || req.query.body || "";
-      const replyToId = req.body?.replyToId || req.query.replyToId || null;
+      const subject = String(req.body?.subject || req.query.subject || "").trim();
+      const rawBody = req.body?.body ?? req.query.body ?? "";
+      const body = typeof rawBody === "string" ? rawBody.trim().slice(0, 10000) : "";
+      const replyToMsgId =
+        req.body?.replyToMsgId ||
+        req.body?.replyToId ||
+        req.query.replyToMsgId ||
+        req.query.replyToId ||
+        null;
+      const senderName = req.body?.senderName || req.query.senderName;
+      const senderRole = req.body?.senderRole || req.query.senderRole;
+      const replyId = req.body?.replyId || req.query.replyId;
+      const date = req.body?.date || req.query.date;
 
       if (!subject || !body) {
         return res.status(400).json({ error: "Brak tematu lub treści wiadomości." });
@@ -378,45 +393,117 @@ exports.sendMessage = onRequest(
         }
       }
 
+      let result = null;
+      let simulated = true;
+
       if (client && restoredSession) {
-        const result = await client.sendMessage({ recipients, subject, body, replyToMsgId: replyToId });
-        return res.status(200).json(
-          buildMessageResponse({
-            success: true,
-            simulated: false,
+        try {
+          result = await client.sendMessage({
             recipients,
             subject,
-            sessionInfo,
-            result
-          })
-        );
+            body,
+            replyToMsgId
+          });
+          simulated = Boolean(result?.simulated);
+        } catch (sendErr) {
+          console.warn("[sendMessage] Restored session sendMessage error:", sendErr.message);
+        }
       }
 
-      if (sessionInfo.sessionKey && pass) {
-        client = new LibrusClient(sessionInfo.sessionKey, pass);
-        await client.authenticate();
-        const result = await client.sendMessage({ recipients, subject, body, replyToMsgId: replyToId });
-        return res.status(200).json(
-          buildMessageResponse({
-            success: true,
-            simulated: false,
+      if (!result && sessionInfo.sessionKey && pass) {
+        try {
+          client = new LibrusClient(sessionInfo.sessionKey, pass);
+          await client.authenticate();
+          result = await client.sendMessage({
             recipients,
             subject,
-            sessionInfo,
-            result
-          })
-        );
+            body,
+            replyToMsgId
+          });
+          simulated = Boolean(result?.simulated);
+        } catch (authSendErr) {
+          console.warn("[sendMessage] Fresh auth sendMessage error:", authSendErr.message);
+        }
       }
 
-      return res.status(200).json(
-        buildMessageResponse({
+      let replyPersisted = false;
+      if (replyToMsgId) {
+        try {
+          const db = admin.firestore();
+          const defaultPrimary =
+            process.env.LIBRUS_PRIMARY_LOGIN || process.env.LIBRUS_LOGIN || "11010033";
+          const rawTarget =
+            req.body?.primaryLogin ||
+            req.query.primaryLogin ||
+            login ||
+            studentLogin ||
+            sessionInfo.sessionKey ||
+            defaultPrimary;
+          const targetStudentId =
+            String(rawTarget).replace(/u$/i, "").trim() || defaultPrimary;
+
+          let studentRef = db.collection("students").doc(targetStudentId);
+          let studentDoc = await studentRef.get();
+          if (!studentDoc.exists && targetStudentId !== defaultPrimary) {
+            studentRef = db.collection("students").doc(defaultPrimary);
+            studentDoc = await studentRef.get();
+          }
+
+          if (studentDoc.exists) {
+            const docData = studentDoc.data() || {};
+            const msgs = Array.isArray(docData.messages) ? [...docData.messages] : [];
+            const targetIdx = msgs.findIndex(
+              m => m && String(m.id) === String(replyToMsgId)
+            );
+            if (targetIdx !== -1) {
+              const targetMsg = { ...msgs[targetIdx] };
+              const existingReplies = Array.isArray(targetMsg.replies)
+                ? [...targetMsg.replies]
+                : [];
+              const resolvedReplyId = String(replyId || `reply_${Date.now()}`);
+              const resolvedSenderName = String(
+                senderName || sessionInfo.senderName || "Rodzic"
+              );
+              const resolvedSenderRole = String(
+                senderRole || (sessionInfo.isStudent ? "Uczeń" : "Rodzic")
+              );
+              const resolvedDate = String(date || new Date().toISOString());
+
+              if (!existingReplies.some(r => String(r?.id) === resolvedReplyId)) {
+                existingReplies.push({
+                  id: resolvedReplyId,
+                  senderName: resolvedSenderName,
+                  senderRole: resolvedSenderRole,
+                  content: body,
+                  date: resolvedDate,
+                  isMe: true
+                });
+              }
+
+              targetMsg.replies = existingReplies;
+              msgs[targetIdx] = targetMsg;
+              await studentRef.set({ messages: msgs }, { merge: true });
+              replyPersisted = true;
+            }
+          }
+        } catch (persistErr) {
+          console.warn("[sendMessage] Could not persist reply to Firestore:", persistErr.message);
+        }
+      }
+
+      return res.status(200).json({
+        status: "sent",
+        details: result || { simulated: true },
+        replyPersisted,
+        ...buildMessageResponse({
           success: true,
-          simulated: true,
+          simulated,
           recipients,
           subject,
-          sessionInfo
+          sessionInfo,
+          result: result || {}
         })
-      );
+      });
     } catch (error) {
       console.error("sendMessage error:", error);
       res.status(500).json({ error: error.message });

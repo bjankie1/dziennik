@@ -448,4 +448,211 @@ test("buildMessageAndAnnouncementNotifications hydrates unindexed new messages a
   assert.equal(freshData.messages[0].attachmentFiles.length, 1);
 });
 
+test("mergeAndIndexMessages preserves and deduplicates replies from prevMessages and freshMessages across sync cycles", async () => {
+  const prevMessages = [
+    {
+      id: "2722626",
+      sender: "Sobota Łukasz [Wychowawca]",
+      subject: "składka 21 zł na maturę próbną z Operonem",
+      date: "2026-10-01 10:00:00",
+      body: "Proszę o wpłatę 21 zł na maturę próbną z Operonem.",
+      bodyLoaded: true,
+      replies: [
+        {
+          id: "reply_1728000001",
+          senderName: "Bartosz Jankiewicz",
+          senderRole: "Rodzic",
+          content: "Dzień dobry, przelałem dzisiaj 21 zł.",
+          date: "2026-10-02T14:20:00.000Z",
+          isMe: true
+        },
+        {
+          id: "reply_1728000002",
+          senderName: "Bartosz Jankiewicz",
+          senderRole: "Rodzic",
+          content: "Potwierdzenie w załączeniu.",
+          date: "2026-10-03T09:15:00.000Z",
+          isMe: true
+        }
+      ]
+    }
+  ];
+
+  const freshMessages = [
+    {
+      id: "2722626",
+      sender: "Sobota Łukasz [Wychowawca]",
+      subject: "składka 21 zł na maturę próbną z Operonem",
+      date: "2026-10-01 10:00:00",
+      body: "Proszę o wpłatę 21 zł na maturę próbną z Operonem.",
+      bodyLoaded: true,
+      replies: [
+        {
+          id: "550011",
+          senderName: "Ty",
+          senderRole: "Rodzic",
+          content: "Dzień dobry, przelałem dzisiaj 21 zł.",
+          date: "2026-10-02 14:20:15",
+          isMe: true
+        }
+      ]
+    }
+  ];
+
+  const merged = await mergeAndIndexMessages({
+    freshMessages,
+    prevMessages,
+    client: null,
+    maxIncrementalFetch: 0
+  });
+
+  assert.equal(merged.length, 1);
+  assert.ok(Array.isArray(merged[0].replies));
+  assert.equal(merged[0].replies.length, 2);
+  assert.equal(merged[0].replies[0].content, "Dzień dobry, przelałem dzisiaj 21 zł.");
+  assert.equal(merged[0].replies[0].senderName, "Bartosz Jankiewicz");
+  assert.equal(merged[0].replies[1].content, "Potwierdzenie w załączeniu.");
+});
+
+test("LibrusClient.fetchMessages scrapes /wiadomosci/6 (Wysłane), strips quoted original message text, and attaches sent replies to matching inbox thread", async () => {
+  const { LibrusClient } = require("../src/librus_client");
+  const client = new LibrusClient("test_login", "test_pass");
+
+  const inboxHtml = `
+    <table class="decorated">
+      <tr class="line0">
+        <td><input type="checkbox" /></td>
+        <td><img src="/images/przeczytana.png" alt="przeczytana" /></td>
+        <td>Sobota Łukasz (Sobota Łukasz) [Wychowawca]</td>
+        <td><a href="/wiadomosci/1/5/2722626">składka 21 zł na maturę próbną z Operonem</a></td>
+        <td>2026-10-01 10:00:00</td>
+      </tr>
+    </table>
+  `;
+
+  const inboxDetailHtml = `
+    <div class="container-message-content">
+      Dzień dobry,<br/>proszę o wpłatę 21 zł na maturę próbną z Operonem do piątku.
+    </div>
+  `;
+
+  const sentListHtml = `
+    <table class="decorated">
+      <tr class="line0">
+        <td><input type="checkbox" /></td>
+        <td></td>
+        <td>Sobota Łukasz (Sobota Łukasz) [Nauczyciel]</td>
+        <td><a href="/wiadomosci/1/6/88002">Re: składka 21 zł na maturę próbną z Operonem</a></td>
+        <td>2026-10-03 11:30:00</td>
+      </tr>
+      <tr class="line1">
+        <td><input type="checkbox" /></td>
+        <td></td>
+        <td>Sobota Łukasz (Sobota Łukasz) [Nauczyciel]</td>
+        <td><a href="/wiadomosci/1/6/88001">Re: składka 21 zł na maturę próbną z Operonem</a></td>
+        <td>2026-10-02 09:15:00</td>
+      </tr>
+    </table>
+  `;
+
+  const sentDetail88001 = `
+    <div class="container-message-content">
+      Dzień dobry,<br/>wpłata 21 zł została zlecona przelewem.<br/><br/>----- Wiadomość oryginalna -----<br/>Użytkownik Sobota Łukasz napisał:<br/>proszę o wpłatę 21 zł na maturę próbną z Operonem do piątku.
+    </div>
+  `;
+
+  const sentDetail88002 = `
+    <div class="container-message-content">
+      Potwierdzam również udział Oskara w części rozszerzonej.<br/>Użytkownik Sobota Łukasz (2026-10-01) napisał:<br/>proszę o wpłatę 21 zł
+    </div>
+  `;
+
+  client.client = {
+    get: async (url) => {
+      if (url.endsWith("/wiadomosci/1/5")) return { data: inboxHtml };
+      if (url.endsWith("/wiadomosci/1/5/2722626")) return { data: inboxDetailHtml };
+      if (url.endsWith("/wiadomosci/6")) return { data: sentListHtml };
+      if (url.endsWith("/wiadomosci/1/6/88001")) return { data: sentDetail88001 };
+      if (url.endsWith("/wiadomosci/1/6/88002")) return { data: sentDetail88002 };
+      throw new Error("Unexpected URL: " + url);
+    }
+  };
+
+  const { messages } = await client.fetchMessages();
+  assert.equal(messages.length, 1);
+  assert.equal(messages[0].id, "2722626");
+  assert.ok(Array.isArray(messages[0].replies));
+  assert.equal(messages[0].replies.length, 2);
+  // Sorted chronologically: 88001 (Oct 2) then 88002 (Oct 3)
+  assert.equal(messages[0].replies[0].id, "88001");
+  assert.equal(messages[0].replies[0].content, "Dzień dobry,\nwpłata 21 zł została zlecona przelewem.");
+  assert.equal(messages[0].replies[0].isMe, true);
+  assert.equal(messages[0].replies[1].id, "88002");
+  assert.equal(messages[0].replies[1].content, "Potwierdzam również udział Oskara w części rozszerzonej.");
+});
+
+test("LibrusClient.sendMessage submits /wiadomosci/3/5/:id reply form via POST /wiadomosci with CSRF requestkey and DoKogo", async () => {
+  const { LibrusClient } = require("../src/librus_client");
+  const client = new LibrusClient("test_login", "test_pass");
+
+  const replyFormHtml = `
+    <form id="formWiadomosci" method="post" action="/wiadomosci">
+      <input type="hidden" name="requestkey" value="rk_secret_123" />
+      <input type="hidden" name="filtrUzytkownikow" value="0" />
+      <input type="hidden" name="idPojemnika" value="5" />
+      <input type="hidden" name="poprzednia" value="6" />
+      <input type="hidden" name="DoKogo" value="445566" />
+      <input type="hidden" name="Wid" value="2722626" />
+      <input type="hidden" name="idWiadomosciOrg" value="2722626" />
+      <input type="hidden" name="idOdpowiadajacego" value="0" />
+      <input type="hidden" name="typ" value="odpowiedz" />
+      <input type="hidden" name="fileStorageIdentifier" value="fs_abc_999" />
+      <input type="text" name="temat" value="Re: składka 21 zł na maturę próbną z Operonem" />
+      <textarea name="tresc">----- Wiadomość oryginalna -----
+Proszę o wpłatę 21 zł.</textarea>
+    </form>
+  `;
+
+  const getCalls = [];
+  const postCalls = [];
+  client.client = {
+    get: async (url) => {
+      getCalls.push(url);
+      return { data: replyFormHtml };
+    },
+    post: async (url, data, config) => {
+      postCalls.push({ url, data, config });
+      return { status: 200, data: "Wysłano wiadomość" };
+    }
+  };
+
+  const res = await client.sendMessage({
+    recipients: ["Sobota Łukasz"],
+    subject: "Re: składka 21 zł na maturę próbną z Operonem",
+    body: "Dziękuję, opłacone.",
+    replyToMsgId: "2722626"
+  });
+
+  assert.equal(res.success, true);
+  assert.equal(res.sentViaLibrus, true);
+  assert.deepEqual(getCalls, ["https://synergia.librus.pl/wiadomosci/3/5/2722626"]);
+  assert.equal(postCalls.length, 1);
+  assert.equal(postCalls[0].url, "https://synergia.librus.pl/wiadomosci");
+  assert.equal(
+    postCalls[0].config?.headers?.Referer,
+    "https://synergia.librus.pl/wiadomosci/3/5/2722626"
+  );
+
+  const params = new URLSearchParams(postCalls[0].data);
+  assert.equal(params.get("requestkey"), "rk_secret_123");
+  assert.equal(params.get("DoKogo"), "445566");
+  assert.equal(params.get("Wid"), "2722626");
+  assert.equal(params.get("idWiadomosciOrg"), "2722626");
+  assert.equal(params.get("fileStorageIdentifier"), "fs_abc_999");
+  assert.equal(params.get("wyslij"), "Wyślij");
+  assert.ok(params.get("tresc").startsWith("Dziękuję, opłacone."));
+  assert.ok(params.get("tresc").includes("----- Wiadomość oryginalna -----"));
+});
+
+
 
