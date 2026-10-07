@@ -78,12 +78,16 @@ class DashboardMetricsColumn extends ConsumerWidget {
                     color: AppColors.secondary,
                   ),
                   SizedBox(width: 8),
-                  Text(
-                    'Ostatnie oceny',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onSurface,
+                  Flexible(
+                    child: Text(
+                      'Ostatnie oceny',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.onSurface,
+                      ),
                     ),
                   ),
                 ],
@@ -109,10 +113,14 @@ class DashboardMetricsColumn extends ConsumerWidget {
                     color: AppColors.primary.withValues(alpha: 0.2),
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 6,
                   children: [
                     Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Container(
                           padding: const EdgeInsets.all(6),
@@ -129,58 +137,61 @@ class DashboardMetricsColumn extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'ŚREDNIA WAŻONA',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.onSurfaceVariant,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.baseline,
-                              textBaseline: TextBaseline.alphabetic,
-                              children: [
-                                Text(
-                                  avgValue > 0 ? avgValue.toStringAsFixed(2) : '—',
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.primary,
-                                  ),
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'ŚREDNIA WAŻONA',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.onSurfaceVariant,
+                                  letterSpacing: 0.5,
                                 ),
-                                if (delta != null) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
+                              ),
+                              Wrap(
+                                crossAxisAlignment: WrapCrossAlignment.center,
+                                spacing: 8,
+                                runSpacing: 4,
+                                children: [
+                                  Text(
+                                    avgValue > 0 ? avgValue.toStringAsFixed(2) : '—',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                      color: AppColors.primary,
                                     ),
-                                    decoration: BoxDecoration(
-                                      color: isPositiveDelta
-                                          ? AppColors.successSurface
-                                          : AppColors.dangerContainer,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      '${isPositiveDelta ? '+' : ''}${delta.toStringAsFixed(2)}',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w700,
+                                  ),
+                                  if (delta != null)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
                                         color: isPositiveDelta
-                                            ? AppColors.successDark
-                                            : AppColors.dangerDark,
+                                            ? AppColors.successSurface
+                                            : AppColors.dangerContainer,
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: Text(
+                                        '${isPositiveDelta ? '+' : ''}${delta.toStringAsFixed(2)}',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          color: isPositiveDelta
+                                              ? AppColors.successDark
+                                              : AppColors.dangerDark,
+                                        ),
                                       ),
                                     ),
-                                  ),
                                 ],
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -217,12 +228,16 @@ class DashboardMetricsColumn extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        'Zobacz wszystkie oceny',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                      Flexible(
+                        child: Text(
+                          'Zobacz wszystkie oceny',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
                         ),
                       ),
                       SizedBox(width: 4),
@@ -263,24 +278,31 @@ class DashboardMetricsColumn extends ConsumerWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
-                    children: [
-                      Icon(
-                        Icons.fact_check_outlined,
-                        size: 20,
-                        color: AppColors.secondary,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Frekwencja',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.onSurface,
+                  const Expanded(
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.fact_check_outlined,
+                          size: 20,
+                          color: AppColors.secondary,
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'Frekwencja',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     '${attendancePct.toStringAsFixed(1)}%',
                     style: const TextStyle(
@@ -292,8 +314,10 @@ class DashboardMetricsColumn extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 10),
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              const Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                spacing: 8,
+                runSpacing: 4,
                 children: [
                   Text(
                     'Wymóg min. 50%',
@@ -382,11 +406,16 @@ class DashboardMetricsColumn extends ConsumerWidget {
                   isStudent
                       ? 'Poproś o usprawiedliwienie'
                       : 'Szybkie usprawiedliwienie (PIN)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),

@@ -48,64 +48,66 @@ class DashboardTasksCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 6,
             children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      width: iconBoxSize,
-                      height: iconBoxSize,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryFixed,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.checklist_rtl_rounded,
-                        size: isCompact ? 18 : 20,
-                        color: AppColors.primary,
-                      ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: iconBoxSize,
+                    height: iconBoxSize,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryFixed,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    SizedBox(width: isCompact ? 8 : 10),
-                    const Flexible(
-                      child: Text(
-                        'Zadania na dziś',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.onSurface,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                    child: Icon(
+                      Icons.checklist_rtl_rounded,
+                      size: isCompact ? 18 : 20,
+                      color: AppColors.primary,
                     ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isCompact ? 7 : 8,
-                        vertical: 2,
+                  ),
+                  SizedBox(width: isCompact ? 8 : 10),
+                  const Flexible(
+                    child: Text(
+                      'Zadania na dziś',
+                      maxLines: 1,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.onSurface,
                       ),
-                      decoration: BoxDecoration(
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isCompact ? 7 : 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: overdueCount > 0
+                          ? AppColors.error
+                          : AppColors.primaryFixed,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '${urgentTasks.length}',
+                      style: TextStyle(
+                        fontSize: isCompact ? 11 : 12,
+                        fontWeight: FontWeight.w600,
                         color: overdueCount > 0
-                            ? AppColors.error
-                            : AppColors.primaryFixed,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        '${urgentTasks.length}',
-                        style: TextStyle(
-                          fontSize: isCompact ? 11 : 12,
-                          fontWeight: FontWeight.w600,
-                          color: overdueCount > 0
-                              ? AppColors.onError
-                              : AppColors.onPrimaryFixedVariant,
-                        ),
+                            ? AppColors.onError
+                            : AppColors.onPrimaryFixedVariant,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 6),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -121,19 +123,26 @@ class DashboardTasksCard extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  TextButton(
-                    onPressed: () => context.go('/zadania'),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Text(
-                      'Zobacz wszystkie ($totalActiveCount) →',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
+                  Flexible(
+                    child: TextButton(
+                      onPressed: () => context.go('/zadania'),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: Text(
+                        'Zobacz wszystkie ($totalActiveCount) →',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                   ),

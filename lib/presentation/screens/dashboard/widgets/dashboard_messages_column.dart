@@ -60,39 +60,49 @@ class _DashboardMessagesColumnState extends State<DashboardMessagesColumn> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
-                    children: [
-                      Icon(
-                        Icons.mark_email_unread_outlined,
-                        size: 20,
-                        color: AppColors.primary,
-                      ),
-                      SizedBox(width: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Wiadomości i Komunikaty',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.onSurface,
-                            ),
+                  const Expanded(
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.mark_email_unread_outlined,
+                          size: 20,
+                          color: AppColors.primary,
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Wiadomości i Komunikaty',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.onSurface,
+                                ),
+                              ),
+                              Text(
+                                'Skrzynka odbiorcza EduSync',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            'Skrzynka odbiorcza EduSync',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   InkWell(
                     onTap: () => context.go('/wiadomosci'),
                     child: const Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           'Otwórz skrzynkę',
@@ -243,7 +253,7 @@ class _DashboardMessagesColumnState extends State<DashboardMessagesColumn> {
         onTap: () => setState(() => _selectedMessageTab = index),
         borderRadius: BorderRadius.circular(10),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isSelected
@@ -262,6 +272,8 @@ class _DashboardMessagesColumnState extends State<DashboardMessagesColumn> {
           ),
           child: Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -292,37 +304,49 @@ class _DashboardMessagesColumnState extends State<DashboardMessagesColumn> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  if (msg.isUnread)
-                    Container(
-                      width: 8,
-                      height: 8,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
+              Expanded(
+                child: Row(
+                  children: [
+                    if (msg.isUnread)
+                      Container(
+                        width: 8,
+                        height: 8,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: const BoxDecoration(
+                          color: AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    Flexible(
+                      child: Text(
+                        msg.senderName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                        ),
                       ),
                     ),
-                  Text(
-                    msg.senderName,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                  if (msg.senderRole.isNotEmpty)
-                    Text(
-                      ' • ${msg.senderRole}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.onSurfaceVariant,
+                    if (msg.senderRole.isNotEmpty)
+                      Flexible(
+                        child: Text(
+                          ' • ${msg.senderRole}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   if (isUrgent)
                     Container(
@@ -398,38 +422,46 @@ class _DashboardMessagesColumnState extends State<DashboardMessagesColumn> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               if (msg.attachments.isNotEmpty || msg.hasAttachments)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLowest,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.attach_file_rounded,
-                        size: 14,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        msg.attachments.isEmpty
-                            ? 'Załącznik'
-                            : (msg.attachments.length == 1
-                                ? msg.attachments.first
-                                : '${msg.attachments.first} (+${msg.attachments.length - 1})'),
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                    ],
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.attach_file_rounded,
+                          size: 14,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            msg.attachments.isEmpty
+                                ? 'Załącznik'
+                                : (msg.attachments.length == 1
+                                    ? msg.attachments.first
+                                    : '${msg.attachments.first} (+${msg.attachments.length - 1})'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               else
                 const SizedBox.shrink(),
+              const SizedBox(width: 8),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   TextButton(
                     onPressed: () =>
