@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/school_repository.dart';
 import '../../data/repositories/firestore_school_repository.dart';
@@ -13,6 +15,57 @@ import '../../domain/models/justification_request.dart';
 final schoolRepositoryProvider = Provider<SchoolRepository>((ref) {
   return FirestoreSchoolRepository();
 });
+
+class CurrentTimeNotifier extends Notifier<DateTime> {
+  Timer? _timer;
+  AppLifecycleListener? _lifecycleListener;
+
+  @override
+  DateTime build() {
+    _timer?.cancel();
+    _lifecycleListener?.dispose();
+
+    // Start background periodic timer & lifecycle listener only on real app binding
+    // so FakeAsync widget tests do not fail with pending timer assertions.
+    try {
+      if (WidgetsBinding.instance is WidgetsFlutterBinding) {
+        _timer = Timer.periodic(const Duration(seconds: 15), (_) => tick());
+        _lifecycleListener = AppLifecycleListener(
+          onResume: tick,
+          onShow: tick,
+        );
+      }
+    } catch (_) {
+      // WidgetsBinding not initialized in pure unit tests
+    }
+
+    ref.onDispose(() {
+      _timer?.cancel();
+      _timer = null;
+      _lifecycleListener?.dispose();
+      _lifecycleListener = null;
+    });
+
+    return DateTime.now();
+  }
+
+  void tick() {
+    final prev = state;
+    final next = DateTime.now();
+    state = next;
+    if (prev.year != next.year || prev.month != next.month || prev.day != next.day) {
+      ref.invalidate(todayScheduleProvider);
+      ref.invalidate(upcomingExamProvider);
+    }
+  }
+
+  void setNow(DateTime customNow) {
+    state = customNow;
+  }
+}
+
+final currentTimeProvider =
+    NotifierProvider<CurrentTimeNotifier, DateTime>(CurrentTimeNotifier.new);
 
 class CurrentNavIndexNotifier extends Notifier<int> {
   @override
