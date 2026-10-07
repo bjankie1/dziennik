@@ -23,7 +23,7 @@ class AgendaView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedDayIndex = ref.watch(selectedScheduleDayProvider);
-    final now = DateTime.now();
+    final now = ref.watch(currentTimeProvider);
 
     final dayNames = ['Pn', 'Wt', 'Śr', 'Czw', 'Pt'];
     final fullDayNames = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek'];

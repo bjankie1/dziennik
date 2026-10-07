@@ -1,11 +1,12 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../domain/models/lesson_slot.dart';
 import '../../../../domain/models/attendance_record.dart';
+import '../../../providers/school_providers.dart';
 import 'lesson_details_modal.dart';
 
-class AgendaLessonCard extends StatefulWidget {
+class AgendaLessonCard extends ConsumerWidget {
   final LessonSlot slot;
   final DateTime date;
 
@@ -16,52 +17,14 @@ class AgendaLessonCard extends StatefulWidget {
   });
 
   @override
-  State<AgendaLessonCard> createState() => _AgendaLessonCardState();
-}
-
-class _AgendaLessonCardState extends State<AgendaLessonCard> with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
-
-    if (widget.slot.status == LessonStatus.inProgress) {
-      _timer = Timer.periodic(const Duration(seconds: 30), (_) {
-        if (mounted) setState(() {});
-      });
-    }
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    _timer?.cancel();
-    super.dispose();
-  }
-
-  int _calculateMinutesRemaining() {
-    final now = DateTime.now();
-    final parts = widget.slot.endTime.split(':');
-    if (parts.length < 2) return 15;
-    final endHour = int.tryParse(parts[0]) ?? 0;
-    final endMin = int.tryParse(parts[1]) ?? 0;
-    final endDateTime = DateTime(now.year, now.month, now.day, endHour, endMin);
-    final diff = endDateTime.difference(now).inMinutes;
-    return diff.clamp(1, 45);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final slot = widget.slot;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final now = ref.watch(currentTimeProvider);
     final isCanceled = slot.status == LessonStatus.canceled;
     final isSubstituted = slot.status == LessonStatus.substituted;
-    final isLive = slot.status == LessonStatus.inProgress;
+    final isLive = slot.isHappeningAt(now, lessonDate: date);
+    final isCompleted = slot.isCompletedAt(now, lessonDate: date);
+    final progress = slot.progressAt(now, lessonDate: date);
+    final minutesLeft = slot.remainingMinutesAt(now, lessonDate: date);
     final isExam = slot.eventType != null || (slot.topic != null && slot.topic!.toLowerCase().contains('sprawdzian'));
 
     Color stripeColor = AppColors.surfaceContainerHighest;
@@ -69,18 +32,18 @@ class _AgendaLessonCardState extends State<AgendaLessonCard> with SingleTickerPr
       stripeColor = AppColors.error;
     } else if (isLive) {
       stripeColor = AppColors.secondary;
+    } else if (isCompleted) {
+      stripeColor = AppColors.secondary;
     } else if (isSubstituted) {
       stripeColor = const Color(0xFFC2410C);
     } else if (isExam) {
       stripeColor = AppColors.primary;
     }
 
-    final minutesLeft = isLive ? _calculateMinutesRemaining() : 0;
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => LessonDetailsModal.show(context, slot, widget.date),
+        onTap: () => LessonDetailsModal.show(context, slot, date),
         borderRadius: BorderRadius.circular(16),
         child: Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -100,218 +63,248 @@ class _AgendaLessonCardState extends State<AgendaLessonCard> with SingleTickerPr
             ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Left status indicator stripe
-                Container(
-                  width: 5,
-                  color: stripeColor,
-                ),
-
-                // Content
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Top line: Lesson number, time, room, status pill
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 26,
-                                  height: 26,
-                                  decoration: BoxDecoration(
-                                    color: isLive ? AppColors.secondary : const Color(0xFFF1F5F9),
-                                    borderRadius: BorderRadius.circular(7),
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '${slot.lessonNumber}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                      color: isLive ? Colors.white : AppColors.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${slot.startTime} – ${slot.endTime}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: isCanceled ? AppColors.outline : AppColors.onSurface,
-                                    decoration: isCanceled ? TextDecoration.lineThrough : null,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                const Text('•', style: TextStyle(color: AppColors.outlineVariant)),
-                                const SizedBox(width: 6),
-                                Text(
-                                  slot.room,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: isLive || isSubstituted ? FontWeight.w700 : FontWeight.w500,
-                                    color: isLive
-                                        ? AppColors.secondary
-                                        : (isSubstituted ? const Color(0xFFC2410C) : AppColors.onSurfaceVariant),
-                                    decoration: isCanceled ? TextDecoration.lineThrough : null,
-                                  ),
-                                ),
-                              ],
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(color: stripeColor, width: 5),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.only(left: 19, top: 14, right: 14, bottom: 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top line: Lesson number, time, room, status pill
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 26,
+                            height: 26,
+                            decoration: BoxDecoration(
+                              color: isLive ? AppColors.secondary : const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(7),
                             ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              '${slot.lessonNumber}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: isLive ? Colors.white : AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${slot.startTime} – ${slot.endTime}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: isCanceled ? AppColors.outline : AppColors.onSurface,
+                              decoration: isCanceled ? TextDecoration.lineThrough : null,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text('•', style: TextStyle(color: AppColors.outlineVariant)),
+                          const SizedBox(width: 6),
+                          Text(
+                            slot.room,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isLive || isSubstituted ? FontWeight.w700 : FontWeight.w500,
+                              color: isLive
+                                  ? AppColors.secondary
+                                  : (isSubstituted ? const Color(0xFFC2410C) : AppColors.onSurfaceVariant),
+                              decoration: isCanceled ? TextDecoration.lineThrough : null,
+                            ),
+                          ),
+                        ],
+                      ),
 
-                            // Right status badge
-                            if (isLive) ...[
-                              FadeTransition(
-                                opacity: Tween(begin: 0.6, end: 1.0).animate(_pulseController),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.secondaryContainer,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Container(
-                                        width: 6,
-                                        height: 6,
-                                        decoration: const BoxDecoration(
-                                          color: AppColors.secondary,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 5),
-                                      Text(
-                                        'Trwa teraz • Zostało $minutesLeft min',
-                                        style: const TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppColors.onSecondaryContainer,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ] else if (isCanceled) ...[
+                      // Right status badge
+                      if (isLive) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFEE2E2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.cancel_outlined, size: 12, color: AppColors.error),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Lekcja odwołana',
-                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.error),
-                                    ),
-                                  ],
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.secondary,
+                                  shape: BoxShape.circle,
                                 ),
                               ),
-                            ] else if (isSubstituted) ...[
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFEDD5),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.swap_horiz_rounded, size: 12, color: Color(0xFFC2410C)),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Zastępstwo',
-                                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFFC2410C)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ] else if (isExam) ...[
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryFixed,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: AppColors.primary.withValues(alpha: 0.25),
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.assignment_late_rounded,
-                                      size: 12,
-                                      color: AppColors.primary,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      slot.eventType ?? 'Sprawdzian',
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w800,
-                                        color: AppColors.primary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ] else if (slot.attendanceType != null && slot.attendanceType != AttendanceType.present) ...[
-                              _buildAttendanceTopBadge(slot),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Title & Teacher
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                slot.subjectName,
-                                style: TextStyle(
-                                  fontSize: 16,
+                              const SizedBox(width: 5),
+                              Text(
+                                'Trwa teraz • Zostało $minutesLeft min',
+                                style: const TextStyle(
+                                  fontSize: 10,
                                   fontWeight: FontWeight.w800,
-                                  color: isCanceled ? AppColors.onSurfaceVariant : AppColors.onSurface,
-                                  decoration: isCanceled ? TextDecoration.lineThrough : null,
-                                  decorationColor: AppColors.error,
+                                  color: AppColors.onSecondaryContainer,
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.person_outline, size: 14, color: AppColors.onSurfaceVariant),
-                                const SizedBox(width: 4),
-                                Text(
-                                  slot.substituteTeacher ?? slot.teacher,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: isSubstituted ? FontWeight.w700 : FontWeight.w500,
-                                    color: isSubstituted ? const Color(0xFFC2410C) : AppColors.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                      ] else if (isCanceled) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEE2E2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.cancel_outlined, size: 12, color: AppColors.error),
+                              SizedBox(width: 4),
+                              Text(
+                                'Lekcja odwołana',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.error),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else if (slot.attendanceType != null && slot.attendanceType != AttendanceType.present) ...[
+                        _buildAttendanceTopBadge(slot),
+                      ] else if (isCompleted) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_rounded,
+                                size: 12,
+                                color: AppColors.onSecondaryContainer,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                'Zrealizowano',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.onSecondaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else if (isSubstituted) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFEDD5),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.swap_horiz_rounded, size: 12, color: Color(0xFFC2410C)),
+                              SizedBox(width: 4),
+                              Text(
+                                'Zastępstwo',
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Color(0xFFC2410C)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else if (isExam) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryFixed,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.25),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.assignment_late_rounded,
+                                size: 12,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                slot.eventType ?? 'Sprawdzian',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Title & Teacher
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          slot.subjectName,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: isCanceled ? AppColors.onSurfaceVariant : AppColors.onSurface,
+                            decoration: isCanceled ? TextDecoration.lineThrough : null,
+                            decorationColor: AppColors.error,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.person_outline, size: 14, color: AppColors.onSurfaceVariant),
+                          const SizedBox(width: 4),
+                          Text(
+                            slot.substituteTeacher ?? slot.teacher,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSubstituted ? FontWeight.w700 : FontWeight.w500,
+                              color: isSubstituted ? const Color(0xFFC2410C) : AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+
+                  if (isLive) ...[
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 5,
+                        backgroundColor: AppColors.surfaceContainerHigh,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                  ],
 
                         // Exam Scope Alert Box
                         if (isExam) ...[
@@ -519,9 +512,6 @@ class _AgendaLessonCardState extends State<AgendaLessonCard> with SingleTickerPr
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
         ),
       ),
     );

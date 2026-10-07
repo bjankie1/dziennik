@@ -37,30 +37,32 @@ class LessonDetailsModal extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final now = ref.watch(currentTimeProvider);
     final dateStr = DateFormat('EEEE, d MMMM yyyy', 'pl_PL').format(date);
     final capitalizedDate = dateStr.isNotEmpty ? '${dateStr[0].toUpperCase()}${dateStr.substring(1)}' : dateStr;
 
     final isCanceled = slot.status == LessonStatus.canceled;
     final isSubstituted = slot.status == LessonStatus.substituted;
-    final isLive = slot.status == LessonStatus.inProgress;
+    final isLive = slot.isHappeningAt(now, lessonDate: date);
+    final isCompleted = slot.isCompletedAt(now, lessonDate: date);
     final isExam = slot.eventType != null || (slot.topic != null && slot.topic!.toLowerCase().contains('sprawdzian'));
 
     Color statusColor = AppColors.secondary;
-    String statusLabel = 'Planowa';
+    String statusLabel = isCompleted ? 'Zrealizowano' : 'Planowa';
     IconData statusIcon = Icons.check_circle_outline;
 
     if (isCanceled) {
       statusColor = AppColors.error;
       statusLabel = 'Lekcja odwołana';
       statusIcon = Icons.cancel_outlined;
+    } else if (isLive) {
+      statusColor = const Color(0xFF006C4A);
+      statusLabel = 'Trwa teraz • Zostało ${slot.remainingMinutesAt(now, lessonDate: date)} min';
+      statusIcon = Icons.timelapse_rounded;
     } else if (isSubstituted) {
       statusColor = const Color(0xFFC2410C);
       statusLabel = 'Zastępstwo';
       statusIcon = Icons.swap_horiz_rounded;
-    } else if (isLive) {
-      statusColor = const Color(0xFF006C4A);
-      statusLabel = 'Trwa teraz';
-      statusIcon = Icons.timelapse_rounded;
     } else if (isExam) {
       statusColor = AppColors.primary;
       statusLabel = slot.eventType ?? 'Sprawdzian';
@@ -115,82 +117,101 @@ class LessonDetailsModal extends ConsumerWidget {
                 bottom: BorderSide(color: statusColor.withValues(alpha: 0.15)),
               ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${slot.lessonNumber}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: statusColor,
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '${slot.lessonNumber}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: statusColor,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '${slot.startTime} – ${slot.endTime}',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: statusColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(statusIcon, size: 12, color: statusColor),
-                                const SizedBox(width: 4),
-                                Text(
-                                  statusLabel,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                    color: statusColor,
-                                  ),
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              Text(
+                                '${slot.startTime} – ${slot.endTime}',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.onSurfaceVariant,
                                 ),
-                              ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(statusIcon, size: 12, color: statusColor),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      statusLabel,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: statusColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            capitalizedDate,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        capitalizedDate,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, size: 20),
+                      onPressed: () => Navigator.pop(context),
+                      tooltip: 'Zamknij',
+                    ),
+                  ],
+                ),
+                if (isLive) ...[
+                  const SizedBox(height: 10),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: slot.progressAt(now, lessonDate: date),
+                      minHeight: 5,
+                      backgroundColor: statusColor.withValues(alpha: 0.18),
+                      color: statusColor,
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () => Navigator.pop(context),
-                  tooltip: 'Zamknij',
-                ),
+                ],
               ],
             ),
           ),

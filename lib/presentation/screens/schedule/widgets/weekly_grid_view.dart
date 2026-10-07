@@ -39,7 +39,7 @@ class WeeklyGridView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeFilter = ref.watch(weekScheduleFilterProvider);
-    final now = DateTime.now();
+    final now = ref.watch(currentTimeProvider);
 
     final dayNames = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek'];
     final dayDates = List.generate(5, (i) => currentWeekMonday.add(Duration(days: i)));
@@ -311,6 +311,7 @@ class WeeklyGridView extends ConsumerWidget {
                                             context,
                                             slot,
                                             dayDate,
+                                            now,
                                             activeFilter,
                                             isCompactTablet,
                                           )
@@ -354,12 +355,15 @@ class WeeklyGridView extends ConsumerWidget {
     BuildContext context,
     LessonSlot slot,
     DateTime date,
+    DateTime now,
     WeekScheduleFilter filter,
     bool isCompact,
   ) {
     final isCanceled = slot.status == LessonStatus.canceled;
     final isSubstituted = slot.status == LessonStatus.substituted;
-    final isLive = slot.status == LessonStatus.inProgress;
+    final isLive = slot.isHappeningAt(now, lessonDate: date);
+    final isCompleted = slot.isCompletedAt(now, lessonDate: date);
+    final isToday = _isSameDay(date, now);
     final isExam = slot.eventType != null || (slot.topic != null && slot.topic!.toLowerCase().contains('sprawdzian'));
 
     // Check filter match
@@ -376,18 +380,20 @@ class WeeklyGridView extends ConsumerWidget {
       stripeColor = AppColors.error;
       bgColor = const Color(0xFFFEF2F2);
       borderColor = const Color(0xFFFECACA);
-    } else if (isSubstituted) {
-      stripeColor = const Color(0xFFC2410C);
-      bgColor = const Color(0xFFFFF7ED);
-      borderColor = const Color(0xFFFED7AA);
     } else if (isLive) {
       stripeColor = const Color(0xFF006C4A);
       bgColor = const Color(0xFFECFDF5);
       borderColor = const Color(0xFFA7F3D0);
+    } else if (isSubstituted) {
+      stripeColor = const Color(0xFFC2410C);
+      bgColor = const Color(0xFFFFF7ED);
+      borderColor = const Color(0xFFFED7AA);
     } else if (isExam) {
       stripeColor = AppColors.primary;
       bgColor = const Color(0xFFEEF2FF);
       borderColor = const Color(0xFFC7D2FE);
+    } else if (isCompleted && isToday) {
+      stripeColor = AppColors.secondary;
     }
 
     // Attendance status badge (D-01, D-02)
@@ -612,6 +618,18 @@ class WeeklyGridView extends ConsumerWidget {
                         ),
                       ),
                     ],
+                  ),
+                ],
+                if (isLive) ...[
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: slot.progressAt(now, lessonDate: date),
+                      minHeight: 3,
+                      backgroundColor: const Color(0xFFA7F3D0),
+                      color: const Color(0xFF006C4A),
+                    ),
                   ),
                 ],
               ],

@@ -49,7 +49,7 @@ class DashboardScreen extends ConsumerWidget {
     final rejectedRequests =
         allJustificationRequests.where((r) => r.status.isRejected).toList();
 
-    final now = DateTime.now();
+    final now = ref.watch(currentTimeProvider);
     final isWeekend =
         now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
     final rawDate = DateFormat('EEEE, d MMMM y', 'pl_PL').format(now);

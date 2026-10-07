@@ -31,12 +31,15 @@ class DashboardMobileView extends ConsumerWidget {
     final messages =
         (messagesAsync.value ?? []).where((m) => !m.isArchived).toList();
 
-    final now = DateTime.now();
+    final now = ref.watch(currentTimeProvider);
     final isWeekend =
         now.weekday == DateTime.saturday || now.weekday == DateTime.sunday;
     final formattedDate = PolishDateFormatter.formatShortDayHeader(now);
 
     final lessons = scheduleAsync.value ?? [];
+    final completedCount = lessons
+        .where((l) => l.status == LessonStatus.canceled || l.isCompletedAt(now))
+        .length;
     final firstLesson = lessons.isNotEmpty ? lessons.first : null;
     final lastLesson = lessons.isNotEmpty ? lessons.last : null;
     final cancelledLessons =
@@ -306,23 +309,49 @@ class DashboardMobileView extends ConsumerWidget {
                           letterSpacing: 0.5,
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryFixed.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          statusNoteStr,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (lessons.isNotEmpty) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceContainer,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '$completedCount / ${lessons.length} zrealizowane',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryFixed.withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              statusNoteStr,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
@@ -391,43 +420,113 @@ class DashboardMobileView extends ConsumerWidget {
                     ),
                     const SizedBox(height: 12),
                     ...lessons.take(4).map(
-                          (l) => Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: Row(
-                              children: [
-                                Text(
-                                  l.startTime,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
+                          (l) {
+                            final isInProgress = l.isHappeningAt(now);
+                            final isCompleted = l.isCompletedAt(now);
+                            return Container(
+                              margin: const EdgeInsets.symmetric(vertical: 3),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: isInProgress ? 8 : 0,
+                                vertical: isInProgress ? 6 : 2,
+                              ),
+                              decoration: isInProgress
+                                  ? BoxDecoration(
+                                      color: AppColors.primaryFixed
+                                          .withValues(alpha: 0.25),
+                                      borderRadius: BorderRadius.circular(8),
+                                    )
+                                  : null,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      if (isCompleted) ...[
+                                        const Icon(
+                                          Icons.check_circle_rounded,
+                                          size: 14,
+                                          color: AppColors.secondary,
+                                        ),
+                                        const SizedBox(width: 5),
+                                      ] else if (isInProgress) ...[
+                                        const Icon(
+                                          Icons.play_circle_fill_rounded,
+                                          size: 14,
+                                          color: AppColors.primary,
+                                        ),
+                                        const SizedBox(width: 5),
+                                      ],
+                                      Text(
+                                        l.startTime,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: isInProgress
+                                              ? FontWeight.w800
+                                              : FontWeight.w600,
+                                          color: isInProgress
+                                              ? AppColors.primary
+                                              : AppColors.onSurface,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          l.subjectName,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: isInProgress
+                                                ? FontWeight.w700
+                                                : FontWeight.w500,
+                                            color: isInProgress
+                                                ? AppColors.primary
+                                                : AppColors.onSurface,
+                                            decoration:
+                                                l.status == LessonStatus.canceled
+                                                    ? TextDecoration.lineThrough
+                                                    : null,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (isInProgress)
+                                        Text(
+                                          'Zostało ${l.remainingMinutesAt(now)} min',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                            color: AppColors.primary,
+                                          ),
+                                        )
+                                      else
+                                        Text(
+                                          l.room.isNotEmpty
+                                              ? 'Sala ${l.room}'
+                                              : '',
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            color: AppColors.outline,
+                                          ),
+                                        ),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    l.subjectName,
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      decoration:
-                                          l.status == LessonStatus.canceled
-                                              ? TextDecoration.lineThrough
-                                              : null,
+                                  if (isInProgress) ...[
+                                    const SizedBox(height: 4),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(3),
+                                      child: LinearProgressIndicator(
+                                        value: l.progressAt(now),
+                                        minHeight: 4,
+                                        backgroundColor:
+                                            AppColors.surfaceContainerHigh,
+                                        color: AppColors.primary,
+                                      ),
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                Text(
-                                  l.room.isNotEmpty ? 'Sala ${l.room}' : '',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.outline,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                                  ],
+                                ],
+                              ),
+                            );
+                          },
                         ),
                   ],
                   const SizedBox(height: 12),

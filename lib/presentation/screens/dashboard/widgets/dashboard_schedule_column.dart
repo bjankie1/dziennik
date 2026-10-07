@@ -21,24 +21,9 @@ class DashboardScheduleColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    int completedCount = 0;
-    for (final l in lessons) {
-      if (l.status == LessonStatus.canceled) {
-        completedCount++;
-        continue;
-      }
-      try {
-        final endParts = l.endTime.split(':').map(int.parse).toList();
-        final end = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          endParts[0],
-          endParts[1],
-        );
-        if (now.isAfter(end)) completedCount++;
-      } catch (_) {}
-    }
+    final completedCount = lessons
+        .where((l) => l.status == LessonStatus.canceled || l.isCompletedAt(now))
+        .length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -191,48 +176,22 @@ class DashboardScheduleColumn extends StatelessWidget {
   }
 
   Widget _buildDesktopLessonItem(LessonSlot lesson) {
-    bool isInProgress = lesson.status == LessonStatus.inProgress;
-    double progress = lesson.progressFraction ?? 0.0;
-    int remainingMinutes = 0;
-
-    if (lesson.status != LessonStatus.canceled) {
-      try {
-        final sParts = lesson.startTime.split(':').map(int.parse).toList();
-        final eParts = lesson.endTime.split(':').map(int.parse).toList();
-        final start = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          sParts[0],
-          sParts[1],
-        );
-        final end = DateTime(
-          now.year,
-          now.month,
-          now.day,
-          eParts[0],
-          eParts[1],
-        );
-
-        if (now.isAfter(start) && now.isBefore(end)) {
-          isInProgress = true;
-          final totalSec = end.difference(start).inSeconds;
-          final elapsedSec = now.difference(start).inSeconds;
-          progress = (elapsedSec / totalSec).clamp(0.0, 1.0);
-          remainingMinutes = end.difference(now).inMinutes;
-        }
-      } catch (_) {}
-    }
+    final isInProgress = lesson.isHappeningAt(now);
+    final isCompleted = lesson.isCompletedAt(now);
+    final progress = lesson.progressAt(now);
+    final remainingMinutes = lesson.remainingMinutesAt(now);
 
     Color stripeColor = AppColors.outlineVariant;
     if (lesson.status == LessonStatus.canceled) {
       stripeColor = AppColors.error;
     } else if (isInProgress) {
       stripeColor = AppColors.primary;
+    } else if (isCompleted) {
+      stripeColor = AppColors.secondary;
     } else if (lesson.status == LessonStatus.substituted) {
       stripeColor = AppColors.tertiary;
     } else {
-      stripeColor = AppColors.secondary;
+      stripeColor = AppColors.outlineVariant;
     }
 
     return Container(
@@ -241,7 +200,9 @@ class DashboardScheduleColumn extends StatelessWidget {
       decoration: BoxDecoration(
         color: isInProgress
             ? AppColors.primaryFixed.withValues(alpha: 0.25)
-            : AppColors.surfaceContainerLow,
+            : (isCompleted
+                ? AppColors.surfaceContainerLow.withValues(alpha: 0.65)
+                : AppColors.surfaceContainerLow),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -317,6 +278,36 @@ class DashboardScheduleColumn extends StatelessWidget {
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (isCompleted)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.secondaryContainer,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.check_rounded,
+                              size: 11,
+                              color: AppColors.onSecondaryContainer,
+                            ),
+                            SizedBox(width: 3),
+                            Text(
+                              'ZREALIZOWANO',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.onSecondaryContainer,
                               ),
                             ),
                           ],
