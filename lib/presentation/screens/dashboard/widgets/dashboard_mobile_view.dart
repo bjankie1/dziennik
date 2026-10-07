@@ -78,38 +78,51 @@ class DashboardMobileView extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.calendar_month,
-                    size: 18,
-                    color: AppColors.primary,
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_month,
+                          size: 18,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            formattedDate,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: AppColors.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: const BoxDecoration(
+                            color: AppColors.outlineVariant,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          studentAsync.value?.currentWeek ?? 'Tydzień B',
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    formattedDate,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: AppColors.onSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(width: 6),
-                  Container(
-                    width: 4,
-                    height: 4,
-                    decoration: const BoxDecoration(
-                      color: AppColors.outlineVariant,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    studentAsync.value?.currentWeek ?? 'Tydzień B',
-                    style: const TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
-                    ),
-                  ),
-                  const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -185,16 +198,20 @@ class DashboardMobileView extends ConsumerWidget {
                       children: [
                         Row(
                           children: [
-                            Text(
-                              syncState.isDemoMode
-                                  ? 'Tryb demonstracyjny'
-                                  : 'Połączono z Librus Synergia',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: syncState.isDemoMode
-                                    ? const Color(0xFF92400E)
-                                    : const Color(0xFF166534),
+                            Flexible(
+                              child: Text(
+                                syncState.isDemoMode
+                                    ? 'Tryb demonstracyjny'
+                                    : 'Połączono z Librus Synergia',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: syncState.isDemoMode
+                                      ? const Color(0xFF92400E)
+                                      : const Color(0xFF166534),
+                                ),
                               ),
                             ),
                             if (syncState.connectedLogin != null &&
@@ -295,10 +312,13 @@ class DashboardMobileView extends ConsumerWidget {
               ),
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 6,
                     children: [
                       const Text(
                         'DZISIEJSZY PLAN ZAJĘĆ',
@@ -309,10 +329,12 @@ class DashboardMobileView extends ConsumerWidget {
                           letterSpacing: 0.5,
                         ),
                       ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          if (lessons.isNotEmpty) ...[
+                          if (lessons.isNotEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 7,
@@ -331,8 +353,6 @@ class DashboardMobileView extends ConsumerWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 6),
-                          ],
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -489,6 +509,7 @@ class DashboardMobileView extends ConsumerWidget {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
+                                      const SizedBox(width: 8),
                                       if (isInProgress)
                                         Text(
                                           'Zostało ${l.remainingMinutesAt(now)} min',
@@ -498,14 +519,20 @@ class DashboardMobileView extends ConsumerWidget {
                                             color: AppColors.primary,
                                           ),
                                         )
-                                      else
-                                        Text(
-                                          l.room.isNotEmpty
-                                              ? 'Sala ${l.room}'
-                                              : '',
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            color: AppColors.outline,
+                                      else if (l.room.isNotEmpty)
+                                        ConstrainedBox(
+                                          constraints: const BoxConstraints(
+                                            maxWidth: 96,
+                                          ),
+                                          child: Text(
+                                            'Sala ${l.room}',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            textAlign: TextAlign.right,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: AppColors.outline,
+                                            ),
                                           ),
                                         ),
                                     ],

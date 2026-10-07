@@ -47,10 +47,14 @@ class DashboardScheduleColumn extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 8,
+                runSpacing: 6,
                 children: [
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(
                         Icons.calendar_today_rounded,
@@ -58,14 +62,20 @@ class DashboardScheduleColumn extends StatelessWidget {
                         color: AppColors.primary,
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        'Harmonogram na dziś',
-                        style:
-                            Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.onSurface,
-                                ),
+                      Flexible(
+                        child: Text(
+                          'Harmonogram na dziś',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.onSurface,
+                              ),
+                        ),
                       ),
                     ],
                   ),
@@ -127,6 +137,7 @@ class DashboardScheduleColumn extends StatelessWidget {
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -149,12 +160,19 @@ class DashboardScheduleColumn extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => context.go('/plan-lekcji'),
                 icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-                label: const Text('Pełny plan lekcji na cały tydzień'),
+                label: const Text(
+                  'Pełny plan lekcji na cały tydzień',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.surfaceContainerLow,
                   foregroundColor: AppColors.primary,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -205,236 +223,272 @@ class DashboardScheduleColumn extends StatelessWidget {
                 : AppColors.surfaceContainerLow),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 4,
-            height: isInProgress ? 65 : 44,
-            decoration: BoxDecoration(
-              color: stripeColor,
-              borderRadius: BorderRadius.circular(4),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 4,
+              constraints: const BoxConstraints(minHeight: 44),
+              decoration: BoxDecoration(
+                color: stripeColor,
+                borderRadius: BorderRadius.circular(4),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${lesson.startTime} - ${lesson.endTime}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight:
-                            isInProgress ? FontWeight.bold : FontWeight.w500,
-                        color: isInProgress
-                            ? AppColors.primary
-                            : AppColors.onSurfaceVariant,
-                        decoration: lesson.status == LessonStatus.canceled
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
-                    ),
-                    if (lesson.status == LessonStatus.canceled)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.errorContainer,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'ODWOŁANE',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.onErrorContainer,
-                          ),
-                        ),
-                      )
-                    else if (isInProgress)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.circle, size: 6, color: Colors.white),
-                            SizedBox(width: 4),
-                            Text(
-                              'W TRAKCIE',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else if (isCompleted)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.secondaryContainer,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.check_rounded,
-                              size: 11,
-                              color: AppColors.onSecondaryContainer,
-                            ),
-                            SizedBox(width: 3),
-                            Text(
-                              'ZREALIZOWANO',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.onSecondaryContainer,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else if (lesson.status == LessonStatus.substituted)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.tertiaryFixed,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'ZASTĘPSTWO',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.onTertiaryFixed,
-                          ),
-                        ),
-                      )
-                    else
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerHigh,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'PLANOWO',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${lesson.lessonNumber}. ${lesson.subjectName}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: isInProgress
-                            ? AppColors.primary
-                            : AppColors.onSurface,
-                        decoration: lesson.status == LessonStatus.canceled
-                            ? TextDecoration.lineThrough
-                            : null,
-                      ),
-                    ),
-                    Text(
-                      lesson.room.isNotEmpty ? 'Sala ${lesson.room}' : '',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-                if (lesson.status == LessonStatus.canceled) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    lesson.statusNote ?? 'Lekcja odwołana',
-                    style: const TextStyle(fontSize: 11, color: AppColors.error),
-                  ),
-                ],
-                if (lesson.status == LessonStatus.substituted &&
-                    lesson.substituteTeacher != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    'Zamiast ${lesson.teacher} prowadzi ${lesson.substituteTeacher}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.tertiary,
-                    ),
-                  ),
-                ],
-                if (isInProgress) ...[
-                  const SizedBox(height: 6),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 5,
-                      backgroundColor: AppColors.surfaceContainerHigh,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        lesson.teacher,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: AppColors.onSurfaceVariant,
+                      Flexible(
+                        child: Text(
+                          '${lesson.startTime} - ${lesson.endTime}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: isInProgress
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                            color: isInProgress
+                                ? AppColors.primary
+                                : AppColors.onSurfaceVariant,
+                            decoration: lesson.status == LessonStatus.canceled
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
                         ),
                       ),
-                      Text(
-                        'Zostało $remainingMinutes min',
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
+                      const SizedBox(width: 8),
+                      if (lesson.status == LessonStatus.canceled)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.errorContainer,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'ODWOŁANE',
+                            style: TextStyle(
+                              fontSize: 10,
+                              height: 1.2,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.onErrorContainer,
+                            ),
+                          ),
+                        )
+                      else if (isInProgress)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.circle, size: 6, color: Colors.white),
+                              SizedBox(width: 4),
+                              Text(
+                                'W TRAKCIE',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  height: 1.2,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (isCompleted)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondaryContainer,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_rounded,
+                                size: 11,
+                                color: AppColors.onSecondaryContainer,
+                              ),
+                              SizedBox(width: 3),
+                              Text(
+                                'ZREALIZOWANO',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  height: 1.2,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.onSecondaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (lesson.status == LessonStatus.substituted)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.tertiaryFixed,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'ZASTĘPSTWO',
+                            style: TextStyle(
+                              fontSize: 10,
+                              height: 1.2,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.onTertiaryFixed,
+                            ),
+                          ),
+                        )
+                      else
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'PLANOWO',
+                            style: TextStyle(
+                              fontSize: 10,
+                              height: 1.2,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
                         ),
-                      ),
                     ],
                   ),
+                  const SizedBox(height: 4),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${lesson.lessonNumber}. ${lesson.subjectName}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: isInProgress
+                                ? AppColors.primary
+                                : AppColors.onSurface,
+                            decoration: lesson.status == LessonStatus.canceled
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                        ),
+                      ),
+                      if (lesson.room.isNotEmpty) ...[
+                        const SizedBox(width: 8),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 110),
+                          child: Text(
+                            'Sala ${lesson.room}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (lesson.status == LessonStatus.canceled) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      lesson.statusNote ?? 'Lekcja odwołana',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style:
+                          const TextStyle(fontSize: 11, color: AppColors.error),
+                    ),
+                  ],
+                  if (lesson.status == LessonStatus.substituted &&
+                      lesson.substituteTeacher != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'Zamiast ${lesson.teacher} prowadzi ${lesson.substituteTeacher}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.tertiary,
+                      ),
+                    ),
+                  ],
+                  if (isInProgress) ...[
+                    const SizedBox(height: 6),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 5,
+                        backgroundColor: AppColors.surfaceContainerHigh,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            lesson.teacher,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Zostało $remainingMinutes min',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

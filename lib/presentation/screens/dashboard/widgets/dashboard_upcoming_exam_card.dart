@@ -56,20 +56,31 @@ class DashboardUpcomingExamCard extends ConsumerWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.timer_outlined, size: 18, color: AppColors.tertiary),
-                  SizedBox(width: 8),
-                  Text(
-                    'Nadchodzący sprawdzian',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.onSurface,
+              const Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.timer_outlined,
+                      size: 18,
+                      color: AppColors.tertiary,
                     ),
-                  ),
-                ],
+                    SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        'Nadchodzący sprawdzian',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
@@ -102,11 +113,13 @@ class DashboardUpcomingExamCard extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Text(
                         '${exam.subject} (${exam.type.toLowerCase()})',
+                        maxLines: 2,
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -115,6 +128,7 @@ class DashboardUpcomingExamCard extends ConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 8),
                     Text(
                       DateFormat('d MMMM', 'pl_PL').format(exam.date),
                       style: const TextStyle(
