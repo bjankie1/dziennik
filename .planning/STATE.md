@@ -41,7 +41,9 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - [x] **Phase 22**: Zapisywanie załączników wiadomości w Google Drive w stylu Gmail (completed 2026-10-01)
 - [x] **Phase 23**: Podgląd szczegółów próśb o usprawiedliwienie i oczekujących wniosków (completed 2026-10-02)
 - [x] **Phase 24**: Dekompozycja monolitycznego FirestoreSchoolRepository (2 691 LOC) na serwisy domenowe i izolacja warstwy cache (completed 2026-10-03)
-- [ ] **Phase 25**: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień i powiadomienia o akceptacji
+- [x] **Phase 25**: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień i powiadomienia o akceptacji (completed 2026-10-04)
+- [x] **Phase 26**: Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram (completed 2026-10-04)
+- [ ] **Phase 27**: Poranny briefing planu lekcji na Telegram (godziny rozpoczęcia i zakończenia lekcji Oskara oraz pełny plan dnia)
 
 ## Completed in Previous Milestones
 
@@ -60,7 +62,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - [x] **Phase 8**: Pełny design ekranu głównego w wersji web (wspólny pasek boczny AppSidebar dla wszystkich widoków, AppDesktopHeader z wyszukiwarką, Bento Grid z 3 kolumnami, harmonogramem na żywo, wiadomościami i szybkimi akcjami).
 - [x] **Phase 9**: Plan lekcji w wersji web (Widok siatki i agendy) (nawigacja tygodnia, kafelki podsumowania, siatka Pn-Pt z modalem szczegółów, agenda z lekcją na żywo, wspólny sidebar i responsywność).
 - [x] **Phase 10**: Pełen panel ocen w wersji na przeglądarkę (Master-Detail 8+4, karty KPI ze średnią i rozkładem MEN 1-6, wykres trajektorii Béziera, szuflada boczna ze szczegółami i kalkulatorem GPA).
-- [x] **Phase 11**: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny) (nowoczesne nagłówki Chrome 133, sekwencyjny fetch z jitterem, probe sesji, dynamiczny backoff 429/503, cisza nocna 22:30-06:30, cooldown klienta 120s).
+- [x] **Phase 11**: Dyskretne odpytywanie serwerów Librus (rate limiting, harmonogram nocny) (nowoczesne nagłówki Chrome 133, sekwencyjny fetch z jitterem, probe sesji, dynamiczny backoff 429/503, cisza nocna 22:30-06:30, cisza klienta 120s).
 - [x] **Phase 12**: Audyt mocków, nieobecności w planie lekcji i stała szerokość przełącznika tygodni (odcięcie mocków z MockData, ukrywanie sprawdzianu, neutralny numerek w weekend, dynamiczny profil i wychowawca, frekwencja na kafelkach planu, stała szerokość 430px WeekNavigatorBar).
 - [x] **Phase 13**: Dedykowane URL i routing dla podstron i zasobów (deep linking) (go_router, Path URL Strategy, StatefulShellRoute, trasy po polsku, deep linki /wiadomosci/:id i /plan-lekcji?data=...).
 
@@ -77,6 +79,7 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - Phase 24 added: Dekompozycja monolitycznego `FirestoreSchoolRepository` (2 691 LOC) na serwisy domenowe i izolacja warstwy cache (`SchoolDataCacheManager`, `*DataSource`)
 - Phase 25 added: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień (z podglądem zaakceptowanych usprawiedliwień we Frekwencji) i powiadomienia o akceptacji usprawiedliwienia
 - Phase 26 added: Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram
+- Phase 27 added: Poranny briefing planu lekcji na Telegram (godziny rozpoczęcia i zakończenia lekcji Oskara oraz pełny plan dnia)
 
 ### Quick Tasks Completed
 
@@ -108,13 +111,14 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 261004-h22 | Wyraźny przycisk Archiwizuj w podglądzie wiadomości (MessageThreadScreen i MessageThreadHeaderCard) z automatycznym powrotem do listy wiadomości i Cofnij | 2026-10-04 | 0a55acf | [261004-h22-archiwizacja-wiadomo-ci-z-poziomu-podgl-](./quick/261004-h22-archiwizacja-wiadomo-ci-z-poziomu-podgl-/) |
 | 261006-j7z | Trwała persystencja i synchronizacja wysłanych odpowiedzi w wątkach wiadomości (lokalny cache, Firestore, korelacja z Librus /wiadomosci/6 Wysłane i rola Rodzic/Uczeń) | 2026-10-06 | 89af6bf | [261006-j7z-w-w-tku-z-wychowawc-wys-a-em-2-odpowiedz](./quick/261006-j7z-w-w-tku-z-wychowawc-wys-a-em-2-odpowiedz/) |
 | 261007-9as | Automatyczne odświeżanie paska postępu czasu i oznaczania aktualnej/odbytej lekcji wraz z upływem czasu bez przeładowania strony | 2026-10-07 | 208b332 | [261007-9as-sprawd-i-napraw-automatyczne-od-wie-anie](./quick/261007-9as-sprawd-i-napraw-automatyczne-od-wie-anie/) |
+| 261007-a26 | Naprawa ucinania i przepełniania tekstów w kolumnie planu dnia i kafelkach na Pulpicie | 2026-10-07 | 61e43eb | [261007-a26-naprawa-ucinania-i-przepe-niania-tekst-w](./quick/261007-a26-naprawa-ucinania-i-przepe-niania-tekst-w/) |
 
 ## Session
 
-**Last session:** 2026-10-07T05:06:00.000Z
+**Last session:** 2026-10-07T05:35:00.000Z
 **Stopped at:** Phase 26 complete, ready to plan Phase 19
 **Resume file:** None
-Last activity: 2026-10-07 - Completed quick task 261007-9as: Automatyczne odświeżanie paska postępu czasu i oznaczania aktualnej/odbytej lekcji wraz z upływem czasu bez przeładowania strony
+Last activity: 2026-10-07 - Completed quick task 261007-a26: Naprawa ucinania i przepełniania tekstów w kolumnie planu dnia i kafelkach na Pulpicie
 
 ## Current Position
 
@@ -123,7 +127,7 @@ Current Plan: Not started
 Total Plans in Phase: 1
 Next Phase: 19 (Raporty tygodniowe)
 Status: Phase complete — ready for verification
-Last activity: 2026-10-07 - Completed quick task 261007-9as: Automatyczne odświeżanie paska postępu czasu i oznaczania aktualnej/odbytej lekcji wraz z upływem czasu bez przeładowania strony
+Last activity: 2026-10-07 - Completed quick task 261007-a26: Naprawa ucinania i przepełniania tekstów w kolumnie planu dnia i kafelkach na Pulpicie
 
 ## Performance Metrics
 

@@ -39,6 +39,7 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 24: Dekompozycja monolitycznego FirestoreSchoolRepository (2 691 LOC) na serwisy domenowe i izolacja warstwy cache** — Podział `FirestoreSchoolRepository` na wyspecjalizowane klasy domenowe (`SchoolDataCacheManager`, `FirestoreGradesDataSource`, `FirestoreAttendanceDataSource`, `FirestoreJustificationsDataSource`, `FirestoreMessagesDataSource`, `FirestoreScheduleDataSource`) z eliminacją statycznych map globalnych i zachowaniem fasady `SchoolRepository`. (completed 2026-10-03)
 - [x] **Phase 25: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień i powiadomienia o akceptacji** — Ręczna archiwizacja i przywracanie wiadomości z zakładką „Archiwum”, automatyczna archiwizacja systemowych potwierdzeń akceptacji usprawiedliwień z podglądem zaakceptowanych usprawiedliwień we Frekwencji oraz powiadomienia Telegram / Web Push o zaakceptowaniu usprawiedliwienia przez wychowawcę. (completed 2026-10-04)
 - [x] **Phase 26: Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram** — Powiadomienia o nowej wiadomości i ogłoszeniu na Telegramie zawierające pełną treść wiadomości/ogłoszenia oraz listę załączników wraz z bezpośrednimi linkami do ich pobrania. (completed 2026-10-04)
+- [ ] **Phase 27: Poranny briefing planu lekcji na Telegram** — Codzienne poranne powiadomienie na Telegram z informacją na starcie, o której godzinie Oskar zaczyna i kończy lekcje danego dnia, oraz pełnym planem lekcji (z uwzględnieniem zastępstw, odwołań i sprawdzianów).
 
 ---
 
@@ -362,4 +363,22 @@ Plans:
 
 Plans:
 
-- [x] 26-01-PLAN.md — Multiline Message Scraping & Pre-Notification Detail/Attachment Hydration (`librus_client.js`, `sync_service.js`) + Full-Content & Attachment-Link Telegram HTML Formatter with 4096-Char Truncation & Unit Tests (`telegram_service.js`, `telegram_notifications.test.js`)
+- [x] 26-01-PLAN.md — Multiline Message Scraping & Pre-Notification Detail/Attachment Hydration (`librus_client.js`, `sync_service.js`) + Full-Content & Attachment-Link Telegram HTML Formatter with 4096-Char Truncation & Unit Tests (`telegram_notifications.test.js`)
+
+### Phase 27: Poranny briefing planu lekcji na Telegram
+
+**Goal**: Codzienne poranne powiadomienie wysyłane na Telegram (w dni szkolne Pn–Pt) z czytelnym podsumowaniem na samym początku wiadomości, o której godzinie Oskar zaczyna pierwszą lekcję i o której kończy ostatnią (z pominięciem odwołanych lekcji skrajnych), a następnie pełną listą lekcji na dany dzień wraz z godzinami, salami, ewentualnymi zastępstwami/odwołaniami oraz zaplanowanymi na ten dzień sprawdzianami/kartkówkami.  
+**Requirements**: REQ-NOTIF-TG-MORNING-01, REQ-NOTIF-TG-MORNING-02  
+**Depends on**: Phase 26  
+**Success Criteria**:
+
+1. W dni szkolne (poniedziałek–piątek, gdy w planie są aktywne lekcje) rano wysyłane jest powiadomienie na Telegram z planem lekcji na bieżący dzień (z opcjonalnym przełącznikiem w ustawieniach powiadomień).
+2. Na samym początku wiadomości znajduje się wyróżniona informacja podsumowująca godziny ramowe dnia: o której godzinie Oskar zaczyna lekcje i o której kończy (wyliczana na podstawie pierwszej i ostatniej nieodwołanej lekcji danego dnia) oraz łączna liczba lekcji.
+3. Pod podsumowaniem prezentowany jest pełny plan lekcji dnia (numer lekcji, godziny `startTime–endTime`, przedmiot, sala, oznaczenia zastępstw i odwołanych lekcji) oraz lista sprawdzianów/kartkówek przypadających w tym dniu.
+4. Jeśli w danym dniu wszystkie lekcje są odwołane lub jest dzień wolny od zajęć, poranny briefing nie wysyła fałszywego alarmu (lub informuje o braku lekcji zgodnie z konfiguracją), a wysyłka jest idempotentna (maksymalnie raz dziennie na konto).
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 27 to break down)
