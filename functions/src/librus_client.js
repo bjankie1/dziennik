@@ -543,7 +543,7 @@ class LibrusClient {
       if (!dateText) return;
 
       for (let col = 1; col <= 13; col++) {
-        $(tds[col]).find("a").each((_, aEl) => {
+        $(tds[col]).find("a").each((spanIdx, aEl) => {
           const tooltip = $(aEl).attr("title") || "";
           const symbol = $(aEl).text().trim();
           if (!tooltip && !symbol) return;
@@ -593,11 +593,15 @@ class LibrusClient {
             absenceCount++;
           }
 
+          const dateClean = dateText.split(' ')[0];
+          const lessonNum = numMatch ? parseInt(numMatch[1], 10) : col - 1;
           records.push({
-            id: `att_${dateText.split(' ')[0]}_${col}_${records.length}`,
-            date: dateText.split(' ')[0],
+            id: spanIdx > 0
+              ? `att_${dateClean}_${lessonNum}_${col}_${spanIdx}`
+              : `att_${dateClean}_${lessonNum}_${col}`,
+            date: dateClean,
             dateDisplay: dateText,
-            lessonNumber: numMatch ? parseInt(numMatch[1], 10) : col - 1,
+            lessonNumber: lessonNum,
             subjectName: lessonMatch ? lessonMatch[1].trim() : "Lekcja",
             teacher: teacherMatch ? teacherMatch[1].trim() : "",
             topic: topicMatch ? topicMatch[1].trim() : "",

@@ -101,6 +101,8 @@ void main() {
       final submitButton = find.text('Zatwierdź i wyślij usprawiedliwienie');
       expect(submitButton, findsOneWidget);
 
+      await tester.enterText(find.byType(TextField).last, '1234');
+      await tester.pump();
       await tester.tap(submitButton);
       await tester.pumpAndSettle();
 
@@ -160,6 +162,8 @@ void main() {
       expect(approveButton, findsOneWidget);
       expect(find.text('Odrzuć wniosek'), findsOneWidget);
 
+      await tester.enterText(find.byType(TextField), '1234');
+      await tester.pump();
       await tester.tap(approveButton);
       await tester.pumpAndSettle();
 
@@ -373,6 +377,8 @@ void main() {
       expect(find.text('Zatwierdź z PIN-em (2 z 3 lekcji)'), findsOneWidget);
 
       // Submit partial approval
+      await tester.enterText(find.byType(TextField), '1234');
+      await tester.pump();
       await tester.tap(find.text('Zatwierdź z PIN-em (2 z 3 lekcji)'));
       await tester.pumpAndSettle();
 

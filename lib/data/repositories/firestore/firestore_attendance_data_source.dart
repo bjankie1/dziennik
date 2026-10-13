@@ -322,6 +322,14 @@ class FirestoreAttendanceDataSource {
     String reason, {
     DateTime? date,
   }) async {
+    final savedUser = await cacheManager.connectionService.getSavedAppUser();
+    if (savedUser?.isStudent ?? false) {
+      debugPrint(
+        '[FirestoreAttendanceDataSource] Zablokowano bezpośrednie wysłanie e-usprawiedliwienia z konta ucznia.',
+      );
+      return;
+    }
+
     await cacheManager.setJustificationOverrides(recordIds, reason);
 
     // Send directly to Librus Synergia e-Usprawiedliwienia through Cloud Function
@@ -382,6 +390,7 @@ class FirestoreAttendanceDataSource {
           'isByHours': isByHours,
           'hoursByDate': hoursByDate,
           'notifyOthers': true,
+          'role': savedUser?.role.name ?? 'parent',
         });
 
         http.Response? res;

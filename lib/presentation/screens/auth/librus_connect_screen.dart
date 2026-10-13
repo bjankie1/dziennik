@@ -32,6 +32,12 @@ class _LibrusConnectScreenState extends ConsumerState<LibrusConnectScreen> {
   Future<void> _handleConnect() async {
     final login = _loginController.text.trim();
     final password = _passwordController.text;
+    final appUser = ref.read(appUserProvider);
+    final fbUser = ref.read(firebaseAuthServiceProvider).currentUser;
+    final email = (appUser?.email ?? fbUser?.email ?? '').trim().toLowerCase();
+    final isForcedStudent =
+        email == 'oskizobory@gmail.com' || RegExp(r'^\d+u$', caseSensitive: false).hasMatch(login);
+    final effectiveRole = isForcedStudent ? UserRole.student : _selectedRole;
 
     if (login.isEmpty || password.isEmpty) {
       setState(() {
@@ -43,19 +49,20 @@ class _LibrusConnectScreenState extends ConsumerState<LibrusConnectScreen> {
     setState(() {
       _isConnecting = true;
       _errorMessage = null;
+      _selectedRole = effectiveRole;
     });
 
     try {
       final resolvedPrimary = LibrusConnectionService.resolvePrimaryLogin(
         login: login,
-        role: _selectedRole,
+        role: effectiveRole,
       );
       final success = await ref
           .read(librusConnectionStateProvider.notifier)
           .connectLibrus(
             login,
             password,
-            role: _selectedRole,
+            role: effectiveRole,
             primaryLogin: resolvedPrimary,
           );
 
@@ -64,12 +71,12 @@ class _LibrusConnectScreenState extends ConsumerState<LibrusConnectScreen> {
         if (current != null) {
           ref.read(appUserProvider.notifier).setUser(
                 current.copyWith(
-                  displayName: _selectedRole.isStudent &&
+                  displayName: effectiveRole.isStudent &&
                           current.displayName == 'Bartosz Jankiewicz'
                       ? 'Oskar Jankiewicz'
                       : current.displayName,
-                  role: _selectedRole,
-                  studentLogin: _selectedRole.isStudent ? login : null,
+                  role: effectiveRole,
+                  studentLogin: effectiveRole.isStudent ? login : null,
                   primaryLogin: resolvedPrimary,
                   familyId: current.familyId ?? 'jankiewicz_family',
                 ),
@@ -101,13 +108,20 @@ class _LibrusConnectScreenState extends ConsumerState<LibrusConnectScreen> {
   }
 
   Future<void> _handleUseDemo() async {
+    final appUser = ref.read(appUserProvider);
+    final fbUser = ref.read(firebaseAuthServiceProvider).currentUser;
+    final email = (appUser?.email ?? fbUser?.email ?? '').trim().toLowerCase();
+    final effectiveRole =
+        email == 'oskizobory@gmail.com' ? UserRole.student : _selectedRole;
+
     setState(() {
       _isConnecting = true;
       _errorMessage = null;
+      _selectedRole = effectiveRole;
     });
 
     await ref.read(librusConnectionStateProvider.notifier).connectDemo();
-    ref.read(appUserProvider.notifier).updateRole(_selectedRole);
+    ref.read(appUserProvider.notifier).updateRole(effectiveRole);
 
     if (mounted) {
       setState(() => _isConnecting = false);
@@ -121,6 +135,10 @@ class _LibrusConnectScreenState extends ConsumerState<LibrusConnectScreen> {
     final displayName = appUser?.displayName ?? fbUser?.displayName ?? 'Bartosz Jankiewicz';
     final email = appUser?.email ?? fbUser?.email ?? 'bartosz.jankiewicz@gmail.com';
     final photoUrl = appUser?.photoUrl ?? fbUser?.photoURL;
+    final isStudentAccountEmail = email.trim().toLowerCase() == 'oskizobory@gmail.com';
+    if (isStudentAccountEmail && _selectedRole != UserRole.student) {
+      _selectedRole = UserRole.student;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -211,13 +229,14 @@ class _LibrusConnectScreenState extends ConsumerState<LibrusConnectScreen> {
 
                   // Role Selector
                   SegmentedButton<UserRole>(
-                    segments: const [
+                    segments: [
                       ButtonSegment<UserRole>(
                         value: UserRole.parent,
-                        icon: Icon(Icons.family_restroom, size: 18),
-                        label: Text('Konto Rodzica'),
+                        enabled: !isStudentAccountEmail,
+                        icon: const Icon(Icons.family_restroom, size: 18),
+                        label: const Text('Konto Rodzica'),
                       ),
-                      ButtonSegment<UserRole>(
+                      const ButtonSegment<UserRole>(
                         value: UserRole.student,
                         icon: Icon(Icons.school, size: 18),
                         label: Text('Konto Ucznia (Oskar)'),
@@ -225,6 +244,7 @@ class _LibrusConnectScreenState extends ConsumerState<LibrusConnectScreen> {
                     ],
                     selected: {_selectedRole},
                     onSelectionChanged: (newSelection) {
+                      if (isStudentAccountEmail) return;
                       setState(() {
                         _selectedRole = newSelection.first;
                       });

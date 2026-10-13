@@ -143,7 +143,13 @@ exports.saveConnection = onRequest(
       const login = req.query.login || req.body?.login || defaultPrimary;
       const email = req.query.email || req.body?.email || "";
       const rawRole = req.query.role || req.body?.role || "parent";
-      const role = String(rawRole).trim().toLowerCase() === "student" ? "student" : "parent";
+      const isKnownStudentAccount =
+        String(email || "").trim().toLowerCase() === "oskizobory@gmail.com" ||
+        /^\d+u$/i.test(String(login || "").trim());
+      const role =
+        isKnownStudentAccount || String(rawRole).trim().toLowerCase() === "student"
+          ? "student"
+          : "parent";
       const rawStudentLogin = req.query.studentLogin || req.body?.studentLogin;
       const rawPrimaryLogin = req.query.primaryLogin || req.body?.primaryLogin;
       const rawFamilyId = req.query.familyId || req.body?.familyId || "jankiewicz_family";
@@ -216,11 +222,16 @@ exports.getConnection = onRequest(
         return res.status(200).json({ connected: false });
       }
 
+      const isKnownStudentAccount =
+        String(data.email || "").trim().toLowerCase() === "oskizobory@gmail.com" ||
+        /^\d+u$/i.test(String(data.librusLogin || "").trim());
+      const effectiveRole = isKnownStudentAccount ? "student" : (data.role || "parent");
+
       res.status(200).json({
         connected: true,
         librusLogin: data.librusLogin,
         isDemoMode: data.isDemoMode || false,
-        role: data.role || "parent",
+        role: effectiveRole,
         studentLogin: data.studentLogin || null,
         primaryLogin: data.primaryLogin || data.librusLogin,
         familyId: data.familyId || "jankiewicz_family"
@@ -961,9 +972,29 @@ exports.submitJustification = onRequest(
   async (req, res) => {
     try {
       const { LibrusClient } = require("./src/librus_client");
-      const login = req.query.login || req.body?.login || process.env.LIBRUS_LOGIN;
+      const rawLogin = req.query.login || req.body?.login;
+      const login = rawLogin || process.env.LIBRUS_LOGIN;
       const pass = process.env.LIBRUS_PASSWORD;
-      const { dateFrom, dateTo, reason, isByHours, hoursByDate, notifyOthers } = req.body || {};
+      const { dateFrom, dateTo, reason, isByHours, hoursByDate, notifyOthers, role, pin, email } = req.body || {};
+
+      const callerRole = String(req.query.role || role || "parent").trim().toLowerCase();
+      const callerEmail = String(req.query.email || email || "").trim().toLowerCase();
+      if (
+        callerRole === "student" ||
+        callerEmail === "oskizobory@gmail.com" ||
+        /^\d+u$/i.test(String(rawLogin || "").trim())
+      ) {
+        return res.status(403).json({
+          error: "Konto ucznia nie ma uprawnień do bezpośredniego wysyłania e-usprawiedliwień. Wyślij prośbę do rodzica."
+        });
+      }
+
+      const expectedPin = process.env.PARENT_PIN || "1234";
+      if (pin !== undefined && String(pin).trim() !== expectedPin) {
+        return res.status(401).json({
+          error: "Niepoprawny kod PIN rodzica."
+        });
+      }
 
       if (!reason || (!dateFrom && !hoursByDate)) {
         return res.status(400).json({ error: "Brak wymaganych parametrów (powód, zakres dat lub lekcje)." });

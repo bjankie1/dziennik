@@ -192,3 +192,69 @@ test("formatNotificationForTelegram formats justification notifications and link
   assert.match(html, /https:\/\/lepsza-szkola\.web\.app\/frekwencja/);
   assert.equal(isCategoryEnabled({ telegramEnabled: true }, "justification"), true);
 });
+
+test("detectJustificationNotifications does not emit false-positive duplicate when positional IDs shift across syncs (2026-09-01 regression)", () => {
+  const prevData = {
+    messages: [],
+    attendance: [
+      {
+        id: "att_2026-09-01_1_42",
+        date: "2026-09-01",
+        lessonNumber: 2,
+        subjectName: "Zajęcia z wychowawcą",
+        type: "excused",
+        symbol: "u"
+      },
+      {
+        id: "att_2026-09-01_1_43",
+        date: "2026-09-01",
+        lessonNumber: 3,
+        subjectName: "Zajęcia z wychowawcą",
+        type: "unexcused",
+        symbol: "nb"
+      }
+    ],
+    justifications: []
+  };
+
+  // A new absence was added on a later date, shifting legacy positional IDs by +1
+  const freshData = {
+    messages: [],
+    attendance: [
+      {
+        id: "att_2026-10-13_4_0",
+        date: "2026-10-13",
+        lessonNumber: 4,
+        subjectName: "Matematyka",
+        type: "unexcused",
+        symbol: "nb"
+      },
+      {
+        id: "att_2026-09-01_1_43", // collides with old Lesson 3 positional ID!
+        date: "2026-09-01",
+        lessonNumber: 2,
+        subjectName: "Zajęcia z wychowawcą",
+        type: "excused",
+        symbol: "u"
+      },
+      {
+        id: "att_2026-09-01_1_44",
+        date: "2026-09-01",
+        lessonNumber: 3,
+        subjectName: "Zajęcia z wychowawcą",
+        type: "unexcused",
+        symbol: "nb"
+      }
+    ],
+    justifications: []
+  };
+
+  const notifs = detectJustificationNotifications({
+    prevData,
+    freshData,
+    timestampValue: "2026-10-13T10:08:07Z"
+  });
+
+  assert.equal(notifs.length, 0);
+});
+

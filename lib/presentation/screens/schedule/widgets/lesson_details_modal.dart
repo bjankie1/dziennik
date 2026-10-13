@@ -6,10 +6,12 @@ import '../../../../core/utils/calendar_export_service.dart';
 import '../../../../domain/models/lesson_slot.dart';
 import '../../../../domain/models/attendance_record.dart';
 import '../../../../domain/models/school_task.dart';
+import '../../../providers/auth_providers.dart';
 import '../../../providers/school_providers.dart';
 import '../../../widgets/common/exam_calendar_actions_row.dart';
 import '../../../widgets/common/linked_task_action_bar.dart';
 import '../../attendance/justification_modal.dart';
+import '../../attendance/widgets/student_justification_modal.dart';
 
 class LessonDetailsModal extends ConsumerWidget {
   final LessonSlot slot;
@@ -629,52 +631,88 @@ class LessonDetailsModal extends ConsumerWidget {
           ],
           if (isUnexcused) ...[
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton.icon(
-                onPressed: () {
-                  final attendanceList = ref.read(attendanceProvider).value ?? [];
-                  final matched = attendanceList.where((a) =>
-                      a.date.year == date.year &&
-                      a.date.month == date.month &&
-                      a.date.day == date.day &&
-                      (a.lessonNumber == slot.lessonNumber || a.subjectName.toLowerCase() == slot.subjectName.toLowerCase())).toList();
-                  final recordIds = matched.isNotEmpty ? [matched.first.id] : ['temp_${slot.lessonNumber}'];
+            Builder(
+              builder: (context) {
+                final isStudent = ref.watch(appUserProvider)?.isStudent ?? false;
+                return SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      final attendanceList = ref.read(attendanceProvider).value ?? [];
+                      final matched = attendanceList.where((a) =>
+                          a.date.year == date.year &&
+                          a.date.month == date.month &&
+                          a.date.day == date.day &&
+                          (a.lessonNumber == slot.lessonNumber || a.subjectName.toLowerCase() == slot.subjectName.toLowerCase())).toList();
+                      final recordIds = matched.isNotEmpty ? [matched.first.id] : ['temp_${slot.lessonNumber}'];
 
-                  Navigator.pop(context); // Close details modal first
-                  JustificationModal.show(
-                    context,
-                    recordIds,
-                    'Wizyta lekarska',
-                    (reason, pin, selectedDate) async {
-                      await ref.read(attendanceProvider.notifier).submitJustification(
-                            recordIds,
-                            reason,
-                            date: selectedDate ?? date,
-                          );
-                      ref.invalidate(weekScheduleProvider);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Wniosek o e-usprawiedliwienie został pomyślnie wysłany.'),
-                            backgroundColor: Color(0xFF006C4A),
-                          ),
+                      Navigator.pop(context); // Close details modal first
+                      if (isStudent) {
+                        StudentJustificationModal.show(
+                          context,
+                          recordIds,
+                          initialDate: date,
+                          onConfirm: (reason, selectedDate) async {
+                            await ref.read(attendanceProvider.notifier).requestJustification(
+                                  recordIds,
+                                  reason,
+                                  date: selectedDate ?? date,
+                                );
+                            ref.invalidate(weekScheduleProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Prośba o usprawiedliwienie została przesłana do rodzica.'),
+                                  backgroundColor: Color(0xFF006C4A),
+                                ),
+                              );
+                            }
+                          },
+                        );
+                      } else {
+                        JustificationModal.show(
+                          context,
+                          recordIds,
+                          'Wizyta lekarska',
+                          (reason, pin, selectedDate) async {
+                            await ref.read(attendanceProvider.notifier).submitJustification(
+                                  recordIds,
+                                  reason,
+                                  date: selectedDate ?? date,
+                                );
+                            ref.invalidate(weekScheduleProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Wniosek o e-usprawiedliwienie został pomyślnie wysłany.'),
+                                  backgroundColor: Color(0xFF006C4A),
+                                ),
+                              );
+                            }
+                          },
+                          initialDate: date,
                         );
                       }
                     },
-                    initialDate: date,
-                  );
-                },
-                icon: const Icon(Icons.send_rounded, size: 15),
-                label: const Text('Zgłoś e-usprawiedliwienie'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.error,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                ),
-              ),
+                    icon: Icon(
+                      isStudent ? Icons.family_restroom_rounded : Icons.send_rounded,
+                      size: 15,
+                    ),
+                    label: Text(
+                      isStudent
+                          ? 'Poproś rodzica o usprawiedliwienie'
+                          : 'Zgłoś e-usprawiedliwienie',
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: isStudent ? AppColors.primary : AppColors.error,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                );
+              },
             ),
           ],
         ],

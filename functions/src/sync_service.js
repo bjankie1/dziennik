@@ -271,15 +271,36 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
     });
   }
 
-  // Save new notifications to subcollection
+  // Deduplicate against already persisted notifications in Firestore so shifted IDs or re-detections never re-send to Telegram
+  const genuinelyNewNotifications = [];
+  if (newNotifications.length > 0) {
+    const seenIds = new Set();
+    const uniqueCandidates = [];
+    for (const notif of newNotifications) {
+      if (!notif || !notif.id || seenIds.has(notif.id)) continue;
+      seenIds.add(notif.id);
+      uniqueCandidates.push(notif);
+    }
+
+    const existingSnaps = await Promise.all(
+      uniqueCandidates.map(n => studentRef.collection("notifications").doc(n.id).get())
+    );
+    for (let i = 0; i < uniqueCandidates.length; i++) {
+      if (!existingSnaps[i].exists) {
+        genuinelyNewNotifications.push(uniqueCandidates[i]);
+      }
+    }
+  }
+
+  // Save genuinely new notifications to subcollection
   const notifBatch = db.batch();
-  for (const notif of newNotifications) {
+  for (const notif of genuinelyNewNotifications) {
     const notifRef = studentRef.collection("notifications").doc(notif.id);
     notifBatch.set(notifRef, notif);
   }
-  if (newNotifications.length > 0) {
+  if (genuinelyNewNotifications.length > 0) {
     await notifBatch.commit();
-    console.log(`Saved ${newNotifications.length} new notification(s).`);
+    console.log(`Saved ${genuinelyNewNotifications.length} new notification(s).`);
 
     // Dispatch new notifications to paired Telegram Bot chats (Phase 18 & Phase 25)
     try {
@@ -287,7 +308,7 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
         db,
         login,
         freshData.student?.name || "Oskar",
-        newNotifications
+        genuinelyNewNotifications
       );
       if (tgResult.sentCount > 0) {
         console.log(`[SyncService] Dispatched ${tgResult.sentCount} Telegram notification(s).`);
@@ -302,7 +323,7 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
   await studentRef.set({
     ...freshData,
     unreadMessagesCount,
-    unreadNotificationsCount: newNotifications.length,
+    unreadNotificationsCount: genuinelyNewNotifications.length,
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   }, { merge: true });
 
@@ -311,7 +332,7 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
     success: true,
     student: freshData.student,
     luckyNumber: freshData.luckyNumber,
-    newNotificationsCount: newNotifications.length,
+    newNotificationsCount: genuinelyNewNotifications.length,
     lastSyncTime: freshData.lastSyncTime
   };
 }
@@ -395,21 +416,23 @@ function detectJustificationNotifications({
       return t === "excused" || st === "approved" || sym === "u" || sym.startsWith("u");
     };
 
+    const getStableAttendanceKey = (r) => {
+      if (r.date && r.lessonNumber !== undefined && r.lessonNumber !== null && r.lessonNumber !== "") {
+        return `${r.date}_${r.lessonNumber}`;
+      }
+      return r.id != null ? String(r.id) : `${r.date || ""}_${r.lessonNumber ?? ""}`;
+    };
+
     const prevNonExcusedKeys = new Set();
     for (const pr of prevAttendance) {
       if (!pr || isRecordExcused(pr)) continue;
-      const key = `${pr.date || ""}_${pr.lessonNumber ?? ""}`;
-      prevNonExcusedKeys.add(key);
-      if (pr.id != null) prevNonExcusedKeys.add(String(pr.id));
+      prevNonExcusedKeys.add(getStableAttendanceKey(pr));
     }
 
     const newlyExcusedByDate = new Map();
     for (const fr of freshAttendance) {
       if (!fr || !isRecordExcused(fr)) continue;
-      const key = `${fr.date || ""}_${fr.lessonNumber ?? ""}`;
-      const wasNonExcused =
-        prevNonExcusedKeys.has(key) ||
-        (fr.id != null && prevNonExcusedKeys.has(String(fr.id)));
+      const wasNonExcused = prevNonExcusedKeys.has(getStableAttendanceKey(fr));
       if (!wasNonExcused) continue;
 
       const dateStr = String(fr.date || "Nieobecność");

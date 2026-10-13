@@ -43,7 +43,7 @@ class JustificationModal extends StatefulWidget {
 
 class _JustificationModalState extends State<JustificationModal> {
   late final TextEditingController _reasonController;
-  final _pinController = TextEditingController(text: '1234');
+  final _pinController = TextEditingController();
   bool _pinError = false;
   DateTime? _selectedDate;
 
@@ -324,28 +324,9 @@ class _JustificationModalState extends State<JustificationModal> {
                       const SizedBox(height: 12),
 
                       // Kod PIN rodzica
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Expanded(
-                            child: Text(
-                              'Kod PIN rodzica:',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'Domyślny PIN: 1234',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
-                            ),
-                          ),
-                        ],
+                      const Text(
+                        'Kod PIN rodzica:',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF475569)),
                       ),
                       const SizedBox(height: 6),
                       TextField(
@@ -371,7 +352,7 @@ class _JustificationModalState extends State<JustificationModal> {
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(color: Color(0xFF3525CD), width: 1.5),
                           ),
-                          errorText: _pinError ? 'Wymagany jest 4-cyfrowy kod PIN (np. 1234)' : null,
+                          errorText: _pinError ? 'Wprowadź poprawny 4-cyfrowy kod PIN rodzica' : null,
                         ),
                         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 4),
                       ),
@@ -388,7 +369,7 @@ class _JustificationModalState extends State<JustificationModal> {
                 child: FilledButton.icon(
                   onPressed: () {
                     final pin = _pinController.text.trim();
-                    if (pin.length < 4) {
+                    if (pin.length < 4 || pin != '1234') {
                       setState(() => _pinError = true);
                       return;
                     }

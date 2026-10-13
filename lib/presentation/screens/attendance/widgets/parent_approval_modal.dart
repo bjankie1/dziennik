@@ -54,7 +54,7 @@ class ParentApprovalModal extends StatefulWidget {
 }
 
 class _ParentApprovalModalState extends State<ParentApprovalModal> {
-  final _pinController = TextEditingController(text: '1234');
+  final _pinController = TextEditingController();
   bool _pinError = false;
   String? _pinErrorMessage;
   bool _isProcessing = false;
@@ -117,7 +117,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
     if (pin.length < 4) {
       setState(() {
         _pinError = true;
-        _pinErrorMessage = 'Wymagany jest 4-cyfrowy kod PIN (np. 1234)';
+        _pinErrorMessage = 'Wymagany jest 4-cyfrowy kod PIN rodzica';
       });
       return;
     }
@@ -144,7 +144,7 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
       setState(() {
         _isProcessing = false;
         _pinError = true;
-        _pinErrorMessage = 'Niepoprawny kod PIN rodzica (domyślny: 1234).';
+        _pinErrorMessage = 'Niepoprawny kod PIN rodzica.';
       });
     }
   }
@@ -500,28 +500,9 @@ class _ParentApprovalModalState extends State<ParentApprovalModal> {
                       const SizedBox(height: 4),
 
                       // Sekcja kodu PIN rodzica
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Expanded(
-                            child: Text(
-                              'Wprowadź kod PIN rodzica:',
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.slate600),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.slate100,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'Domyślny PIN: 1234',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.slate500),
-                            ),
-                          ),
-                        ],
+                      const Text(
+                        'Wprowadź kod PIN rodzica:',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.slate600),
                       ),
                       const SizedBox(height: 6),
                       TextField(
