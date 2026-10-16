@@ -46,7 +46,9 @@ class _AverageSimulatorModalState extends State<AverageSimulatorModal> {
     final sub = _selectedSubject;
     double weightedSum = 0;
     int totalWeight = 0;
-    for (final g in sub.grades.where((g) => g.isCountedToAverage)) {
+    for (final g in sub.grades.where(
+      (g) => g.isCountedToAverage && g.isMenScaleGrade && g.weight > 0,
+    )) {
       weightedSum += g.numericValue * g.weight;
       totalWeight += g.weight;
     }
@@ -56,20 +58,24 @@ class _AverageSimulatorModalState extends State<AverageSimulatorModal> {
   }
 
   double _calculateSimulatedOverallAverage() {
-    double totalSubjectAverages = 0;
+    double weightedSum = 0;
+    int totalWeight = 0;
     for (final s in widget.subjects) {
-      if (s.id == _selectedSubjectId) {
-        totalSubjectAverages += _calculateSimulatedSubjectAverage();
-      } else {
-        totalSubjectAverages += (s.weightedAverageSem1 ?? 4.5);
+      for (final g in s.grades.where(
+        (g) => g.isCountedToAverage && g.isMenScaleGrade && g.weight > 0,
+      )) {
+        weightedSum += g.numericValue * g.weight;
+        totalWeight += g.weight;
       }
     }
-    return totalSubjectAverages / widget.subjects.length;
+    weightedSum += _simulatedGrade * _simulatedWeight;
+    totalWeight += _simulatedWeight;
+    return totalWeight == 0 ? 0.0 : (weightedSum / totalWeight);
   }
 
   @override
   Widget build(BuildContext context) {
-    final curSubAvg = _selectedSubject.weightedAverageSem1 ?? 4.0;
+    final curSubAvg = _selectedSubject.calculateWeightedAverage(1);
     final newSubAvg = _calculateSimulatedSubjectAverage();
     final newOverallAvg = _calculateSimulatedOverallAverage();
     final diff = newOverallAvg - widget.currentOverallAverage;
@@ -198,7 +204,7 @@ class _AverageSimulatorModalState extends State<AverageSimulatorModal> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            ' (było ${curSubAvg.toStringAsFixed(2)})',
+                            ' (było ${curSubAvg > 0 ? curSubAvg.toStringAsFixed(2) : '—'})',
                             style: const TextStyle(
                               fontSize: 11,
                               color: AppColors.onSurfaceVariant,

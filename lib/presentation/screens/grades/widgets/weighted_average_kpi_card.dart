@@ -161,11 +161,15 @@ class WeightedAverageKpiCard extends ConsumerWidget {
                   child: Row(
                     children: [
                       Icon(
-                        lastGrade != null && lastGrade.numericValue < 2.0
+                        lastGrade != null &&
+                                lastGrade.isMenScaleGrade &&
+                                lastGrade.numericValue < 2.0
                             ? Icons.warning_amber_rounded
                             : Icons.history_edu_rounded,
                         size: 16,
-                        color: lastGrade != null && lastGrade.numericValue < 2.0
+                        color: lastGrade != null &&
+                                lastGrade.isMenScaleGrade &&
+                                lastGrade.numericValue < 2.0
                             ? const Color(0xFFB91C1C)
                             : AppColors.secondary,
                       ),
@@ -173,12 +177,16 @@ class WeightedAverageKpiCard extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           lastGrade != null
-                              ? 'Ostatnia ocena: ${lastGrade.rawValue} (waga ${lastGrade.weight}) • ${lastGrade.subjectName}'
+                              ? (lastGrade.isCountedToAverage && lastGrade.weight > 0
+                                  ? 'Ostatnia ocena: ${lastGrade.rawValue} (waga ${lastGrade.weight}) • ${lastGrade.subjectName}'
+                                  : 'Ostatnia ocena: ${lastGrade.rawValue} • ${lastGrade.subjectName}')
                               : 'Klasa $className • Brak ocen w wybranym okresie',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: lastGrade != null && lastGrade.numericValue < 2.0
+                            color: lastGrade != null &&
+                                    lastGrade.isMenScaleGrade &&
+                                    lastGrade.numericValue < 2.0
                                 ? const Color(0xFFB91C1C)
                                 : AppColors.secondary,
                           ),

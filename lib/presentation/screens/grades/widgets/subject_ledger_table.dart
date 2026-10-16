@@ -24,6 +24,10 @@ class SubjectLedgerTable extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final searchQuery = ref.watch(gradesSearchQueryProvider);
     final term = ref.watch(gradesTermProvider);
+    final stats = ref.watch(gradesDistributionStatsProvider);
+    final overallAvgStr = stats.overallAverage > 0
+        ? stats.overallAverage.toStringAsFixed(2)
+        : '—';
 
     final filteredSubjects = subjects.where((s) {
       if (searchQuery.trim().isEmpty) return true;
@@ -260,9 +264,9 @@ class SubjectLedgerTable extends ConsumerWidget {
                         color: AppColors.primaryFixed,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text(
-                        '4.82',
-                        style: TextStyle(
+                      child: Text(
+                        overallAvgStr,
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w800,
                           color: AppColors.primary,
@@ -281,21 +285,42 @@ class SubjectLedgerTable extends ConsumerWidget {
 
   Widget _buildTableRow(BuildContext context, Subject s, bool isSelected, int term) {
     final avg = s.calculateWeightedAverage(term);
-    final avgStr = avg > 0 ? avg.toStringAsFixed(2) : (s.weightedAverageSem1?.toStringAsFixed(2) ?? '4.80');
+    final hasAvg = avg > 0;
+    final avgStr = hasAvg ? avg.toStringAsFixed(2) : '—';
 
-    // Predicted grade
-    final predicted = s.predictedGrade != null
-        ? '${s.predictedGrade}'
-        : (avg >= 4.75 ? '5' : (avg >= 3.75 ? '4' : '3'));
+    // Predicted grade (null when subject has no counted grades)
+    final predictedInt = s.predictedGradeForTerm(term);
+    final predicted = predictedInt != null ? '$predictedInt' : '—';
 
-    // Recent grade
+    Color predictedBg;
+    Color predictedText;
+    if (predictedInt == null) {
+      predictedBg = AppColors.surfaceContainerLow;
+      predictedText = AppColors.outline;
+    } else if (predictedInt >= 5) {
+      predictedBg = AppColors.secondaryContainer;
+      predictedText = AppColors.onSecondaryContainer;
+    } else if (predictedInt == 4) {
+      predictedBg = AppColors.primaryFixed;
+      predictedText = AppColors.primary;
+    } else if (predictedInt == 3) {
+      predictedBg = const Color(0xFFFEF3C7);
+      predictedText = const Color(0xFFB45309);
+    } else {
+      predictedBg = const Color(0xFFFEE2E2);
+      predictedText = const Color(0xFFB91C1C);
+    }
+
+    // Recent grade (newest by date)
     final gradesList = term == 3
         ? s.grades
         : s.grades.where((g) => g.term == term).toList();
-    final lastGrade = gradesList.isNotEmpty ? gradesList.first : null;
+    final lastGrade = gradesList.isNotEmpty
+        ? gradesList.reduce((a, b) => b.date.isBefore(a.date) ? a : b)
+        : null;
     final lastDateStr = lastGrade != null
         ? DateFormat('d MMM yyyy', 'pl').format(lastGrade.date)
-        : '-';
+        : '—';
 
     return Material(
       color: isSelected
@@ -401,7 +426,11 @@ class SubjectLedgerTable extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
-                    color: avg >= 4.75 ? AppColors.secondary : AppColors.primary,
+                    color: !hasAvg
+                        ? AppColors.outline
+                        : (avg >= 4.75
+                            ? AppColors.secondary
+                            : (avg < 2.0 ? AppColors.error : AppColors.primary)),
                   ),
                 ),
               ),
@@ -414,16 +443,16 @@ class SubjectLedgerTable extends ConsumerWidget {
                     width: 26,
                     height: 26,
                     decoration: BoxDecoration(
-                      color: AppColors.secondaryContainer,
+                      color: predictedBg,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     alignment: Alignment.center,
                     child: Text(
                       predicted,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.onSecondaryContainer,
+                        color: predictedText,
                       ),
                     ),
                   ),
@@ -530,25 +559,45 @@ class SubjectLedgerTable extends ConsumerWidget {
     Color pillBg;
     Color textColor;
 
-    final isHigh = grade.numericValue >= 5.0;
-    final isMid = grade.numericValue >= 4.0;
-
-    if (grade.weight >= 3) {
-      pillBg = isHigh
-          ? AppColors.secondary
-          : (isMid ? AppColors.primaryContainer : const Color(0xFFDC2626));
-      textColor = Colors.white;
-    } else if (grade.weight == 2) {
-      pillBg = isHigh
-          ? AppColors.secondary
-          : (isMid ? AppColors.primaryContainer : AppColors.tertiaryFixedDim);
-      textColor = (isHigh || isMid) ? Colors.white : AppColors.tertiary;
+    if (!grade.isMenScaleGrade) {
+      if (grade.rawValue.trim() == '+') {
+        pillBg = const Color(0xFFDCFCE7);
+        textColor = const Color(0xFF15803D);
+      } else {
+        pillBg = AppColors.surfaceContainerHigh;
+        textColor = AppColors.onSurfaceVariant;
+      }
     } else {
-      pillBg = isHigh
-          ? AppColors.secondary
-          : (isMid ? AppColors.primary : AppColors.surfaceContainerHighest);
-      textColor = (isHigh || isMid) ? Colors.white : AppColors.onSurface;
+      final isHigh = grade.numericValue >= 5.0;
+      final isMid = grade.numericValue >= 4.0;
+      final isLow = grade.numericValue < 2.75;
+
+      if (isLow) {
+        pillBg = grade.numericValue < 2.0
+            ? const Color(0xFFDC2626)
+            : const Color(0xFFFEE2E2);
+        textColor = grade.numericValue < 2.0
+            ? Colors.white
+            : const Color(0xFFB91C1C);
+      } else if (grade.weight >= 3) {
+        pillBg = isHigh
+            ? AppColors.secondary
+            : (isMid ? AppColors.primaryContainer : AppColors.tertiaryFixedDim);
+        textColor = (isHigh || isMid) ? Colors.white : AppColors.tertiary;
+      } else if (grade.weight == 2) {
+        pillBg = isHigh
+            ? AppColors.secondary
+            : (isMid ? AppColors.primaryContainer : AppColors.tertiaryFixedDim);
+        textColor = (isHigh || isMid) ? Colors.white : AppColors.tertiary;
+      } else {
+        pillBg = isHigh
+            ? AppColors.secondary
+            : (isMid ? AppColors.primary : AppColors.surfaceContainerHighest);
+        textColor = (isHigh || isMid) ? Colors.white : AppColors.onSurface;
+      }
     }
+
+    final showWeight = grade.isCountedToAverage && grade.weight > 0;
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -582,15 +631,17 @@ class SubjectLedgerTable extends ConsumerWidget {
                   color: textColor,
                 ),
               ),
-              const SizedBox(width: 3),
-              Text(
-                'w:${grade.weight}',
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w500,
-                  color: textColor.withValues(alpha: 0.85),
+              if (showWeight) ...[
+                const SizedBox(width: 3),
+                Text(
+                  'w:${grade.weight}',
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.w500,
+                    color: textColor.withValues(alpha: 0.85),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

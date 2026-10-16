@@ -111,8 +111,35 @@ class SubjectInspectorCard extends StatelessWidget {
   /// Populated State adhering to Decision D-04
   Widget _buildPopulatedState(BuildContext context, Subject s) {
     final avg = s.calculateWeightedAverage(1);
-    final avgStr = avg > 0 ? avg.toStringAsFixed(2) : (s.weightedAverageSem1?.toStringAsFixed(2) ?? '4.80');
+    final avgStr = avg > 0 ? avg.toStringAsFixed(2) : '—';
     final gradesList = s.grades;
+
+    double weightedSum = 0;
+    int totalWeight = 0;
+    for (final g in gradesList) {
+      if (g.isCountedToAverage && g.isMenScaleGrade && g.weight > 0) {
+        weightedSum += g.numericValue * g.weight;
+        totalWeight += g.weight;
+      }
+    }
+    final simAvg = (weightedSum + 5.0 * 3) / (totalWeight + 3);
+    String targetLabel;
+    if (simAvg >= 5.50) {
+      targetLabel = 'ocenę celującą (6)';
+    } else if (simAvg >= 4.75) {
+      targetLabel = 'ocenę bardzo dobrą (5)';
+    } else if (simAvg >= 3.75) {
+      targetLabel = 'ocenę dobrą (4)';
+    } else if (simAvg >= 2.75) {
+      targetLabel = 'ocenę dostateczną (3)';
+    } else if (simAvg >= 1.75) {
+      targetLabel = 'ocenę dopuszczającą (2)';
+    } else {
+      targetLabel = 'poprawę sytuacji klasyfikacyjnej';
+    }
+    final aiInsightText = avg > 0
+        ? 'Zdobycie oceny 5 ze sprawdzianu (waga 3) zmieni średnią z tego przedmiotu na ${simAvg.toStringAsFixed(2)} i przybliży do: $targetLabel.'
+        : 'Przedmiot nie posiada jeszcze ocen liczonych do średniej. Pierwsza ocena 5 (waga 3) otworzy średnią na poziomie 5.00.';
 
     return Container(
       decoration: BoxDecoration(
@@ -180,10 +207,10 @@ class SubjectInspectorCard extends StatelessWidget {
                 children: [
                   Text(
                     avgStr,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
-                      color: AppColors.primary,
+                      color: avg > 0 ? AppColors.primary : AppColors.outline,
                       height: 1.1,
                     ),
                   ),
@@ -286,7 +313,7 @@ class SubjectInspectorCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Zdobycie oceny 5 ze sprawdzianu podniesie średnią z tego przedmiotu do ${(avg + 0.12).clamp(1.0, 6.0).toStringAsFixed(2)} i zabezpieczy ocenę celującą na koniec semestru.',
+                        aiInsightText,
                         style: const TextStyle(
                           fontSize: 11,
                           height: 1.35,
@@ -335,12 +362,32 @@ class SubjectInspectorCard extends StatelessWidget {
     final dateFormat = DateFormat('d MMM', 'pl');
     final dateStr = dateFormat.format(grade.date);
 
-    final isHigh = grade.numericValue >= 5.0;
-    final isMid = grade.numericValue >= 4.0;
-    final badgeColor = isHigh
-        ? AppColors.secondary
-        : (isMid ? AppColors.primaryContainer : AppColors.tertiaryFixedDim);
-    final badgeTextColor = (isHigh || isMid) ? Colors.white : AppColors.tertiary;
+    Color badgeColor;
+    Color badgeTextColor;
+    if (!grade.isMenScaleGrade) {
+      if (grade.rawValue.trim() == '+') {
+        badgeColor = const Color(0xFFDCFCE7);
+        badgeTextColor = const Color(0xFF15803D);
+      } else {
+        badgeColor = AppColors.surfaceContainerHighest;
+        badgeTextColor = AppColors.onSurfaceVariant;
+      }
+    } else if (grade.numericValue < 2.0) {
+      badgeColor = const Color(0xFFDC2626);
+      badgeTextColor = Colors.white;
+    } else {
+      final isHigh = grade.numericValue >= 5.0;
+      final isMid = grade.numericValue >= 4.0;
+      badgeColor = isHigh
+          ? AppColors.secondary
+          : (isMid ? AppColors.primaryContainer : AppColors.tertiaryFixedDim);
+      badgeTextColor = (isHigh || isMid) ? Colors.white : AppColors.tertiary;
+    }
+
+    final isCounted = grade.isCountedToAverage && grade.weight > 0;
+    final metaStr = isCounted
+        ? 'Waga: ${grade.weight} • Data: $dateStr'
+        : 'Nieliczona do średniej • Data: $dateStr';
 
     return InkWell(
       onTap: () => onTapGrade?.call(grade, s),
@@ -391,7 +438,7 @@ class SubjectInspectorCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        'Waga: ${grade.weight} • Data: $dateStr',
+                        metaStr,
                         style: const TextStyle(
                           fontSize: 11,
                           color: AppColors.onSurfaceVariant,

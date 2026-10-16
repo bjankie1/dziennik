@@ -93,30 +93,86 @@ class GradeDetailsSideSheet extends ConsumerWidget {
     final dateFormat = DateFormat('EEEE, d MMMM yyyy (godz. HH:mm)', 'pl');
     final formattedDate = dateFormat.format(grade.date);
 
-    final isHigh = grade.numericValue >= 5.0;
-    final isMid = grade.numericValue >= 4.0;
-    final badgeColor = isHigh
-        ? AppColors.primaryContainer
-        : (isMid ? AppColors.primary : AppColors.tertiaryContainer);
+    final isCounted =
+        grade.isCountedToAverage && grade.isMenScaleGrade && grade.weight > 0;
 
-    String verbalGradeStr = 'Dobra';
-    if (grade.numericValue >= 5.5) {
-      verbalGradeStr = 'Celująca';
-    } else if (grade.numericValue >= 4.75) {
-      verbalGradeStr = 'B. Dobra';
-    } else if (grade.numericValue >= 3.75) {
-      verbalGradeStr = 'Dobra';
-    } else if (grade.numericValue >= 2.75) {
-      verbalGradeStr = 'Dostateczna';
-    } else if (grade.numericValue >= 1.75) {
-      verbalGradeStr = 'Dopuszczająca';
+    Color badgeColor;
+    String verbalGradeStr;
+    if (!grade.isMenScaleGrade) {
+      if (grade.rawValue.trim() == '+') {
+        badgeColor = AppColors.secondary;
+        verbalGradeStr = 'Aktywność (+)';
+      } else if (grade.rawValue.trim() == '0') {
+        badgeColor = AppColors.outline;
+        verbalGradeStr = 'Brak zaliczenia (0)';
+      } else {
+        badgeColor = AppColors.outline;
+        verbalGradeStr = 'Wpis informacyjny';
+      }
     } else {
-      verbalGradeStr = 'Niedostateczna';
+      final isHigh = grade.numericValue >= 5.0;
+      final isMid = grade.numericValue >= 4.0;
+      badgeColor = isHigh
+          ? AppColors.primaryContainer
+          : (isMid
+              ? AppColors.primary
+              : (grade.numericValue < 2.0
+                  ? AppColors.error
+                  : AppColors.tertiaryContainer));
+
+      if (grade.numericValue >= 5.5) {
+        verbalGradeStr = 'Celująca';
+      } else if (grade.numericValue >= 4.75) {
+        verbalGradeStr = 'B. Dobra';
+      } else if (grade.numericValue >= 3.75) {
+        verbalGradeStr = 'Dobra';
+      } else if (grade.numericValue >= 2.75) {
+        verbalGradeStr = 'Dostateczna';
+      } else if (grade.numericValue >= 1.75) {
+        verbalGradeStr = 'Dopuszczająca';
+      } else {
+        verbalGradeStr = 'Niedostateczna';
+      }
     }
 
-    final commentText = grade.comment.isNotEmpty
-        ? grade.comment
-        : 'Świetna wypowiedź, bezbłędna terminologia naukowa i poprawny logicznie wywód merytoryczny.';
+    final countedSubjectGrades = subject.grades
+        .where(
+          (g) => g.isCountedToAverage && g.isMenScaleGrade && g.weight > 0,
+        )
+        .toList();
+    final double afterAvg = subject.calculateWeightedAverage(grade.term);
+    double? beforeAvg;
+    double? impactDelta;
+    if (isCounted) {
+      final otherGrades =
+          countedSubjectGrades.where((g) => g.id != grade.id).toList();
+      if (otherGrades.isNotEmpty) {
+        double wSum = 0;
+        int wTot = 0;
+        for (final g in otherGrades) {
+          wSum += g.numericValue * g.weight;
+          wTot += g.weight;
+        }
+        if (wTot > 0) {
+          beforeAvg = wSum / wTot;
+          impactDelta = afterAvg - beforeAvg;
+        }
+      }
+    }
+
+    final pctSuffix = grade.percentage != null ? ' • ${grade.percentage}%' : '';
+    final digitalGradeValue = '${grade.rawValue} ($verbalGradeStr$pctSuffix)';
+    final weightRowValue = isCounted
+        ? '${grade.weight} (${'★' * grade.weight.clamp(1, 5)})'
+        : '— (Nieliczona)';
+
+    final cleanComment = grade.comment.trim();
+    final hasRealComment = cleanComment.isNotEmpty &&
+        cleanComment.toLowerCase() != 'brak uwag' &&
+        cleanComment.toLowerCase() != 'brak';
+    final commentText = hasRealComment
+        ? cleanComment
+        : 'Brak dodatkowego komentarza nauczyciela.';
 
     return SafeArea(
       child: Column(
@@ -308,15 +364,21 @@ class GradeDetailsSideSheet extends ConsumerWidget {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: AppColors.primaryFixed,
+                                          color: isCounted
+                                              ? AppColors.primaryFixed
+                                              : AppColors.surfaceContainerHighest,
                                           borderRadius: BorderRadius.circular(6),
                                         ),
                                         child: Text(
-                                          'Waga: ${grade.weight}',
-                                          style: const TextStyle(
+                                          isCounted
+                                              ? 'Waga: ${grade.weight}'
+                                              : 'Nieliczona do średniej',
+                                          style: TextStyle(
                                             fontSize: 10,
                                             fontWeight: FontWeight.w700,
-                                            color: AppColors.primary,
+                                            color: isCounted
+                                                ? AppColors.primary
+                                                : AppColors.onSurfaceVariant,
                                           ),
                                         ),
                                       ),
@@ -324,7 +386,7 @@ class GradeDetailsSideSheet extends ConsumerWidget {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    grade.comment.isNotEmpty ? grade.comment : 'Ocena cząstkowa z zajęć',
+                                    hasRealComment ? cleanComment : 'Ocena cząstkowa z zajęć',
                                     style: const TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700,
@@ -365,75 +427,115 @@ class GradeDetailsSideSheet extends ConsumerWidget {
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: AppColors.surfaceContainerHigh.withValues(alpha: 0.6)),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'WPŁYW NA ŚREDNIĄ',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      letterSpacing: 0.6,
+                          child: !isCounted
+                              ? Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.info_outline_rounded,
+                                      size: 16,
                                       color: AppColors.onSurfaceVariant,
                                     ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.trending_up_rounded, size: 14, color: Color(0xFF15803D)),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        '+0.06 pkt',
-                                        style: TextStyle(
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        afterAvg > 0
+                                            ? 'Wpis nie jest wliczany do średniej ważonej (aktualna średnia przedmiotu: ${afterAvg.toStringAsFixed(2)})'
+                                            : 'Wpis nie jest wliczany do średniej ważonej',
+                                        style: const TextStyle(
                                           fontSize: 11,
-                                          fontWeight: FontWeight.w800,
-                                          color: Color(0xFF15803D),
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.onSurfaceVariant,
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              const Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Przed: 4.86',
-                                    style: TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
-                                  ),
-                                  Text(
-                                    'Teraz: 4.92',
-                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.primary),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: 0.82,
-                                  minHeight: 6,
-                                  backgroundColor: AppColors.surfaceContainerHigh,
-                                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.secondary),
+                                    ),
+                                  ],
+                                )
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text(
+                                          'WPŁYW NA ŚREDNIĄ PRZEDMIOTU',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 0.6,
+                                            color: AppColors.onSurfaceVariant,
+                                          ),
+                                        ),
+                                        if (impactDelta != null)
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                impactDelta >= 0
+                                                    ? Icons.trending_up_rounded
+                                                    : Icons.trending_down_rounded,
+                                                size: 14,
+                                                color: impactDelta >= 0
+                                                    ? const Color(0xFF15803D)
+                                                    : AppColors.error,
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                '${impactDelta >= 0 ? '+' : ''}${impactDelta.toStringAsFixed(2)} pkt',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w800,
+                                                  color: impactDelta >= 0
+                                                      ? const Color(0xFF15803D)
+                                                      : AppColors.error,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        else
+                                          const Text(
+                                            'Pierwsza ocena liczona',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.primary,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Przed: ${beforeAvg != null ? beforeAvg.toStringAsFixed(2) : '—'}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: AppColors.onSurfaceVariant,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Teraz: ${afterAvg.toStringAsFixed(2)}',
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800,
+                                            color: AppColors.primary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: LinearProgressIndicator(
+                                        value: (afterAvg / 6.0).clamp(0.0, 1.0),
+                                        minHeight: 6,
+                                        backgroundColor: AppColors.surfaceContainerHigh,
+                                        valueColor: const AlwaysStoppedAnimation<Color>(
+                                          AppColors.secondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              const Align(
-                                alignment: Alignment.centerRight,
-                                child: Text(
-                                  'Pozycja w top 5% rocznika',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.secondary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
                       ],
                     ),
@@ -475,7 +577,7 @@ class GradeDetailsSideSheet extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        _buildRegisterRow('Ocena cyfrowa', '${grade.rawValue} ($verbalGradeStr • ${grade.percentage ?? 100}%)', isBold: true),
+                        _buildRegisterRow('Ocena cyfrowa', digitalGradeValue, isBold: true),
                         _buildDivider(),
                         _buildRegisterRow('Kategoria', grade.categoryName),
                         _buildDivider(),
@@ -485,9 +587,14 @@ class GradeDetailsSideSheet extends ConsumerWidget {
                         _buildDivider(),
                         _buildRegisterRow('Nauczyciel', subject.teacherName),
                         _buildDivider(),
-                        _buildRegisterRow('Waga oceny', '${grade.weight} (${'★' * grade.weight.clamp(1, 5)})'),
+                        _buildRegisterRow('Waga oceny', weightRowValue),
                         _buildDivider(),
-                        _buildRegisterRow('Licz do średniej', 'TAK (Wliczana)', badge: true),
+                        _buildRegisterRow(
+                          'Licz do średniej',
+                          isCounted ? 'TAK (Wliczana)' : 'NIE (Nieliczona)',
+                          badge: true,
+                          isCountedBadge: isCounted,
+                        ),
                       ],
                     ),
                   ),
@@ -531,7 +638,7 @@ class GradeDetailsSideSheet extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '„$commentText”',
+                          hasRealComment ? '„$commentText”' : commentText,
                           style: const TextStyle(
                             fontSize: 12,
                             fontStyle: FontStyle.italic,
@@ -597,7 +704,13 @@ class GradeDetailsSideSheet extends ConsumerWidget {
     );
   }
 
-  Widget _buildRegisterRow(String label, String value, {bool isBold = false, bool badge = false}) {
+  Widget _buildRegisterRow(
+    String label,
+    String value, {
+    bool isBold = false,
+    bool badge = false,
+    bool isCountedBadge = true,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: Row(
@@ -614,20 +727,32 @@ class GradeDetailsSideSheet extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFFDCFCE7),
+                color: isCountedBadge
+                    ? const Color(0xFFDCFCE7)
+                    : AppColors.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check_circle_rounded, size: 12, color: Color(0xFF15803D)),
-                  SizedBox(width: 4),
+                  Icon(
+                    isCountedBadge
+                        ? Icons.check_circle_rounded
+                        : Icons.remove_circle_outline_rounded,
+                    size: 12,
+                    color: isCountedBadge
+                        ? const Color(0xFF15803D)
+                        : AppColors.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
                   Text(
-                    'TAK (Wliczana)',
+                    value,
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF15803D),
+                      color: isCountedBadge
+                          ? const Color(0xFF15803D)
+                          : AppColors.onSurfaceVariant,
                     ),
                   ),
                 ],

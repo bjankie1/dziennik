@@ -594,7 +594,9 @@ class DashboardMetricsColumn extends ConsumerWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    '${grade.categoryName} • waga ${grade.weight}',
+                    grade.isCountedToAverage && grade.weight > 0
+                        ? '${grade.categoryName} • waga ${grade.weight}'
+                        : '${grade.categoryName} • nieliczona',
                     style: const TextStyle(
                       fontSize: 11,
                       color: AppColors.onSurfaceVariant,

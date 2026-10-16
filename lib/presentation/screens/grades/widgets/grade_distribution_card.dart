@@ -7,11 +7,22 @@ import '../../../providers/school_providers.dart';
 class GradeDistributionCard extends ConsumerWidget {
   const GradeDistributionCard({super.key});
 
+  static String formatThreatsLabel(int count) {
+    if (count == 1) return '1 zagrożenie';
+    final mod10 = count % 10;
+    final mod100 = count % 100;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+      return '$count zagrożenia';
+    }
+    return '$count zagrożeń';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stats = ref.watch(gradesDistributionStatsProvider);
     final counts = stats.counts;
     final total = stats.totalGrades;
+    final threatCount = counts[1] ?? 0;
 
     // Determine max count for scaling (ensure at least 1)
     int maxCount = 1;
@@ -62,13 +73,16 @@ class GradeDistributionCard extends ConsumerWidget {
                         children: [
                           Row(
                             children: [
-                              const Text(
-                                'ROZKŁAD OCEN CZĄSTKOWYCH',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.8,
-                                  color: AppColors.onSurfaceVariant,
+                              const Flexible(
+                                child: Text(
+                                  'ROZKŁAD OCEN CZĄSTKOWYCH',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.8,
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -94,7 +108,7 @@ class GradeDistributionCard extends ConsumerWidget {
                                     const SizedBox(width: 4),
                                     Text(
                                       stats.hasThreats
-                                          ? '${stats.counts[1]} zagrożeń'
+                                          ? formatThreatsLabel(threatCount)
                                           : '0 zagrożeń • 100% pozytywnych',
                                       style: TextStyle(
                                         fontSize: 11,
@@ -121,11 +135,16 @@ class GradeDistributionCard extends ConsumerWidget {
                                 ),
                               ),
                               const SizedBox(width: 6),
-                              const Text(
-                                'ocen wpisanych w semestrze',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.onSurfaceVariant,
+                              Flexible(
+                                child: Text(
+                                  stats.otherGradesCount > 0
+                                      ? 'ocen w skali 1–6 (+${stats.otherGradesCount} wpisów: 0/+)'
+                                      : 'ocen wpisanych w semestrze',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                             ],

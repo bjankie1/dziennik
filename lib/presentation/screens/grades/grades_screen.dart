@@ -28,6 +28,22 @@ class _GradePalette {
 }
 
 _GradePalette _getGradePalette(Grade grade) {
+  if (!grade.isMenScaleGrade) {
+    if (grade.rawValue.trim() == '+') {
+      return const _GradePalette(
+        bg: Color(0xFFDCFCE7),
+        text: Color(0xFF15803D),
+        weightColor: Color(0xFF16A34A),
+        circleBg: Color(0xFFBBF7D0),
+      );
+    }
+    return const _GradePalette(
+      bg: Color(0xFFF1F5F9),
+      text: Color(0xFF475569),
+      weightColor: Color(0xFF64748B),
+      circleBg: Color(0xFFE2E8F0),
+    );
+  }
   final numVal = grade.numericValue;
   if (numVal >= 4.75) {
     // 5, 5+, 6
@@ -858,7 +874,8 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
 
   Widget _buildSubjectCard(Subject subject) {
     final isExpanded = _expandedSubjectIds.contains(subject.id);
-    final avg = subject.weightedAverageSem1 ?? 0.0;
+    final avg = subject.calculateWeightedAverage(_selectedTerm);
+    final hasAvg = avg > 0;
     final isHighAvg = avg >= 4.75;
     final dotColor = _getSubjectDotColor(subject.name);
 
@@ -931,21 +948,33 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isHighAvg ? const Color(0xFFDCFCE7) : const Color(0xFFEFF6FF),
+                          color: !hasAvg
+                              ? const Color(0xFFF8FAFC)
+                              : (isHighAvg
+                                  ? const Color(0xFFDCFCE7)
+                                  : const Color(0xFFEFF6FF)),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: isHighAvg ? const Color(0xFFBBF7D0) : const Color(0xFFDBEAFE),
+                            color: !hasAvg
+                                ? const Color(0xFFE2E8F0)
+                                : (isHighAvg
+                                    ? const Color(0xFFBBF7D0)
+                                    : const Color(0xFFDBEAFE)),
                           ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              avg.toStringAsFixed(2),
+                              hasAvg ? avg.toStringAsFixed(2) : '—',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w800,
-                                color: isHighAvg ? const Color(0xFF15803D) : const Color(0xFF1D4ED8),
+                                color: !hasAvg
+                                    ? const Color(0xFF94A3B8)
+                                    : (isHighAvg
+                                        ? const Color(0xFF15803D)
+                                        : const Color(0xFF1D4ED8)),
                               ),
                             ),
                             Text(
@@ -953,7 +982,11 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                               style: TextStyle(
                                 fontSize: 8,
                                 fontWeight: FontWeight.w600,
-                                color: isHighAvg ? const Color(0xFF16A34A) : const Color(0xFF3B82F6),
+                                color: !hasAvg
+                                    ? const Color(0xFF94A3B8)
+                                    : (isHighAvg
+                                        ? const Color(0xFF16A34A)
+                                        : const Color(0xFF3B82F6)),
                               ),
                             ),
                           ],
@@ -975,10 +1008,16 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                     runSpacing: 4,
                     children: subject.grades.map((grade) {
                       final palette = _getGradePalette(grade);
+                      final showWeight =
+                          grade.isCountedToAverage && grade.weight > 0;
                       return Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: () => GradeDetailsModal.show(context, grade),
+                          onTap: () => GradeDetailsModal.show(
+                            context,
+                            grade,
+                            subject: subject,
+                          ),
                           borderRadius: BorderRadius.circular(8),
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -997,16 +1036,18 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                                   fontWeight: FontWeight.w800,
                                   color: palette.text,
                                 ),
-                                children: [
-                                  TextSpan(
-                                    text: ' (w:${grade.weight})',
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w600,
-                                      color: palette.weightColor,
-                                    ),
-                                  ),
-                                ],
+                                children: showWeight
+                                    ? [
+                                        TextSpan(
+                                          text: ' (w:${grade.weight})',
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w600,
+                                            color: palette.weightColor,
+                                          ),
+                                        ),
+                                      ]
+                                    : const [],
                               ),
                             ),
                           ),
@@ -1051,15 +1092,17 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  ...subject.grades.map((g) => _buildExpandedGradeRow(g)),
+                  ...subject.grades.map((g) => _buildExpandedGradeRow(g, subject)),
                   const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       onPressed: () {
                         final subjects = ref.read(subjectsProvider).value ?? [];
-                        final avg = ref.read(studentProfileProvider).value?.overallAverage ?? 4.82;
-                        AverageSimulatorModal.show(context, subjects, avg);
+                        final statsAvg = ref
+                            .read(gradesDistributionStatsProvider)
+                            .overallAverage;
+                        AverageSimulatorModal.show(context, subjects, statsAvg);
                       },
                       icon: const Icon(Icons.tune, size: 16),
                       label: const Text('Symuluj ocenę dla tego przedmiotu'),
@@ -1081,11 +1124,14 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
     );
   }
 
-  Widget _buildExpandedGradeRow(Grade grade) {
+  Widget _buildExpandedGradeRow(Grade grade, [Subject? subject]) {
     final palette = _getGradePalette(grade);
     final hasComment = grade.comment.isNotEmpty &&
         grade.comment.trim().toLowerCase() != 'brak uwag' &&
         grade.comment.trim().toLowerCase() != 'brak';
+    final weightInfo = grade.isCountedToAverage && grade.weight > 0
+        ? 'Waga: ${grade.weight}'
+        : 'Nieliczona do średniej';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1095,7 +1141,7 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: InkWell(
-        onTap: () => GradeDetailsModal.show(context, grade),
+        onTap: () => GradeDetailsModal.show(context, grade, subject: subject),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
@@ -1137,7 +1183,7 @@ class _GradesScreenState extends ConsumerState<GradesScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${_formatGradeDate(grade.date)} • Waga: ${grade.weight}',
+                      '${_formatGradeDate(grade.date)} • $weightInfo',
                       style: const TextStyle(
                         fontSize: 11,
                         color: Color(0xFF64748B),
