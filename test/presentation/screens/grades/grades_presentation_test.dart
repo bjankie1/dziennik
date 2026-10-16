@@ -470,4 +470,123 @@ void main() {
     expect(find.text('1.00'), findsWidgets);
     expect(find.text('Brak ocen'), findsAtLeastNWidgets(5));
   });
+
+  testWidgets('GradeDistributionCard aligns all 6 histogram bars and grade labels on the exact same horizontal baseline without overflow', (tester) async {
+    tester.view.physicalSize = const Size(2000, 1400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    // Skewed dataset where grade 1 has count 7 (matching the user screenshot where bar 1 was pushed down)
+    final skewedDataset = [
+      Subject(
+        id: 'sub_skew',
+        name: 'Matematyka',
+        teacherName: 'Nauczyciel Testowy',
+        grades: [
+          for (int i = 0; i < 7; i++)
+            _grade(
+              id: 'g1_$i',
+              value: '1',
+              numericValue: 1.0,
+              weight: 3,
+              isCountedToAverage: true,
+              subjectName: 'Matematyka',
+            ),
+          _grade(
+            id: 'g3_1',
+            value: '3+',
+            numericValue: 3.5,
+            weight: 2,
+            isCountedToAverage: true,
+            subjectName: 'Matematyka',
+          ),
+          _grade(
+            id: 'g4_1',
+            value: '4',
+            numericValue: 4.0,
+            weight: 2,
+            isCountedToAverage: true,
+            subjectName: 'Matematyka',
+          ),
+          _grade(
+            id: 'g4_2',
+            value: '4-',
+            numericValue: 3.75,
+            weight: 2,
+            isCountedToAverage: true,
+            subjectName: 'Matematyka',
+          ),
+          _grade(
+            id: 'g5_1',
+            value: '5',
+            numericValue: 5.0,
+            weight: 4,
+            isCountedToAverage: true,
+            subjectName: 'Matematyka',
+          ),
+        ],
+      ),
+    ];
+
+    for (final dataset in [_buildOskarRealDataset(), skewedDataset]) {
+      final container = ProviderContainer(
+        overrides: [
+          subjectsProvider.overrideWith((ref) async => dataset),
+        ],
+      );
+      await container.read(subjectsProvider.future);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: GradesScreen(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify no overflow or rendering exceptions
+      expect(tester.takeException(), isNull);
+
+      final bar1BottomDy = tester.getBottomLeft(find.byKey(const ValueKey('grade_bar_1'))).dy;
+      final label1BottomDy = tester.getBottomLeft(find.byKey(const ValueKey('grade_label_1'))).dy;
+      final label1CenterDy = tester.getCenter(find.byKey(const ValueKey('grade_label_1'))).dy;
+
+      for (int gradeNum = 1; gradeNum <= 6; gradeNum++) {
+        final barFinder = find.byKey(ValueKey('grade_bar_$gradeNum'));
+        final labelFinder = find.byKey(ValueKey('grade_label_$gradeNum'));
+
+        expect(barFinder, findsOneWidget, reason: 'Missing grade_bar_$gradeNum');
+        expect(labelFinder, findsOneWidget, reason: 'Missing grade_label_$gradeNum');
+
+        final barBottomDy = tester.getBottomLeft(barFinder).dy;
+        final labelBottomDy = tester.getBottomLeft(labelFinder).dy;
+        final labelCenterDy = tester.getCenter(labelFinder).dy;
+
+        expect(
+          barBottomDy,
+          equals(bar1BottomDy),
+          reason: 'Bar $gradeNum bottom dy ($barBottomDy) must match bar 1 bottom dy ($bar1BottomDy)',
+        );
+        expect(
+          labelBottomDy,
+          equals(label1BottomDy),
+          reason: 'Label $gradeNum bottom dy ($labelBottomDy) must match label 1 bottom dy ($label1BottomDy)',
+        );
+        expect(
+          labelCenterDy,
+          equals(label1CenterDy),
+          reason: 'Label $gradeNum center dy ($labelCenterDy) must match label 1 center dy ($label1CenterDy)',
+        );
+      }
+
+      container.dispose();
+    }
+  });
 }

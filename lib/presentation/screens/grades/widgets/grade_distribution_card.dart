@@ -171,8 +171,8 @@ class GradeDistributionCard extends ConsumerWidget {
 
                 // Bar Histogram (Scale 1..6)
                 Container(
-                  height: 80,
-                  padding: const EdgeInsets.only(bottom: 4),
+                  height: 96,
+                  padding: const EdgeInsets.only(bottom: 6),
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(color: AppColors.surfaceContainerHigh.withValues(alpha: 0.6)),
@@ -185,7 +185,7 @@ class GradeDistributionCard extends ConsumerWidget {
                       final gradeNum = index + 1;
                       final count = counts[gradeNum] ?? 0;
                       final ratio = maxCount > 0 ? (count / maxCount) : 0.0;
-                      final barHeight = (ratio * 34).clamp(4.0, 34.0);
+                      final barHeight = (ratio * 36).roundToDouble().clamp(4.0, 36.0);
 
                       Color barColor;
                       Color countColor;
@@ -209,17 +209,25 @@ class GradeDistributionCard extends ConsumerWidget {
                       return Expanded(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.end,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text(
-                              '$count',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                                color: countColor,
+                            SizedBox(
+                              height: 16,
+                              child: Center(
+                                child: Text(
+                                  '$count',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    height: 1.0,
+                                    fontWeight: FontWeight.w700,
+                                    color: countColor,
+                                  ),
+                                ),
                               ),
                             ),
                             const SizedBox(height: 4),
                             Container(
+                              key: ValueKey('grade_bar_$gradeNum'),
                               width: 32,
                               height: barHeight,
                               decoration: BoxDecoration(
@@ -227,13 +235,20 @@ class GradeDistributionCard extends ConsumerWidget {
                                 borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '$gradeNum',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: gradeNum >= 5 ? FontWeight.w800 : FontWeight.w600,
-                                color: gradeNum >= 5 ? AppColors.primary : AppColors.onSurfaceVariant,
+                            const SizedBox(height: 6),
+                            SizedBox(
+                              key: ValueKey('grade_label_$gradeNum'),
+                              height: 18,
+                              child: Center(
+                                child: Text(
+                                  '$gradeNum',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    height: 1.0,
+                                    fontWeight: gradeNum >= 5 ? FontWeight.w800 : FontWeight.w600,
+                                    color: gradeNum >= 5 ? AppColors.primary : AppColors.onSurfaceVariant,
+                                  ),
+                                ),
                               ),
                             ),
                           ],
