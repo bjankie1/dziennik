@@ -112,13 +112,14 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 261006-j7z | Trwała persystencja i synchronizacja wysłanych odpowiedzi w wątkach wiadomości (lokalny cache, Firestore, korelacja z Librus /wiadomosci/6 Wysłane i rola Rodzic/Uczeń) | 2026-10-06 | 89af6bf | [261006-j7z-w-w-tku-z-wychowawc-wys-a-em-2-odpowiedz](./quick/261006-j7z-w-w-tku-z-wychowawc-wys-a-em-2-odpowiedz/) |
 | 261007-9as | Automatyczne odświeżanie paska postępu czasu i oznaczania aktualnej/odbytej lekcji wraz z upływem czasu bez przeładowania strony | 2026-10-07 | 208b332 | [261007-9as-sprawd-i-napraw-automatyczne-od-wie-anie](./quick/261007-9as-sprawd-i-napraw-automatyczne-od-wie-anie/) |
 | 261007-a26 | Naprawa ucinania i przepełniania tekstów w kolumnie planu dnia i kafelkach na Pulpicie | 2026-10-07 | 61e43eb | [261007-a26-naprawa-ucinania-i-przepe-niania-tekst-w](./quick/261007-a26-naprawa-ucinania-i-przepe-niania-tekst-w/) |
+| 261016-cvn | Upewnij się że oceny są dobrze prezentowane. Średnia 2.74. Rozkład pokazuje 6 ocen 1, ale tabelka poniżej już 1 ocenę 1, ale też kilka 0. Średnia ogólna na dole to 4.82, a na górze 2.74 | 2026-10-16 | b0a0ee2 | [261016-cvn-upewnij-si-e-oceny-s-dobrze-prezentowane](./quick/261016-cvn-upewnij-si-e-oceny-s-dobrze-prezentowane/) |
 
 ## Session
 
-**Last session:** 2026-10-07T05:35:00.000Z
+**Last session:** 2026-10-16T07:45:00.000Z
 **Stopped at:** Phase 26 complete, ready to plan Phase 19
 **Resume file:** None
-Last activity: 2026-10-07 - Completed quick task 261007-a26: Naprawa ucinania i przepełniania tekstów w kolumnie planu dnia i kafelkach na Pulpicie
+Last activity: 2026-10-16 - Completed quick task 261016-cvn: Upewnij się że oceny są dobrze prezentowane. Średnia 2.74. Rozkład pokazuje 6 ocen 1, ale tabelka poniżej już 1 ocenę 1, ale też kilka 0. Średnia ogólna na dole to 4.82, a na górze 2.74
 
 ## Current Position
 
@@ -127,7 +128,7 @@ Current Plan: Not started
 Total Plans in Phase: 1
 Next Phase: 19 (Raporty tygodniowe)
 Status: Phase complete — ready for verification
-Last activity: 2026-10-07 - Completed quick task 261007-a26: Naprawa ucinania i przepełniania tekstów w kolumnie planu dnia i kafelkach na Pulpicie
+Last activity: 2026-10-16 - Completed quick task 261016-cvn: Upewnij się że oceny są dobrze prezentowane. Średnia 2.74. Rozkład pokazuje 6 ocen 1, ale tabelka poniżej już 1 ocenę 1, ale też kilka 0. Średnia ogólna na dole to 4.82, a na górze 2.74
 
 ## Performance Metrics
 
