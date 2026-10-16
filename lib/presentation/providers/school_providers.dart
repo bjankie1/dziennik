@@ -447,6 +447,7 @@ final gradesTermProvider =
 class GradesDistributionStats {
   final Map<int, int> counts; // 1..6
   final int totalGrades;
+  final int otherGradesCount;
   final bool hasThreats;
   final int dangerCount;
   final double positivePercentage;
@@ -460,6 +461,7 @@ class GradesDistributionStats {
   const GradesDistributionStats({
     required this.counts,
     required this.totalGrades,
+    this.otherGradesCount = 0,
     required this.hasThreats,
     required this.dangerCount,
     required this.positivePercentage,
@@ -475,6 +477,7 @@ class GradesDistributionStats {
     return const GradesDistributionStats(
       counts: {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0},
       totalGrades: 0,
+      otherGradesCount: 0,
       hasThreats: false,
       dangerCount: 0,
       positivePercentage: 100.0,
@@ -496,6 +499,7 @@ final gradesDistributionStatsProvider = Provider<GradesDistributionStats>((ref) 
     data: (subjects) {
       final Map<int, int> counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0};
       int total = 0;
+      int otherGradesCount = 0;
       double weightedSum = 0;
       int totalWeight = 0;
       int subjectsWithGrades = 0;
@@ -508,18 +512,22 @@ final gradesDistributionStatsProvider = Provider<GradesDistributionStats>((ref) 
             ? subject.grades
             : subject.grades.where((g) => g.term == term).toList();
 
-        if (grades.isNotEmpty) {
+        if (grades.any((g) => g.isMenScaleGrade || g.isCountedToAverage)) {
           subjectsWithGrades++;
         }
 
         for (final g in grades) {
-          final bucket = g.numericValue.round().clamp(1, 6);
-          counts[bucket] = (counts[bucket] ?? 0) + 1;
-          total++;
+          final bucket = g.menScaleBucket;
+          if (bucket != null) {
+            counts[bucket] = (counts[bucket] ?? 0) + 1;
+            total++;
+          } else {
+            otherGradesCount++;
+          }
           runningIndex++;
           indexedAllGrades.add((grade: g, index: runningIndex));
 
-          if (g.isCountedToAverage) {
+          if (g.isCountedToAverage && g.isMenScaleGrade && g.weight > 0) {
             weightedSum += g.numericValue * g.weight;
             totalWeight += g.weight;
             indexedCountedGrades.add((grade: g, index: runningIndex));
@@ -582,6 +590,7 @@ final gradesDistributionStatsProvider = Provider<GradesDistributionStats>((ref) 
       return GradesDistributionStats(
         counts: counts,
         totalGrades: total,
+        otherGradesCount: otherGradesCount,
         hasThreats: threatCount > 0,
         dangerCount: threatCount + (counts[2] ?? 0),
         positivePercentage: positivePct,

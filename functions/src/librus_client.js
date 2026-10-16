@@ -396,8 +396,8 @@ class LibrusClient {
     const $ = cheerio.load(res.data);
 
     const subjects = [];
-    let totalGradePoints = 0;
-    let totalGradeCount = 0;
+    let totalWeightedSum = 0;
+    let totalWeightSum = 0;
 
     $("table.decorated tr.line0, table.decorated tr.line1").each((_, tr) => {
       const tds = $(tr).find("td");
@@ -429,28 +429,44 @@ class LibrusClient {
       $(tr).find("span.grade-box a, a.grade-box").each((__, g) => {
         const valueStr = $(g).text().trim();
         const tooltip = $(g).attr("title") || "";
-        if (!valueStr || valueStr === "-") return;
+        if (!valueStr) return;
 
         const weightMatch = tooltip.match(/Waga:\s*(\d+)/i);
+        const countMatch = tooltip.match(/Licz do średniej:\s*(tak|nie)/i);
         const catMatch = tooltip.match(/Kategoria:\s*([^<]+)/i);
         const dateMatch = tooltip.match(/Data:\s*([^<]+)/i);
         const teacherMatch = tooltip.match(/Nauczyciel:\s*([^<]+)/i);
 
-        const valClean = valueStr.replace(/[^0-9+-]/g, "");
-        let numVal = parseFloat(valClean);
-        if (valueStr.includes("+")) numVal += 0.5;
-        if (valueStr.includes("-")) numVal -= 0.25;
+        const menMatch = valueStr.match(/^([1-6])([+-])?$|^([+-])([1-6])$/);
+        let numVal = 0;
+        let isMenScale = false;
+        if (menMatch) {
+          isMenScale = true;
+          const digit = parseInt(menMatch[1] || menMatch[4], 10);
+          const mod = menMatch[2] || menMatch[3] || "";
+          numVal = digit + (mod === "+" ? 0.5 : mod === "-" ? -0.25 : 0);
+          numVal = Math.max(1.0, Math.min(6.0, numVal));
+        }
 
-        if (!isNaN(numVal)) {
-          totalGradePoints += numVal;
-          totalGradeCount += 1;
+        const parsedWeight = weightMatch ? parseInt(weightMatch[1], 10) : null;
+        const isCountedToAverage = isMenScale && (
+          countMatch
+            ? countMatch[1].toLowerCase() === "tak"
+            : (parsedWeight !== null ? parsedWeight > 0 : true)
+        );
+        const weight = isCountedToAverage ? (parsedWeight ?? 1) : (parsedWeight ?? 0);
+
+        if (isCountedToAverage && weight > 0) {
+          totalWeightedSum += numVal * weight;
+          totalWeightSum += weight;
         }
 
         grades.push({
           id: `${subjectName}_${dateMatch ? dateMatch[1].trim() : Date.now()}_${grades.length}`,
           value: valueStr,
-          numericalValue: isNaN(numVal) ? 5.0 : numVal,
-          weight: weightMatch ? parseInt(weightMatch[1], 10) : 1,
+          numericalValue: numVal,
+          weight,
+          isCountedToAverage,
           category: catMatch ? catMatch[1].trim() : "Ocena",
           date: dateMatch ? dateMatch[1].trim() : "",
           teacher: teacherMatch ? teacherMatch[1].trim() : "",
@@ -463,8 +479,10 @@ class LibrusClient {
         let weightedSum = 0;
         let weightSum = 0;
         grades.forEach(g => {
-          weightedSum += g.numericalValue * g.weight;
-          weightSum += g.weight;
+          if (g.isCountedToAverage && g.numericalValue >= 1.0 && g.weight > 0) {
+            weightedSum += g.numericalValue * g.weight;
+            weightSum += g.weight;
+          }
         });
         subjAvg = weightSum > 0 ? parseFloat((weightedSum / weightSum).toFixed(2)) : 0;
       }
@@ -478,7 +496,7 @@ class LibrusClient {
       });
     });
 
-    const overallAverage = totalGradeCount > 0 ? parseFloat((totalGradePoints / totalGradeCount).toFixed(2)) : 5.0;
+    const overallAverage = totalWeightSum > 0 ? parseFloat((totalWeightedSum / totalWeightSum).toFixed(2)) : 0;
 
     return { subjects, overallAverage };
   }

@@ -78,9 +78,69 @@ class FirestoreGradesDataSource {
       final rawGrades = s['grades'] as List<dynamic>? ?? [];
 
       final grades = rawGrades.map((g) {
-        final val = g['value'] as String? ?? '5';
-        final numVal = (g['numericalValue'] as num?)?.toDouble() ?? 5.0;
-        final weight = (g['weight'] as num?)?.toInt() ?? 1;
+        final val = (g['value'] as String? ?? '5').trim();
+        final tooltip = g['rawTooltip'] as String? ?? '';
+        final parsedMen = Grade.tryParseMenValue(val);
+        double numVal;
+        if (parsedMen != null) {
+          numVal = parsedMen;
+        } else {
+          final rawNum = (g['numericalValue'] as num?)?.toDouble();
+          if (val.isEmpty && rawNum != null && rawNum >= 1.0 && rawNum <= 6.0) {
+            numVal = rawNum;
+          } else {
+            numVal = 0.0;
+          }
+        }
+
+        final isMenScale = numVal >= 1.0 && numVal <= 6.0;
+        final explicitCountNo = RegExp(
+          r'Licz do średniej:\s*nie',
+          caseSensitive: false,
+        ).hasMatch(tooltip);
+        final explicitCountYes = RegExp(
+          r'Licz do średniej:\s*tak',
+          caseSensitive: false,
+        ).hasMatch(tooltip);
+        final hasFullLibrusTooltip = RegExp(
+              r'Kategoria:',
+              caseSensitive: false,
+            ).hasMatch(tooltip) &&
+            RegExp(
+              r'Nauczyciel:',
+              caseSensitive: false,
+            ).hasMatch(tooltip);
+
+        bool isCounted;
+        if (!isMenScale || explicitCountNo) {
+          isCounted = false;
+        } else if (g['isCountedToAverage'] is bool) {
+          isCounted = g['isCountedToAverage'] as bool;
+        } else if (explicitCountYes) {
+          isCounted = true;
+        } else if (hasFullLibrusTooltip) {
+          isCounted = false;
+        } else {
+          isCounted = true;
+        }
+
+        final weightMatch = RegExp(
+          r'Waga:\s*(\d+)',
+          caseSensitive: false,
+        ).firstMatch(tooltip);
+        final tooltipWeight =
+            weightMatch != null ? int.tryParse(weightMatch.group(1)!) : null;
+
+        int weight;
+        if (!isCounted || !isMenScale) {
+          weight = tooltipWeight ?? 0;
+        } else {
+          weight = tooltipWeight ?? (g['weight'] as num?)?.toInt() ?? 1;
+          if (weight <= 0) {
+            isCounted = false;
+          }
+        }
+
         final cat = g['category'] as String? ?? 'Ocena';
         final dateStr = g['date'] as String? ?? '';
 
@@ -91,10 +151,9 @@ class FirestoreGradesDataSource {
           dt = DateTime.now();
         }
 
-        final tooltip = g['rawTooltip'] as String? ?? '';
         final pctMatch = RegExp(r'(\d{1,3})\s*%').firstMatch(tooltip);
         int? pct = pctMatch != null ? int.tryParse(pctMatch.group(1)!) : null;
-        if (pct == null && numVal > 0) {
+        if (pct == null && numVal >= 1.0) {
           if (numVal >= 6.0) {
             pct = 100;
           } else if (numVal >= 5.0) {
@@ -133,18 +192,36 @@ class FirestoreGradesDataSource {
           comment: cleanComment.isNotEmpty ? cleanComment : 'Brak uwag',
           teacher: g['teacher'] ?? teacher,
           date: dt,
-          term: 1,
+          term: (g['term'] as num?)?.toInt() ?? 1,
+          isCountedToAverage: isCounted,
           percentage: pct,
         );
       }).toList();
+
+      final countedGrades = grades
+          .where((g) => g.isCountedToAverage && g.isMenScaleGrade && g.weight > 0)
+          .toList();
+      double? computedAvg;
+      if (countedGrades.isNotEmpty) {
+        double wSum = 0;
+        int wTotal = 0;
+        for (final g in countedGrades) {
+          wSum += g.numericValue * g.weight;
+          wTotal += g.weight;
+        }
+        if (wTotal > 0) {
+          computedAvg = wSum / wTotal;
+        }
+      } else if (grades.isEmpty && avg != null && avg > 0) {
+        computedAvg = avg;
+      }
 
       return Subject(
         id: s['id'] ?? sName.toLowerCase(),
         name: sName,
         teacherName: teacher.isNotEmpty ? teacher : 'Nauczyciel',
         grades: grades,
-        weightedAverageSem1:
-            avg != null && avg > 0 ? avg : (grades.isNotEmpty ? 5.0 : null),
+        weightedAverageSem1: computedAvg,
       );
     }).toList();
   }

@@ -22,7 +22,13 @@ class Subject {
   });
 
   double calculateWeightedAverage(int term) {
-    final termGrades = grades.where((g) => g.term == term && g.isCountedToAverage).toList();
+    final termGrades = grades.where((g) {
+      final matchesTerm = term == 3 || g.term == term;
+      return matchesTerm &&
+          g.isCountedToAverage &&
+          g.isMenScaleGrade &&
+          g.weight > 0;
+    }).toList();
     if (termGrades.isEmpty) return 0.0;
     double weightedSum = 0;
     int totalWeight = 0;
@@ -31,5 +37,17 @@ class Subject {
       totalWeight += g.weight;
     }
     return totalWeight == 0 ? 0.0 : (weightedSum / totalWeight);
+  }
+
+  int? predictedGradeForTerm(int term) {
+    if (predictedGrade != null) return predictedGrade;
+    final avg = calculateWeightedAverage(term);
+    if (avg <= 0) return null;
+    if (avg >= 5.50) return 6;
+    if (avg >= 4.75) return 5;
+    if (avg >= 3.75) return 4;
+    if (avg >= 2.75) return 3;
+    if (avg >= 1.75) return 2;
+    return 1;
   }
 }

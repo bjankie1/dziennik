@@ -31,7 +31,23 @@ class FirestoreScheduleDataSource {
 
     final studentMap = data['student'] as Map<String, dynamic>? ?? {};
     final lucky = (data['luckyNumber'] as num?)?.toInt() ?? 0;
-    final avg = (data['overallAverage'] as num?)?.toDouble() ?? 5.0;
+    double avg = (data['overallAverage'] as num?)?.toDouble() ?? 0.0;
+    if (data['subjects'] is List && (data['subjects'] as List).isNotEmpty) {
+      final subjects = await gradesDataSource.getSubjects();
+      double weightedSum = 0;
+      int totalWeight = 0;
+      for (final s in subjects) {
+        for (final g in s.grades) {
+          if (g.isCountedToAverage && g.isMenScaleGrade && g.weight > 0) {
+            weightedSum += g.numericValue * g.weight;
+            totalWeight += g.weight;
+          }
+        }
+      }
+      if (totalWeight > 0) {
+        avg = weightedSum / totalWeight;
+      }
+    }
 
     final attStats = data['attendanceStats'] as Map<String, dynamic>?;
     final attPct = (attStats?['percentage'] as num?)?.toDouble() ?? 98.6;
