@@ -318,9 +318,16 @@ class SubjectLedgerTable extends ConsumerWidget {
     final lastGrade = gradesList.isNotEmpty
         ? gradesList.reduce((a, b) => b.date.isBefore(a.date) ? a : b)
         : null;
-    final lastDateStr = lastGrade != null
-        ? DateFormat('d MMM yyyy', 'pl').format(lastGrade.date)
-        : '—';
+    String lastDateStr = '—';
+    if (lastGrade != null) {
+      try {
+        lastDateStr = DateFormat('d MMM yyyy', 'pl').format(lastGrade.date);
+      } catch (_) {
+        final d = lastGrade.date;
+        lastDateStr =
+            '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+      }
+    }
 
     return Material(
       color: isSelected

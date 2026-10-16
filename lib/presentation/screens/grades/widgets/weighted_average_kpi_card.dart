@@ -83,8 +83,7 @@ class WeightedAverageKpiCard extends ConsumerWidget {
 
                 // Middle: Big Average + Real Trend Pill (from last grade impact)
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
                       avgStr,

@@ -185,7 +185,7 @@ class GradeDistributionCard extends ConsumerWidget {
                       final gradeNum = index + 1;
                       final count = counts[gradeNum] ?? 0;
                       final ratio = maxCount > 0 ? (count / maxCount) : 0.0;
-                      final barHeight = (ratio * 46).clamp(4.0, 46.0);
+                      final barHeight = (ratio * 34).clamp(4.0, 34.0);
 
                       Color barColor;
                       Color countColor;

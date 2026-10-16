@@ -92,12 +92,14 @@ class SubjectInspectorCard extends StatelessWidget {
               children: [
                 Icon(Icons.info_outline, size: 16, color: AppColors.primary),
                 SizedBox(width: 6),
-                Text(
-                  'Kliknij wiersz przedmiotu w tabeli',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                Flexible(
+                  child: Text(
+                    'Kliknij wiersz przedmiotu w tabeli',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
               ],

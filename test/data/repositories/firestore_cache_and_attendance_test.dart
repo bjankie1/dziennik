@@ -215,6 +215,210 @@ void main() {
       final recent = await gradesDs.getRecentGrades();
       expect(recent.map((g) => g.id).toList(), ['g_newer', 'g_older']);
     });
+
+    test('normalizes Librus non-MEN entries (0, +) as uncounted and calculates exact weighted averages for Chemia (5.00), Język polski (1.80), Historia (+), Język niemiecki (0)', () async {
+      final cache = SchoolDataCacheManager();
+      cache.seedMemoryCache({
+        'login': '11010033',
+        'timetable': [],
+        'subjects': [
+          {
+            'id': 'chem',
+            'name': 'Chemia',
+            'teacher': 'Pietrzak Michał',
+            'currentAverage': 3.75, // corrupted when 0 was counted
+            'grades': [
+              {
+                'id': 'c_5',
+                'value': '5',
+                'numericalValue': 5.0,
+                'weight': 3,
+                'category': 'sprawdzian',
+                'date': '2026-09-20',
+                'rawTooltip':
+                    'Kategoria: sprawdzian<br>Licz do średniej: tak<br>Waga: 3<br>Nauczyciel: Pietrzak Michał',
+              },
+              {
+                'id': 'c_0',
+                'value': '0',
+                'numericalValue': 0.0,
+                'weight': 1,
+                'category': 'kartkówka',
+                'date': '2026-10-05',
+                'rawTooltip':
+                    'Kategoria: kartkówka<br>Data: 2026-10-05 (pn.)<br>Nauczyciel: Pietrzak Michał',
+              },
+            ],
+          },
+          {
+            'id': 'pol',
+            'name': 'Język polski',
+            'teacher': 'Kowalska Anna',
+            'currentAverage': 1.29, // corrupted when three 0s were counted
+            'grades': [
+              {
+                'id': 'p_5',
+                'value': '5',
+                'numericalValue': 5.0,
+                'weight': 1,
+                'category': 'aktywność',
+                'date': '2026-09-12',
+                'rawTooltip':
+                    'Kategoria: aktywność<br>Licz do średniej: tak<br>Waga: 1<br>Nauczyciel: Kowalska Anna',
+              },
+              {
+                'id': 'p_1',
+                'value': '1',
+                'numericalValue': 1.0,
+                'weight': 4,
+                'category': 'sprawdzian',
+                'date': '2026-09-25',
+                'rawTooltip':
+                    'Kategoria: sprawdzian<br>Licz do średniej: tak<br>Waga: 4<br>Nauczyciel: Kowalska Anna',
+              },
+              {
+                'id': 'p_0a',
+                'value': '0',
+                'numericalValue': 0.0,
+                'weight': 1,
+                'category': 'kartkówka',
+                'date': '2026-10-01',
+                'rawTooltip':
+                    'Kategoria: kartkówka<br>Data: 2026-10-01<br>Nauczyciel: Kowalska Anna',
+              },
+              {
+                'id': 'p_0b',
+                'value': '0',
+                'numericalValue': 0.0,
+                'weight': 1,
+                'category': 'odpowiedź',
+                'date': '2026-10-08',
+                'rawTooltip':
+                    'Kategoria: odpowiedź<br>Data: 2026-10-08<br>Nauczyciel: Kowalska Anna',
+              },
+              {
+                'id': 'p_0c',
+                'value': '0',
+                'numericalValue': 0.0,
+                'weight': 1,
+                'category': 'zadanie',
+                'date': '2026-10-12',
+                'rawTooltip':
+                    'Kategoria: zadanie<br>Data: 2026-10-12<br>Nauczyciel: Kowalska Anna',
+              },
+            ],
+          },
+          {
+            'id': 'hist',
+            'name': 'Historia',
+            'teacher': 'Mazur Piotr',
+            'currentAverage': 5.0, // corrupted fallback for '+'
+            'grades': [
+              {
+                'id': 'h_plus',
+                'value': '+',
+                'numericalValue': 5.0,
+                'weight': 1,
+                'category': 'aktywność',
+                'date': '2026-09-18',
+                'rawTooltip':
+                    'Kategoria: aktywność<br>Data: 2026-09-18<br>Nauczyciel: Mazur Piotr',
+              },
+            ],
+          },
+          {
+            'id': 'niem',
+            'name': 'Język niemiecki',
+            'teacher': 'Schmidt Anna',
+            'currentAverage': 0.0,
+            'grades': [
+              {
+                'id': 'n_0',
+                'value': '0',
+                'numericalValue': 0.0,
+                'weight': 1,
+                'category': 'kartkówka',
+                'date': '2026-10-02',
+                'rawTooltip':
+                    'Kategoria: kartkówka<br>Data: 2026-10-02<br>Nauczyciel: Schmidt Anna',
+              },
+            ],
+          },
+          {
+            'id': 'wf',
+            'name': 'Wychowanie fizyczne',
+            'teacher': 'Nowicki Paweł',
+            'currentAverage': 3.5,
+            'grades': [
+              {
+                'id': 'wf_3p',
+                'value': '3+',
+                'numericalValue': 3.5,
+                'weight': 4,
+                'category': 'sprawdzian',
+                'date': '2026-09-28',
+                'rawTooltip':
+                    'Kategoria: sprawdzian<br>Licz do średniej: tak<br>Waga: 4<br>Nauczyciel: Nowicki Paweł',
+              },
+              {
+                'id': 'wf_4m',
+                'value': '4-',
+                'numericalValue': 3.75,
+                'weight': 1,
+                'category': 'aktywność',
+                'date': '2026-10-04',
+                'rawTooltip':
+                    'Kategoria: aktywność<br>Licz do średniej: tak<br>Waga: 1<br>Nauczyciel: Nowicki Paweł',
+              },
+            ],
+          },
+          {
+            'id': 'biol',
+            'name': 'Biologia',
+            'teacher': 'Kowal Anna',
+            'currentAverage': 0.0,
+            'grades': [],
+          },
+        ],
+      });
+
+      final gradesDs = FirestoreGradesDataSource(cacheManager: cache);
+      final subjects = await gradesDs.getSubjects();
+
+      final chem = subjects.firstWhere((s) => s.id == 'chem');
+      final c0 = chem.grades.firstWhere((g) => g.id == 'c_0');
+      expect(c0.isCountedToAverage, isFalse);
+      expect(c0.numericValue, 0.0);
+      expect(c0.weight, 0);
+      expect(chem.calculateWeightedAverage(1), 5.00);
+      expect(chem.weightedAverageSem1, 5.00);
+
+      final pol = subjects.firstWhere((s) => s.id == 'pol');
+      expect(pol.calculateWeightedAverage(1), closeTo(1.80, 0.001));
+      expect(pol.weightedAverageSem1, closeTo(1.80, 0.001));
+
+      final hist = subjects.firstWhere((s) => s.id == 'hist');
+      final hPlus = hist.grades.first;
+      expect(hPlus.isCountedToAverage, isFalse);
+      expect(hPlus.numericValue, 0.0);
+      expect(hPlus.weight, 0);
+      expect(hist.weightedAverageSem1, isNull);
+      expect(hist.calculateWeightedAverage(1), 0.0);
+
+      final niem = subjects.firstWhere((s) => s.id == 'niem');
+      expect(niem.weightedAverageSem1, isNull);
+      expect(niem.calculateWeightedAverage(1), 0.0);
+
+      final wf = subjects.firstWhere((s) => s.id == 'wf');
+      final wf3p = wf.grades.firstWhere((g) => g.id == 'wf_3p');
+      final wf4m = wf.grades.firstWhere((g) => g.id == 'wf_4m');
+      expect(wf3p.menScaleBucket, 3);
+      expect(wf4m.menScaleBucket, 4);
+
+      final biol = subjects.firstWhere((s) => s.id == 'biol');
+      expect(biol.weightedAverageSem1, isNull);
+      expect(biol.calculateWeightedAverage(1), 0.0);
+    });
   });
 
   group('FirestoreAttendanceDataSource (REQ-ARCH-03, REQ-ARCH-04)', () {
