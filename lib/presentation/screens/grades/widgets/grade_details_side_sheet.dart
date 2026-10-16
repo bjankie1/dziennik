@@ -90,8 +90,19 @@ class GradeDetailsSideSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final student = ref.watch(studentProfileProvider).value;
     final className = student?.className.isNotEmpty == true ? student!.className : '';
-    final dateFormat = DateFormat('EEEE, d MMMM yyyy (godz. HH:mm)', 'pl');
-    final formattedDate = dateFormat.format(grade.date);
+    String formattedDate;
+    String registerDateStr;
+    try {
+      formattedDate =
+          DateFormat('EEEE, d MMMM yyyy (godz. HH:mm)', 'pl').format(grade.date);
+      registerDateStr = DateFormat('yyyy-MM-dd (EEE)', 'pl').format(grade.date);
+    } catch (_) {
+      final d = grade.date;
+      final iso =
+          '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      formattedDate = iso;
+      registerDateStr = iso;
+    }
 
     final isCounted =
         grade.isCountedToAverage && grade.isMenScaleGrade && grade.weight > 0;
@@ -581,7 +592,7 @@ class GradeDetailsSideSheet extends ConsumerWidget {
                         _buildDivider(),
                         _buildRegisterRow('Kategoria', grade.categoryName),
                         _buildDivider(),
-                        _buildRegisterRow('Data lekcji', DateFormat('yyyy-MM-dd (EEE)', 'pl').format(grade.date)),
+                        _buildRegisterRow('Data lekcji', registerDateStr),
                         _buildDivider(),
                         _buildRegisterRow('Przedmiot', subject.name),
                         _buildDivider(),

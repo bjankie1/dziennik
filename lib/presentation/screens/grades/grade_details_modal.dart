@@ -33,7 +33,17 @@ class GradeDetailsModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('EEEE, d MMMM yyyy, HH:mm', 'pl');
+    String formattedDate;
+    try {
+      formattedDate =
+          DateFormat('EEEE, d MMMM yyyy, HH:mm', 'pl').format(grade.date);
+    } catch (_) {
+      final d = grade.date;
+      formattedDate =
+          '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+    }
+    final isCounted =
+        grade.isCountedToAverage && grade.isMenScaleGrade && grade.weight > 0;
 
     return Container(
       decoration: const BoxDecoration(
@@ -130,7 +140,7 @@ class GradeDetailsModal extends StatelessWidget {
                     context,
                     icon: Icons.scale_outlined,
                     label: 'Waga oceny',
-                    value: 'Waga ${grade.weight}',
+                    value: isCounted ? 'Waga ${grade.weight}' : 'Nieliczona',
                     badgeColor: AppColors.secondaryFixed,
                     badgeTextColor: AppColors.onSecondaryFixedVariant,
                   ),
@@ -139,14 +149,14 @@ class GradeDetailsModal extends StatelessWidget {
                     context,
                     icon: Icons.calendar_today_outlined,
                     label: 'Data wpisu',
-                    value: dateFormat.format(grade.date),
+                    value: formattedDate,
                   ),
                   const Divider(height: 16, color: Color(0x15000000)),
                   _buildMetaRow(
                     context,
                     icon: Icons.calculate_outlined,
                     label: 'Wpływ na średnią',
-                    value: grade.isCountedToAverage ? 'Liczona do średniej' : 'Nieliczona',
+                    value: isCounted ? 'Liczona do średniej' : 'Nieliczona',
                   ),
                 ],
               ),

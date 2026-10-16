@@ -33,16 +33,21 @@ Grade _grade({
 }
 
 List<Subject> _buildOskarRealDataset() {
+  // Exact 12 subjects from Oskar's Librus snapshot (11010033):
   // Counted grades (9 total, total weight = 31, weighted sum = 93.75, overallAverage = 3.02419 -> 3.02):
   // - Chemia: 5 (w:3) = 15.0 (plus one '0' uncounted) -> avg 5.00
-  // - Język polski: 5 (w:1) + 1 (w:4) = 9.0 (plus three '0's uncounted) -> avg 1.80
-  // - Matematyka: 1 (w:4) + 3 (w:8) = 28.0 -> avg 2.33
-  // - Wychowanie fizyczne: 3+ (w:4) = 14.0 -> avg 3.50
-  // - Język angielski: 4- (w:1) + 4 (w:3) + 4 (w:3) = 27.75 -> avg 3.96
-  // Uncounted-only / empty subjects:
+  // - Język angielski: 4 (w:1) + 3 (w:5) + 4- (w:3) = 30.25 / 9 -> avg 3.36
+  // - Język polski: 5 (w:1) + 1 (w:4) = 9.0 / 5 (plus three '0's uncounted) -> avg 1.80
+  // - Matematyka: 1 (w:5) = 5.0 / 5 -> avg 1.00
+  // - Wychowanie fizyczne: 3+ (w:3) + 4 (w:6) = 34.5 / 9 -> avg 3.83
+  // Uncounted-only / empty subjects (7):
+  // - Biologia: []
+  // - Doradztwo zawodowe: []
+  // - Etyka: []
   // - Historia: '+' (uncounted)
   // - Język niemiecki: '0' (uncounted)
-  // - Biologia: []
+  // - Religia: []
+  // - Zajęcia z wychowawcą: []
   return [
     const Subject(
       id: 'sub_biol',
@@ -62,7 +67,7 @@ List<Subject> _buildOskarRealDataset() {
           weight: 3,
           isCountedToAverage: true,
           subjectName: 'Chemia',
-          date: DateTime(2026, 9, 20),
+          date: DateTime(2026, 9, 15),
         ),
         _grade(
           id: 'chem_0',
@@ -71,14 +76,26 @@ List<Subject> _buildOskarRealDataset() {
           weight: 0,
           isCountedToAverage: false,
           subjectName: 'Chemia',
-          date: DateTime(2026, 10, 5),
+          date: DateTime(2026, 10, 8),
         ),
       ],
+    ),
+    const Subject(
+      id: 'sub_dor',
+      name: 'Doradztwo zawodowe',
+      teacherName: 'Nowak Jan',
+      grades: [],
+    ),
+    const Subject(
+      id: 'sub_ety',
+      name: 'Etyka',
+      teacherName: 'Wiśniewski Piotr',
+      grades: [],
     ),
     Subject(
       id: 'sub_hist',
       name: 'Historia',
-      teacherName: 'Mazur Piotr',
+      teacherName: 'Ćwikliński Piotr',
       grades: [
         _grade(
           id: 'hist_plus',
@@ -87,49 +104,52 @@ List<Subject> _buildOskarRealDataset() {
           weight: 0,
           isCountedToAverage: false,
           subjectName: 'Historia',
-          category: 'aktywność',
-          date: DateTime(2026, 9, 18),
+          category: 'zadanie',
+          date: DateTime(2026, 10, 5),
         ),
       ],
     ),
     Subject(
       id: 'sub_ang',
       name: 'Język angielski',
-      teacherName: 'Wiśniewska Ewa',
+      teacherName: 'Tychańska Magdalena',
       grades: [
+        _grade(
+          id: 'ang_4',
+          value: '4',
+          numericValue: 4.0,
+          weight: 1,
+          isCountedToAverage: true,
+          subjectName: 'Język angielski',
+          category: 'aktywność',
+          date: DateTime(2026, 9, 29),
+        ),
+        _grade(
+          id: 'ang_3',
+          value: '3',
+          numericValue: 3.0,
+          weight: 5,
+          isCountedToAverage: true,
+          subjectName: 'Język angielski',
+          category: 'sprawdzian',
+          date: DateTime(2026, 9, 30),
+        ),
         _grade(
           id: 'ang_4m',
           value: '4-',
           numericValue: 3.75,
-          weight: 1,
-          isCountedToAverage: true,
-          subjectName: 'Język angielski',
-          date: DateTime(2026, 9, 15),
-        ),
-        _grade(
-          id: 'ang_4a',
-          value: '4',
-          numericValue: 4.0,
           weight: 3,
           isCountedToAverage: true,
           subjectName: 'Język angielski',
-          date: DateTime(2026, 9, 29),
-        ),
-        _grade(
-          id: 'ang_4b',
-          value: '4',
-          numericValue: 4.0,
-          weight: 3,
-          isCountedToAverage: true,
-          subjectName: 'Język angielski',
-          date: DateTime(2026, 10, 8),
+          category: 'odpowiedź ustna',
+          date: DateTime(2026, 10, 9),
         ),
       ],
     ),
     Subject(
       id: 'sub_niem',
       name: 'Język niemiecki',
-      teacherName: 'Schmidt Anna',
+      teacherName: 'Błaszkiewicz Marta',
       grades: [
         _grade(
           id: 'niem_0',
@@ -138,14 +158,15 @@ List<Subject> _buildOskarRealDataset() {
           weight: 0,
           isCountedToAverage: false,
           subjectName: 'Język niemiecki',
-          date: DateTime(2026, 10, 2),
+          category: 'zadanie',
+          date: DateTime(2026, 9, 30),
         ),
       ],
     ),
     Subject(
       id: 'sub_pol',
       name: 'Język polski',
-      teacherName: 'Kowalska Anna',
+      teacherName: 'Melska Grażyna',
       grades: [
         _grade(
           id: 'pol_5',
@@ -154,16 +175,8 @@ List<Subject> _buildOskarRealDataset() {
           weight: 1,
           isCountedToAverage: true,
           subjectName: 'Język polski',
-          date: DateTime(2026, 9, 12),
-        ),
-        _grade(
-          id: 'pol_1',
-          value: '1',
-          numericValue: 1.0,
-          weight: 4,
-          isCountedToAverage: true,
-          subjectName: 'Język polski',
-          date: DateTime(2026, 9, 25),
+          category: 'aktywność',
+          date: DateTime(2026, 9, 10),
         ),
         _grade(
           id: 'pol_0a',
@@ -172,7 +185,18 @@ List<Subject> _buildOskarRealDataset() {
           weight: 0,
           isCountedToAverage: false,
           subjectName: 'Język polski',
-          date: DateTime(2026, 10, 1),
+          category: 'Zagadnienia jawne',
+          date: DateTime(2026, 9, 30),
+        ),
+        _grade(
+          id: 'pol_1',
+          value: '1',
+          numericValue: 1.0,
+          weight: 4,
+          isCountedToAverage: true,
+          subjectName: 'Język polski',
+          category: 'Zagadnienia jawne',
+          date: DateTime(2026, 10, 2),
         ),
         _grade(
           id: 'pol_0b',
@@ -181,7 +205,8 @@ List<Subject> _buildOskarRealDataset() {
           weight: 0,
           isCountedToAverage: false,
           subjectName: 'Język polski',
-          date: DateTime(2026, 10, 6),
+          category: 'kartkówka',
+          date: DateTime(2026, 10, 9),
         ),
         _grade(
           id: 'pol_0c',
@@ -190,50 +215,66 @@ List<Subject> _buildOskarRealDataset() {
           weight: 0,
           isCountedToAverage: false,
           subjectName: 'Język polski',
-          date: DateTime(2026, 10, 12),
+          category: 'Zagadnienia jawne',
+          date: DateTime(2026, 10, 16),
         ),
       ],
     ),
     Subject(
       id: 'sub_mat',
       name: 'Matematyka',
-      teacherName: 'Nowicki Paweł',
+      teacherName: 'Duda-Radicchio Wioletta',
       grades: [
         _grade(
           id: 'mat_1',
           value: '1',
           numericValue: 1.0,
-          weight: 4,
+          weight: 5,
           isCountedToAverage: true,
           subjectName: 'Matematyka',
-          date: DateTime(2026, 9, 22),
-        ),
-        _grade(
-          id: 'mat_3',
-          value: '3',
-          numericValue: 3.0,
-          weight: 8,
-          isCountedToAverage: true,
-          subjectName: 'Matematyka',
-          date: DateTime(2026, 10, 4),
+          category: 'sprawdzian',
+          date: DateTime(2026, 9, 24),
         ),
       ],
+    ),
+    const Subject(
+      id: 'sub_rel',
+      name: 'Religia',
+      teacherName: 'Kaczmarek Marek',
+      grades: [],
     ),
     Subject(
       id: 'sub_wf',
       name: 'Wychowanie fizyczne',
-      teacherName: 'Zając Marek',
+      teacherName: 'Herezo Maciej',
       grades: [
         _grade(
           id: 'wf_3p',
           value: '3+',
           numericValue: 3.5,
-          weight: 4,
+          weight: 3,
           isCountedToAverage: true,
           subjectName: 'Wychowanie fizyczne',
-          date: DateTime(2026, 9, 28),
+          category: 'sprawdzian',
+          date: DateTime(2026, 10, 4),
+        ),
+        _grade(
+          id: 'wf_4',
+          value: '4',
+          numericValue: 4.0,
+          weight: 6,
+          isCountedToAverage: true,
+          subjectName: 'Wychowanie fizyczne',
+          category: 'Systematyczność',
+          date: DateTime(2026, 10, 4),
         ),
       ],
+    ),
+    const Subject(
+      id: 'sub_zw',
+      name: 'Zajęcia z wychowawcą',
+      teacherName: 'Sobota Łukasz',
+      grades: [],
     ),
   ];
 }
@@ -262,7 +303,7 @@ void main() {
         id: '1',
         value: '3+',
         numericValue: 3.5,
-        weight: 4,
+        weight: 3,
         isCountedToAverage: true,
         subjectName: 'Wychowanie fizyczne',
       );
@@ -270,7 +311,7 @@ void main() {
         id: '2',
         value: '4-',
         numericValue: 3.75,
-        weight: 1,
+        weight: 3,
         isCountedToAverage: true,
         subjectName: 'Język angielski',
       );
@@ -326,8 +367,8 @@ void main() {
     });
   });
 
-  testWidgets('GradesScreen (desktop) renders 3.02 in KPI and table footer, 2 zagrożenia, — for ungraded subjects, and no hardcoded 4.82/4.80', (tester) async {
-    tester.view.physicalSize = const Size(2000, 1200);
+  testWidgets('GradesScreen (desktop) renders all 12 subjects with exact weighted averages (Chemia 5.00, Angielski 3.36, Polski 1.80, Matematyka 1.00, WF 3.83), inspector, and GPA simulator with weights 1..6', (tester) async {
+    tester.view.physicalSize = const Size(2000, 1400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
       tester.view.resetPhysicalSize();
@@ -359,9 +400,12 @@ void main() {
     // Overall average 3.02 appears both in WeightedAverageKpiCard and SubjectLedgerTable footer
     expect(find.text('3.02'), findsAtLeastNWidgets(2));
 
-    // Subject averages for Chemia (5.00) and Język polski (1.80)
+    // Exact subject averages for all 5 graded subjects
     expect(find.text('5.00'), findsWidgets);
+    expect(find.text('3.36'), findsWidgets);
     expect(find.text('1.80'), findsWidgets);
+    expect(find.text('1.00'), findsWidgets);
+    expect(find.text('3.83'), findsWidgets);
 
     // Never renders hardcoded mock values
     expect(find.text('4.82'), findsNothing);
@@ -370,10 +414,60 @@ void main() {
     // Shows 2 zagrożenia badge in GradeDistributionCard
     expect(find.textContaining('2 zagrożenia'), findsOneWidget);
 
-    // Shows '—' for subjects without counted grades (Biologia, Historia, Język niemiecki)
-    expect(find.text('—'), findsAtLeastNWidgets(3));
+    // Shows '—' for the 7 subjects without counted grades
+    expect(find.text('—'), findsAtLeastNWidgets(7));
 
     // Shows (+6 wpisów: 0/+) subtitle on GradeDistributionCard
     expect(find.textContaining('ocen w skali 1–6 (+6 wpisów: 0/+)'), findsOneWidget);
+
+    // Selecting 'Język polski' populates SubjectInspectorCard without DateFormat crash
+    await tester.tap(find.text('Język polski').first);
+    await tester.pumpAndSettle();
+    expect(find.text('REJESTR OCEN CZĄSTKOWYCH (5)'), findsOneWidget);
+
+    // Clicking 'Symuluj ocenę dla tego przedmiotu' opens AverageSimulatorModal pre-selected to Język polski and supports Waga 5 & Waga 6
+    await tester.tap(find.text('Symuluj ocenę dla tego przedmiotu'));
+    await tester.pumpAndSettle();
+    expect(find.text('Symulator Średniej "Co jeśli"'), findsOneWidget);
+    expect(find.text(' (było 1.80)'), findsOneWidget);
+    expect(find.text('Waga 5'), findsOneWidget);
+    expect(find.text('Waga 6'), findsOneWidget);
+  });
+
+  testWidgets('GradesScreen (mobile) renders exact subject averages, Brak ocen for empty subjects, and opens simulator for selected subject', (tester) async {
+    tester.view.physicalSize = const Size(430, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final dataset = _buildOskarRealDataset();
+    final container = ProviderContainer(
+      overrides: [
+        subjectsProvider.overrideWith((ref) async => dataset),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(subjectsProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: GradesScreen(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('3.02'), findsWidgets);
+    expect(find.text('5.00'), findsWidgets);
+    expect(find.text('1.80'), findsWidgets);
+    expect(find.text('1.00'), findsWidgets);
+    expect(find.text('Brak ocen'), findsAtLeastNWidgets(5));
   });
 }

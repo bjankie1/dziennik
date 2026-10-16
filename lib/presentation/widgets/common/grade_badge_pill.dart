@@ -19,6 +19,9 @@ class GradeBadgePill extends StatelessWidget {
   });
 
   static (Color bg, Color fg) resolveGradeColors(String rawValue, double? numeric) {
+    if (rawValue.trim() == '+') {
+      return (AppColors.secondaryContainer, AppColors.onSecondaryContainer);
+    }
     final numVal = numeric ?? double.tryParse(rawValue.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
     if (numVal >= 4.75 || rawValue.startsWith('5') || rawValue.startsWith('6')) {
       return (AppColors.secondaryContainer, AppColors.onSecondaryContainer);

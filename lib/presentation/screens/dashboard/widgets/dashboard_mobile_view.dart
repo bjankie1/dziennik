@@ -725,33 +725,47 @@ class DashboardMobileView extends ConsumerWidget {
                   const SizedBox(height: 4),
                   if ((recentGradesAsync.value ?? []).isNotEmpty)
                     ...recentGradesAsync.value!.take(3).map(
-                          (g) => ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: GradeBadgePill(
-                              value: g.rawValue,
-                              numericValue: g.numericValue,
-                              size: 38,
-                            ),
-                            title: Text(
-                              g.subjectName,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
+                          (g) {
+                            String dateStr;
+                            try {
+                              dateStr = DateFormat('d MMM', 'pl_PL').format(g.date);
+                            } catch (_) {
+                              final d = g.date;
+                              dateStr =
+                                  '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}';
+                            }
+                            final weightLabel =
+                                (g.isCountedToAverage && g.weight > 0)
+                                    ? 'waga ${g.weight}'
+                                    : 'Nieliczona';
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: GradeBadgePill(
+                                value: g.rawValue,
+                                numericValue: g.numericValue,
+                                size: 38,
                               ),
-                            ),
-                            subtitle: Text(
-                              '${g.categoryName} • waga ${g.weight}',
-                              style: const TextStyle(fontSize: 11),
-                            ),
-                            trailing: Text(
-                              DateFormat('d MMM', 'pl_PL').format(g.date),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.outline,
+                              title: Text(
+                                g.subjectName,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
-                            ),
-                            onTap: () => GradeDetailsModal.show(context, g),
-                          ),
+                              subtitle: Text(
+                                '${g.categoryName} • $weightLabel',
+                                style: const TextStyle(fontSize: 11),
+                              ),
+                              trailing: Text(
+                                dateStr,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.outline,
+                                ),
+                              ),
+                              onTap: () => GradeDetailsModal.show(context, g),
+                            );
+                          },
                         ),
                 ],
               ),

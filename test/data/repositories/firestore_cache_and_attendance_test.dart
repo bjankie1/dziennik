@@ -345,30 +345,86 @@ void main() {
             ],
           },
           {
+            'id': 'ang',
+            'name': 'Język angielski',
+            'teacher': 'Tychańska Magdalena',
+            'currentAverage': 3.36,
+            'grades': [
+              {
+                'id': 'ang_4',
+                'value': '4',
+                'numericalValue': 4.0,
+                'weight': 1,
+                'category': 'aktywność',
+                'date': '2026-09-29',
+                'rawTooltip':
+                    'Kategoria: aktywność Data: 2026-09-29 (wt.) Nauczyciel: Tychańska Magdalena Licz do średniej: tak Waga: 1',
+              },
+              {
+                'id': 'ang_3',
+                'value': '3',
+                'numericalValue': 3.0,
+                'weight': 5,
+                'category': 'sprawdzian',
+                'date': '2026-09-30',
+                'rawTooltip':
+                    'Kategoria: sprawdzian Data: 2026-09-30 (śr.) Nauczyciel: Tychańska Magdalena Licz do średniej: tak Waga: 5',
+              },
+              {
+                'id': 'ang_4m',
+                'value': '4-',
+                'numericalValue': 3.75,
+                'weight': 3,
+                'category': 'odpowiedź ustna',
+                'date': '2026-10-09',
+                'rawTooltip':
+                    'Kategoria: odpowiedź ustna Data: 2026-10-09 (pt.) Nauczyciel: Tychańska Magdalena Licz do średniej: tak Waga: 3',
+              },
+            ],
+          },
+          {
+            'id': 'mat',
+            'name': 'Matematyka',
+            'teacher': 'Duda-Radicchio Wioletta',
+            'currentAverage': 1.0,
+            'grades': [
+              {
+                'id': 'mat_1',
+                'value': '1',
+                'numericalValue': 1.0,
+                'weight': 5,
+                'category': 'sprawdzian',
+                'date': '2026-09-24',
+                'rawTooltip':
+                    'Kategoria: sprawdzian Data: 2026-09-24 (czw.) Nauczyciel: Duda-Radicchio Wioletta Licz do średniej: tak Waga: 5',
+              },
+            ],
+          },
+          {
             'id': 'wf',
             'name': 'Wychowanie fizyczne',
-            'teacher': 'Nowicki Paweł',
-            'currentAverage': 3.5,
+            'teacher': 'Herezo Maciej',
+            'currentAverage': 3.83,
             'grades': [
               {
                 'id': 'wf_3p',
                 'value': '3+',
                 'numericalValue': 3.5,
-                'weight': 4,
+                'weight': 3,
                 'category': 'sprawdzian',
-                'date': '2026-09-28',
-                'rawTooltip':
-                    'Kategoria: sprawdzian<br>Licz do średniej: tak<br>Waga: 4<br>Nauczyciel: Nowicki Paweł',
-              },
-              {
-                'id': 'wf_4m',
-                'value': '4-',
-                'numericalValue': 3.75,
-                'weight': 1,
-                'category': 'aktywność',
                 'date': '2026-10-04',
                 'rawTooltip':
-                    'Kategoria: aktywność<br>Licz do średniej: tak<br>Waga: 1<br>Nauczyciel: Nowicki Paweł',
+                    'Kategoria: sprawdzian<br>Licz do średniej: tak<br>Waga: 3<br>Nauczyciel: Herezo Maciej',
+              },
+              {
+                'id': 'wf_4',
+                'value': '4',
+                'numericalValue': 4.0,
+                'weight': 6,
+                'category': 'Systematyczność',
+                'date': '2026-10-04',
+                'rawTooltip':
+                    'Kategoria: Systematyczność<br>Licz do średniej: tak<br>Waga: 6<br>Nauczyciel: Herezo Maciej',
               },
             ],
           },
@@ -376,7 +432,7 @@ void main() {
             'id': 'biol',
             'name': 'Biologia',
             'teacher': 'Kowal Anna',
-            'currentAverage': 0.0,
+            'currentAverage': 4.80, // stale avg on empty subject must be ignored
             'grades': [],
           },
         ],
@@ -397,6 +453,13 @@ void main() {
       expect(pol.calculateWeightedAverage(1), closeTo(1.80, 0.001));
       expect(pol.weightedAverageSem1, closeTo(1.80, 0.001));
 
+      final ang = subjects.firstWhere((s) => s.id == 'ang');
+      expect(ang.calculateWeightedAverage(1), closeTo(3.3611, 0.001));
+      expect(ang.calculateWeightedAverage(1).toStringAsFixed(2), '3.36');
+
+      final mat = subjects.firstWhere((s) => s.id == 'mat');
+      expect(mat.calculateWeightedAverage(1), 1.00);
+
       final hist = subjects.firstWhere((s) => s.id == 'hist');
       final hPlus = hist.grades.first;
       expect(hPlus.isCountedToAverage, isFalse);
@@ -411,9 +474,11 @@ void main() {
 
       final wf = subjects.firstWhere((s) => s.id == 'wf');
       final wf3p = wf.grades.firstWhere((g) => g.id == 'wf_3p');
-      final wf4m = wf.grades.firstWhere((g) => g.id == 'wf_4m');
+      final wf4 = wf.grades.firstWhere((g) => g.id == 'wf_4');
       expect(wf3p.menScaleBucket, 3);
-      expect(wf4m.menScaleBucket, 4);
+      expect(wf4.menScaleBucket, 4);
+      expect(wf.calculateWeightedAverage(1), closeTo(3.8333, 0.001));
+      expect(wf.calculateWeightedAverage(1).toStringAsFixed(2), '3.83');
 
       final biol = subjects.firstWhere((s) => s.id == 'biol');
       expect(biol.weightedAverageSem1, isNull);

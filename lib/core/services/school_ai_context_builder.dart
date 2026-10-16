@@ -219,7 +219,10 @@ $snapshot
         final gradesSummary = recent.take(8).map((g) {
           final commentPart =
               g.comment.trim().isNotEmpty ? ' "${g.comment.trim()}"' : '';
-          return '${g.rawValue} (waga ${g.weight}, ${g.categoryName}, ${_fmtShortDate(g.date)}$commentPart)';
+          final weightPart = (g.isCountedToAverage && g.weight > 0)
+              ? 'waga ${g.weight}'
+              : 'Nieliczona';
+          return '${g.rawValue} ($weightPart, ${g.categoryName}, ${_fmtShortDate(g.date)}$commentPart)';
         }).join('; ');
         buf.writeln(
           '- ${sub.name} (naucz. ${sub.teacherName}) | Śr. Sem1: ${avg1.toStringAsFixed(2)}, Sem2: ${avg2.toStringAsFixed(2)} | Oceny: ${gradesSummary.isEmpty ? "brak" : gradesSummary}',
@@ -530,7 +533,7 @@ $snapshot
           timestamp: now,
           modelUsed: modelUsed,
           text:
-              'Najbliższy sprawdzian w terminarzu to:\n\n'
+               'Najbliższy sprawdzian w terminarzu to:\n\n'
               '📅 **${ex.type}: ${ex.subject}**\n'
               '• **Data:** ${_fmtShortDate(ex.date)} (${polishWeekday(ex.date)})\n'
               '• **Zakres:** ${ex.title}\n'
@@ -656,7 +659,10 @@ $snapshot
       final allGrades = input.subjects.expand((s) => s.grades).toList()
         ..sort((a, b) => b.date.compareTo(a.date));
       final latestLines = allGrades.take(5).map((g) {
-        return '• **${g.rawValue}** (waga ${g.weight}) — **${g.subjectName}**: ${g.categoryName} (${_fmtShortDate(g.date)})';
+        final weightPart = (g.isCountedToAverage && g.weight > 0)
+            ? 'waga ${g.weight}'
+            : 'Nieliczona';
+        return '• **${g.rawValue}** ($weightPart) — **${g.subjectName}**: ${g.categoryName} (${_fmtShortDate(g.date)})';
       }).join('\n');
       final avg = input.student?.overallAverage ?? 4.75;
 

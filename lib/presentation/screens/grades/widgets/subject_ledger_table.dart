@@ -311,13 +311,12 @@ class SubjectLedgerTable extends ConsumerWidget {
       predictedText = const Color(0xFFB91C1C);
     }
 
-    // Recent grade (newest by date)
-    final gradesList = term == 3
-        ? s.grades
-        : s.grades.where((g) => g.term == term).toList();
-    final lastGrade = gradesList.isNotEmpty
-        ? gradesList.reduce((a, b) => b.date.isBefore(a.date) ? a : b)
-        : null;
+    // Recent grade (newest by date) and chronological ordering of pills
+    final gradesList = (term == 3
+            ? [...s.grades]
+            : s.grades.where((g) => g.term == term).toList())
+          ..sort((a, b) => a.date.compareTo(b.date));
+    final lastGrade = gradesList.isNotEmpty ? gradesList.last : null;
     String lastDateStr = '—';
     if (lastGrade != null) {
       try {

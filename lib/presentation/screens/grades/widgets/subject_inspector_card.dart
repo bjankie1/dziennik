@@ -6,6 +6,7 @@ import '../../../../domain/models/subject.dart';
 
 class SubjectInspectorCard extends StatelessWidget {
   final Subject? subject;
+  final int term;
   final void Function(Grade grade, Subject subject)? onTapGrade;
   final VoidCallback? onSimulateGpa;
   final VoidCallback? onContactTeacher;
@@ -13,6 +14,7 @@ class SubjectInspectorCard extends StatelessWidget {
   const SubjectInspectorCard({
     super.key,
     required this.subject,
+    this.term = 1,
     this.onTapGrade,
     this.onSimulateGpa,
     this.onContactTeacher,
@@ -112,9 +114,12 @@ class SubjectInspectorCard extends StatelessWidget {
 
   /// Populated State adhering to Decision D-04
   Widget _buildPopulatedState(BuildContext context, Subject s) {
-    final avg = s.calculateWeightedAverage(1);
+    final avg = s.calculateWeightedAverage(term);
     final avgStr = avg > 0 ? avg.toStringAsFixed(2) : '—';
-    final gradesList = s.grades;
+    final gradesList = (term == 3
+            ? [...s.grades]
+            : s.grades.where((g) => g.term == term).toList())
+          ..sort((a, b) => a.date.compareTo(b.date));
 
     double weightedSum = 0;
     int totalWeight = 0;
@@ -361,8 +366,14 @@ class SubjectInspectorCard extends StatelessWidget {
   }
 
   Widget _buildGradeItem(BuildContext context, Grade grade, Subject s) {
-    final dateFormat = DateFormat('d MMM', 'pl');
-    final dateStr = dateFormat.format(grade.date);
+    String dateStr;
+    try {
+      dateStr = DateFormat('d MMM', 'pl').format(grade.date);
+    } catch (_) {
+      final d = grade.date;
+      dateStr =
+          '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}';
+    }
 
     Color badgeColor;
     Color badgeTextColor;

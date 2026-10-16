@@ -5,14 +5,24 @@ import '../../../domain/models/subject.dart';
 class AverageSimulatorModal extends StatefulWidget {
   final List<Subject> subjects;
   final double currentOverallAverage;
+  final String? initialSubjectId;
+  final int term;
 
   const AverageSimulatorModal({
     super.key,
     required this.subjects,
     required this.currentOverallAverage,
+    this.initialSubjectId,
+    this.term = 1,
   });
 
-  static void show(BuildContext context, List<Subject> subjects, double currentOverallAverage) {
+  static void show(
+    BuildContext context,
+    List<Subject> subjects,
+    double currentOverallAverage, {
+    String? initialSubjectId,
+    int term = 1,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -20,6 +30,8 @@ class AverageSimulatorModal extends StatefulWidget {
       builder: (context) => AverageSimulatorModal(
         subjects: subjects,
         currentOverallAverage: currentOverallAverage,
+        initialSubjectId: initialSubjectId,
+        term: term,
       ),
     );
   }
@@ -36,7 +48,20 @@ class _AverageSimulatorModalState extends State<AverageSimulatorModal> {
   @override
   void initState() {
     super.initState();
-    _selectedSubjectId = widget.subjects.first.id;
+    final hasInitial = widget.initialSubjectId != null &&
+        widget.subjects.any((s) => s.id == widget.initialSubjectId);
+    if (hasInitial) {
+      _selectedSubjectId = widget.initialSubjectId!;
+    } else {
+      final firstWithGrades = widget.subjects.where(
+        (s) => s.grades.any(
+          (g) => g.isCountedToAverage && g.isMenScaleGrade && g.weight > 0,
+        ),
+      );
+      _selectedSubjectId = firstWithGrades.isNotEmpty
+          ? firstWithGrades.first.id
+          : widget.subjects.first.id;
+    }
   }
 
   Subject get _selectedSubject =>
@@ -44,9 +69,12 @@ class _AverageSimulatorModalState extends State<AverageSimulatorModal> {
 
   double _calculateSimulatedSubjectAverage() {
     final sub = _selectedSubject;
+    final termGrades = widget.term == 3
+        ? sub.grades
+        : sub.grades.where((g) => g.term == widget.term);
     double weightedSum = 0;
     int totalWeight = 0;
-    for (final g in sub.grades.where(
+    for (final g in termGrades.where(
       (g) => g.isCountedToAverage && g.isMenScaleGrade && g.weight > 0,
     )) {
       weightedSum += g.numericValue * g.weight;
@@ -61,7 +89,10 @@ class _AverageSimulatorModalState extends State<AverageSimulatorModal> {
     double weightedSum = 0;
     int totalWeight = 0;
     for (final s in widget.subjects) {
-      for (final g in s.grades.where(
+      final termGrades = widget.term == 3
+          ? s.grades
+          : s.grades.where((g) => g.term == widget.term);
+      for (final g in termGrades.where(
         (g) => g.isCountedToAverage && g.isMenScaleGrade && g.weight > 0,
       )) {
         weightedSum += g.numericValue * g.weight;
@@ -75,7 +106,7 @@ class _AverageSimulatorModalState extends State<AverageSimulatorModal> {
 
   @override
   Widget build(BuildContext context) {
-    final curSubAvg = _selectedSubject.calculateWeightedAverage(1);
+    final curSubAvg = _selectedSubject.calculateWeightedAverage(widget.term);
     final newSubAvg = _calculateSimulatedSubjectAverage();
     final newOverallAvg = _calculateSimulatedOverallAverage();
     final diff = newOverallAvg - widget.currentOverallAverage;
@@ -118,20 +149,22 @@ class _AverageSimulatorModalState extends State<AverageSimulatorModal> {
                   child: const Icon(Icons.calculate, color: AppColors.primary, size: 22),
                 ),
                 const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Symulator Średniej "Co jeśli"',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
-                    Text(
-                      'Sprawdź wpływ przewidywanej oceny na wyniki',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Symulator Średniej "Co jeśli"',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                      Text(
+                        'Sprawdź wpływ przewidywanej oceny na wyniki',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -289,30 +322,29 @@ class _AverageSimulatorModalState extends State<AverageSimulatorModal> {
             ),
             const SizedBox(height: 14),
 
-            // Weight Picker (1, 2, 3, 4, 5)
+            // Weight Picker (1..6)
             const Text(
               'Waga oceny',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.onSurfaceVariant),
             ),
             const SizedBox(height: 6),
-            Row(
-              children: [1, 2, 3, 4].map((w) {
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [1, 2, 3, 4, 5, 6].map((w) {
                 final isSelected = _simulatedWeight == w;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: ChoiceChip(
-                    label: Text('Waga $w'),
-                    selected: isSelected,
-                    selectedColor: AppColors.primaryFixed,
-                    backgroundColor: AppColors.surfaceContainerLow,
-                    labelStyle: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? AppColors.onPrimaryFixedVariant : AppColors.onSurfaceVariant,
-                    ),
-                    onSelected: (selected) {
-                      if (selected) setState(() => _simulatedWeight = w);
-                    },
+                return ChoiceChip(
+                  label: Text('Waga $w'),
+                  selected: isSelected,
+                  selectedColor: AppColors.primaryFixed,
+                  backgroundColor: AppColors.surfaceContainerLow,
+                  labelStyle: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isSelected ? AppColors.onPrimaryFixedVariant : AppColors.onSurfaceVariant,
                   ),
+                  onSelected: (selected) {
+                    if (selected) setState(() => _simulatedWeight = w);
+                  },
                 );
               }).toList(),
             ),
