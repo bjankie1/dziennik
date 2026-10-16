@@ -114,13 +114,14 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 261007-a26 | Naprawa ucinania i przepełniania tekstów w kolumnie planu dnia i kafelkach na Pulpicie | 2026-10-07 | 61e43eb | [261007-a26-naprawa-ucinania-i-przepe-niania-tekst-w](./quick/261007-a26-naprawa-ucinania-i-przepe-niania-tekst-w/) |
 | 261016-cvn | Upewnij się że oceny są dobrze prezentowane. Średnia 2.74. Rozkład pokazuje 6 ocen 1, ale tabelka poniżej już 1 ocenę 1, ale też kilka 0. Średnia ogólna na dole to 4.82, a na górze 2.74 | 2026-10-16 | b0a0ee2 | [261016-cvn-upewnij-si-e-oceny-s-dobrze-prezentowane](./quick/261016-cvn-upewnij-si-e-oceny-s-dobrze-prezentowane/) |
 | 261016-dko | Średnie ważone dla poszczególnych przedmiotów są z dupy - niejak się mają do otrzymanych ocen. | 2026-10-16 | 9e2b22c | [261016-dko-rednie-wa-one-dla-poszczeg-lnych-przedmi](./quick/261016-dko-rednie-wa-one-dla-poszczeg-lnych-przedmi/) |
+| 261016-e8f | Słupki w histogramie ocen są rozjechane - powinny zaczynać się na tym samym poziomie | 2026-10-16 | 2a3a91f | [261016-e8f-s-upki-w-histogramie-ocen-s-rozjechane-c](./quick/261016-e8f-s-upki-w-histogramie-ocen-s-rozjechane-c/) |
 
 ## Session
 
-**Last session:** 2026-10-16T08:14:20.000Z
+**Last session:** 2026-10-16T17:22:30.000Z
 **Stopped at:** Phase 26 complete, ready to plan Phase 19
 **Resume file:** None
-Last activity: 2026-10-16 - Completed quick task 261016-dko: Średnie ważone dla poszczególnych przedmiotów są z dupy - niejak się mają do otrzymanych ocen.
+Last activity: 2026-10-16 - Completed quick task 261016-e8f: Słupki w histogramie ocen są rozjechane - powinny zaczynać się na tym samym poziomie
 
 ## Current Position
 
@@ -129,7 +130,7 @@ Current Plan: Not started
 Total Plans in Phase: 1
 Next Phase: 19 (Raporty tygodniowe)
 Status: Phase complete — ready for verification
-Last activity: 2026-10-16 - Completed quick task 261016-dko: Średnie ważone dla poszczególnych przedmiotów są z dupy - niejak się mają do otrzymanych ocen.
+Last activity: 2026-10-16 - Completed quick task 261016-e8f: Słupki w histogramie ocen są rozjechane - powinny zaczynać się na tym samym poziomie
 
 ## Performance Metrics
 
