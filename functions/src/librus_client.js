@@ -396,8 +396,6 @@ class LibrusClient {
     const $ = cheerio.load(res.data);
 
     const subjects = [];
-    let totalWeightedSum = 0;
-    let totalWeightSum = 0;
 
     $("table.decorated tr.line0, table.decorated tr.line1").each((_, tr) => {
       const tds = $(tr).find("td");
@@ -431,74 +429,36 @@ class LibrusClient {
         const tooltip = $(g).attr("title") || "";
         if (!valueStr) return;
 
-        const weightMatch = tooltip.match(/Waga:\s*(\d+)/i);
-        const countMatch = tooltip.match(/Licz do średniej:\s*(tak|nie)/i);
         const catMatch = tooltip.match(/Kategoria:\s*([^<]+)/i);
         const dateMatch = tooltip.match(/Data:\s*([^<]+)/i);
         const teacherMatch = tooltip.match(/Nauczyciel:\s*([^<]+)/i);
-
-        const menMatch = valueStr.match(/^([1-6])([+-])?$|^([+-])([1-6])$/);
-        let numVal = 0;
-        let isMenScale = false;
-        if (menMatch) {
-          isMenScale = true;
-          const digit = parseInt(menMatch[1] || menMatch[4], 10);
-          const mod = menMatch[2] || menMatch[3] || "";
-          numVal = digit + (mod === "+" ? 0.5 : mod === "-" ? -0.25 : 0);
-          numVal = Math.max(1.0, Math.min(6.0, numVal));
-        }
-
-        const parsedWeight = weightMatch ? parseInt(weightMatch[1], 10) : null;
-        const isCountedToAverage = isMenScale && (
-          countMatch
-            ? countMatch[1].toLowerCase() === "tak"
-            : (parsedWeight !== null ? parsedWeight > 0 : true)
-        );
-        const weight = isCountedToAverage ? (parsedWeight ?? 1) : (parsedWeight ?? 0);
-
-        if (isCountedToAverage && weight > 0) {
-          totalWeightedSum += numVal * weight;
-          totalWeightSum += weight;
-        }
+        const cleanTooltip = tooltip.replace(/<[^>]*>/g, " ").trim();
+        const parsedMen = parseMenGradeValue(valueStr);
 
         grades.push({
           id: `${subjectName}_${dateMatch ? dateMatch[1].trim() : Date.now()}_${grades.length}`,
           value: valueStr,
-          numericalValue: numVal,
-          weight,
-          isCountedToAverage,
+          numericalValue: parsedMen ?? 0,
+          weight: parsedMen !== null ? 1 : 0,
+          isCountedToAverage: parsedMen !== null,
           category: catMatch ? catMatch[1].trim() : "Ocena",
           date: dateMatch ? dateMatch[1].trim() : "",
           teacher: teacherMatch ? teacherMatch[1].trim() : "",
-          rawTooltip: tooltip.replace(/<[^>]*>/g, " ").trim()
+          rawTooltip: cleanTooltip
         });
       });
-
-      let subjAvg = 0;
-      if (grades.length > 0) {
-        let weightedSum = 0;
-        let weightSum = 0;
-        grades.forEach(g => {
-          if (g.isCountedToAverage && g.numericalValue >= 1.0 && g.weight > 0) {
-            weightedSum += g.numericalValue * g.weight;
-            weightSum += g.weight;
-          }
-        });
-        subjAvg = weightSum > 0 ? parseFloat((weightedSum / weightSum).toFixed(2)) : 0;
-      }
 
       subjects.push({
         id: subjectName.toLowerCase().replace(/[^a-z0-9]/g, "_"),
         name: subjectName,
         grades,
-        currentAverage: subjAvg,
+        currentAverage: 0,
         teacher: grades[0]?.teacher || ""
       });
     });
 
-    const overallAverage = totalWeightSum > 0 ? parseFloat((totalWeightedSum / totalWeightSum).toFixed(2)) : 0;
-
-    return { subjects, overallAverage };
+    const normalized = normalizeStudentGradesData({ subjects, overallAverage: 0 }).data;
+    return { subjects: normalized.subjects, overallAverage: normalized.overallAverage };
   }
 
   async fetchTimetable() {
@@ -1327,4 +1287,113 @@ class LibrusClient {
   }
 }
 
-module.exports = { LibrusClient, deriveLibrusModule };
+function parseMenGradeValue(rawValue) {
+  const cleaned = String(rawValue ?? "").trim();
+  const menMatch = cleaned.match(/^([1-6])([+-])?$|^([+-])([1-6])$/);
+  if (!menMatch) return null;
+  const digit = parseInt(menMatch[1] || menMatch[4], 10);
+  const mod = menMatch[2] || menMatch[3] || "";
+  const numVal = digit + (mod === "+" ? 0.5 : mod === "-" ? -0.25 : 0);
+  return Math.max(1.0, Math.min(6.0, numVal));
+}
+
+function normalizeStudentGradesData(studentData) {
+  if (!studentData || typeof studentData !== "object") {
+    return { data: studentData, changed: false };
+  }
+  const data = studentData;
+  if (!Array.isArray(data.subjects)) {
+    return { data, changed: false };
+  }
+
+  let changed = false;
+  let totalWeightedSum = 0;
+  let totalWeightSum = 0;
+
+  data.subjects.forEach(subject => {
+    if (!subject || typeof subject !== "object") return;
+    const grades = Array.isArray(subject.grades) ? subject.grades : [];
+    let weightedSum = 0;
+    let weightSum = 0;
+
+    grades.forEach(g => {
+      if (!g || typeof g !== "object") return;
+      const parsedMen = parseMenGradeValue(g.value);
+      const tooltip = String(g.rawTooltip || "");
+
+      let numVal = 0;
+      let isCountedToAverage = false;
+      let weight = 0;
+
+      if (parsedMen !== null) {
+        numVal = parsedMen;
+        const explicitCountNo = /Licz do średniej:\s*nie/i.test(tooltip);
+        const explicitCountYes = /Licz do średniej:\s*tak/i.test(tooltip);
+        const weightMatch = tooltip.match(/Waga:\s*(\d+)/i);
+        const parsedWeight = weightMatch ? parseInt(weightMatch[1], 10) : null;
+        const hasFullLibrusTooltip = /Kategoria:/i.test(tooltip) && /Nauczyciel:/i.test(tooltip);
+
+        if (explicitCountNo) {
+          isCountedToAverage = false;
+          weight = 0;
+        } else if (explicitCountYes) {
+          weight = parsedWeight ?? (typeof g.weight === "number" && g.weight > 0 ? g.weight : 1);
+          isCountedToAverage = weight > 0;
+        } else if (hasFullLibrusTooltip) {
+          isCountedToAverage = parsedWeight !== null && parsedWeight > 0;
+          weight = isCountedToAverage ? parsedWeight : 0;
+        } else {
+          const fallbackWeight = parsedWeight ?? (typeof g.weight === "number" ? g.weight : 1);
+          isCountedToAverage = g.isCountedToAverage !== false && fallbackWeight > 0;
+          weight = isCountedToAverage ? fallbackWeight : 0;
+        }
+      }
+
+      if (
+        g.numericalValue !== numVal ||
+        g.isCountedToAverage !== isCountedToAverage ||
+        g.weight !== weight
+      ) {
+        changed = true;
+      }
+
+      g.numericalValue = numVal;
+      g.isCountedToAverage = isCountedToAverage;
+      g.weight = weight;
+
+      if (isCountedToAverage && numVal >= 1.0 && numVal <= 6.0 && weight > 0) {
+        weightedSum += numVal * weight;
+        weightSum += weight;
+        totalWeightedSum += numVal * weight;
+        totalWeightSum += weight;
+      }
+    });
+
+    const computedSubjectAvg = weightSum > 0
+      ? parseFloat((weightedSum / weightSum).toFixed(2))
+      : 0;
+
+    if (subject.currentAverage !== computedSubjectAvg) {
+      changed = true;
+      subject.currentAverage = computedSubjectAvg;
+    }
+  });
+
+  const computedOverallAvg = totalWeightSum > 0
+    ? parseFloat((totalWeightedSum / totalWeightSum).toFixed(2))
+    : 0;
+
+  if (data.overallAverage !== computedOverallAvg) {
+    changed = true;
+    data.overallAverage = computedOverallAvg;
+  }
+
+  return { data, changed };
+}
+
+module.exports = {
+  LibrusClient,
+  deriveLibrusModule,
+  parseMenGradeValue,
+  normalizeStudentGradesData
+};

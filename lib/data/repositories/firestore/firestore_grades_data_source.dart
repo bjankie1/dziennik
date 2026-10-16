@@ -70,7 +70,6 @@ class FirestoreGradesDataSource {
 
     return validSubjects.map((s) {
       final sName = s['name'] as String? ?? 'Przedmiot';
-      final avg = (s['currentAverage'] as num?)?.toDouble();
       var teacher = s['teacher'] as String? ?? '';
       if (teacher.isEmpty) {
         teacher = ttTeachers[sName.toLowerCase()] ?? '';
@@ -212,8 +211,6 @@ class FirestoreGradesDataSource {
         if (wTotal > 0) {
           computedAvg = wSum / wTotal;
         }
-      } else if (grades.isEmpty && avg != null && avg > 0) {
-        computedAvg = avg;
       }
 
       return Subject(

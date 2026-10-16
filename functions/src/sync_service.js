@@ -1,5 +1,5 @@
 const admin = require("firebase-admin");
-const { LibrusClient, deriveLibrusModule } = require("./librus_client");
+const { LibrusClient, deriveLibrusModule, normalizeStudentGradesData } = require("./librus_client");
 const { dispatchTelegramNotificationsForStudent } = require("./telegram_service");
 
 function resolveCacheDocumentId({ role, librusLogin, primaryLogin }) {
@@ -42,12 +42,19 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
       cachedDoc = await db.collection("students").doc(defaultPrimary).get();
     }
     if (cachedDoc.exists) {
+      const normalized = normalizeStudentGradesData(cachedDoc.data() || {});
+      if (normalized.changed && cachedDoc.ref && typeof cachedDoc.ref.set === "function") {
+        cachedDoc.ref.set(
+          { subjects: normalized.data.subjects, overallAverage: normalized.data.overallAverage },
+          { merge: true }
+        ).catch(() => {});
+      }
       return {
         success: true,
         fromCache: true,
         isSharedCache: true,
         primaryLogin: cachedDoc.id,
-        ...cachedDoc.data()
+        ...normalized.data
       };
     }
   }
@@ -102,13 +109,14 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
             timestamp: admin.firestore.FieldValue.serverTimestamp()
           }).catch(() => {});
 
+          const normalized = normalizeStudentGradesData(cachedDoc.data() || {});
           return {
             success: true,
             fromCache: true,
             rateLimited: true,
             lockedUntil: limit.lockedUntil.toDate().toISOString(),
             reason: limit.reason,
-            ...cachedDoc.data()
+            ...normalized.data
           };
         }
       }
@@ -133,6 +141,7 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
   try {
     console.log(`Starting sync for student: ${login}...`);
     freshData = await client.fetchAll();
+    normalizeStudentGradesData(freshData);
 
     // Persist updated session cookies to Firestore
     try {
@@ -172,13 +181,14 @@ async function syncStudentData(login = process.env.LIBRUS_LOGIN, password = proc
 
       const cachedDoc = await db.collection("students").doc(login).get();
       if (cachedDoc.exists) {
+        const normalized = normalizeStudentGradesData(cachedDoc.data() || {});
         return {
           success: true,
           fromCache: true,
           rateLimited: true,
           lockedUntil: lockedUntil.toISOString(),
           reason: msg,
-          ...cachedDoc.data()
+          ...normalized.data
         };
       }
     }

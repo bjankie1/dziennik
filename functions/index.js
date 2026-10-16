@@ -8,6 +8,7 @@ if (!admin.apps.length) {
 admin.firestore().settings({ ignoreUndefinedProperties: true });
 
 const { syncStudentData } = require("./src/sync_service");
+const { normalizeStudentGradesData } = require("./src/librus_client");
 const { evaluateScheduleWindow } = require("./src/schedule_evaluator");
 
 /**
@@ -101,9 +102,17 @@ exports.getStudentData = onRequest(
         }
         await syncStudentData(login, pass);
         const freshDoc = await admin.firestore().collection("students").doc(login).get();
-        return res.status(200).json(freshDoc.data());
+        const normalizedFresh = normalizeStudentGradesData(freshDoc.data() || {});
+        return res.status(200).json(normalizedFresh.data);
       }
-      res.status(200).json(doc.data());
+      const { data, changed } = normalizeStudentGradesData(doc.data() || {});
+      if (changed && doc.ref && typeof doc.ref.set === "function") {
+        await doc.ref.set(
+          { subjects: data.subjects, overallAverage: data.overallAverage },
+          { merge: true }
+        ).catch(() => {});
+      }
+      res.status(200).json(data);
     } catch (error) {
       console.error("getStudentData error:", error);
       res.status(500).json({ error: error.message });
