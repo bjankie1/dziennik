@@ -127,50 +127,46 @@ class _FloatingJustificationDockState
             ),
             const SizedBox(height: 8),
 
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _quickReasons.map((reason) {
-                  final isSelected = _selectedQuickReason == reason;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: GestureDetector(
-                      onTap: () =>
-                          setState(() => _selectedQuickReason = reason),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 7,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.indigoSurface
-                              : AppColors.slate100,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.slate200,
-                            width: isSelected ? 1.5 : 1.0,
-                          ),
-                        ),
-                        child: Text(
-                          reason,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isSelected
-                                ? FontWeight.w800
-                                : FontWeight.w600,
-                            color: isSelected
-                                ? AppColors.primary
-                                : AppColors.slate700,
-                          ),
-                        ),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _quickReasons.map((reason) {
+                final isSelected = _selectedQuickReason == reason;
+                return GestureDetector(
+                  onTap: () =>
+                      setState(() => _selectedQuickReason = reason),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.indigoSurface
+                          : AppColors.slate100,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.slate200,
+                        width: isSelected ? 1.5 : 1.0,
                       ),
                     ),
-                  );
-                }).toList(),
-              ),
+                    child: Text(
+                      reason,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: isSelected
+                            ? FontWeight.w800
+                            : FontWeight.w600,
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.slate700,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 14),
 
@@ -255,13 +251,16 @@ class _FloatingJustificationDockState
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      isStudent
-                          ? 'Poproś rodzica o usprawiedliwienie ($count $lessonLabel)'
-                          : 'Wyślij usprawiedliwienie ($count $lessonLabel)',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 14,
+                    Flexible(
+                      child: Text(
+                        isStudent
+                            ? 'Poproś rodzica o usprawiedliwienie ($count $lessonLabel)'
+                            : 'Wyślij usprawiedliwienie ($count $lessonLabel)',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -289,14 +288,17 @@ class _FloatingJustificationDockState
                   color: AppColors.slate500,
                 ),
                 const SizedBox(width: 6),
-                Text(
-                  isStudent
-                      ? 'Wniosek zostanie przekazany rodzicowi do zatwierdzenia kodem PIN'
-                      : 'Wymagane zatwierdzenie kodem PIN rodzica w następnym kroku',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.slate500,
+                Flexible(
+                  child: Text(
+                    isStudent
+                        ? 'Wniosek zostanie przekazany rodzicowi do zatwierdzenia kodem PIN'
+                        : 'Wymagane zatwierdzenie kodem PIN rodzica w następnym kroku',
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.slate500,
+                    ),
                   ),
                 ),
               ],

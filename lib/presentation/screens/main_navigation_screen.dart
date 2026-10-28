@@ -297,23 +297,11 @@ class MainNavigationScreen extends ConsumerWidget {
             loading: () => null,
             error: (err, stack) => null,
           ),
-          body: Stack(
-            children: [
-              Positioned.fill(
-                child: navigationShell ??
-                    IndexedStack(
-                      index: activeIndex,
-                      children: screens,
-                    ),
+          body: navigationShell ??
+              IndexedStack(
+                index: activeIndex,
+                children: screens,
               ),
-              if (showFloatingChat)
-                Positioned(
-                  right: 16,
-                  bottom: activeIndex == 3 ? 84 : 16,
-                  child: const FloatingChatFab(isDesktop: false),
-                ),
-            ],
-          ),
           bottomNavigationBar: NavigationBar(
             selectedIndex: activeIndex < 6 ? activeIndex : 0,
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,

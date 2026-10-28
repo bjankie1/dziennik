@@ -9,6 +9,7 @@ import 'package:edusync/domain/models/user_role.dart';
 import 'package:edusync/presentation/providers/auth_providers.dart';
 import 'package:edusync/presentation/providers/school_providers.dart';
 import 'package:edusync/presentation/screens/attendance/attendance_screen.dart';
+import 'package:edusync/presentation/screens/attendance/widgets/floating_justification_dock.dart';
 import 'package:edusync/presentation/screens/attendance/widgets/parent_approval_modal.dart';
 
 class _ConfigurableSchoolRepository extends MockSchoolRepository {
@@ -441,5 +442,46 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Wyślij do Librusa'), findsNothing);
+  });
+
+  testWidgets(
+      'FloatingJustificationDock renders all 4 quick reasons in a Wrap without horizontal clipping on mobile',
+      (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        child: MaterialApp(
+          home: Scaffold(
+            body: Align(
+              alignment: Alignment.bottomCenter,
+              child: FloatingJustificationDock(
+                selectedIds: const {'att_unexcused_1'},
+                isStudent: false,
+                onClearSelection: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Wrap), findsOneWidget);
+
+    // All 4 quick reasons must be visible and tappable without scrolling
+    for (final reason in const [
+      'Choroba',
+      'Wizyta lekarska',
+      'Sprawy rodzinne',
+      'Zawody sportowe',
+    ]) {
+      final finder = find.text(reason);
+      expect(finder, findsOneWidget);
+      await tester.tap(finder);
+      await tester.pump();
+    }
   });
 }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../domain/models/student_profile.dart';
 import '../providers/family_chat_provider.dart';
 import '../providers/sync_provider.dart';
 import '../providers/school_providers.dart';
+import 'chat/floating_chat_panel.dart';
 import 'modals/librus_query_log_modal.dart';
 
 class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
@@ -159,18 +159,60 @@ class AppHeader extends ConsumerWidget implements PreferredSizeWidget {
                 ),
               ),
 
-              // Family Chat Action with Badge (D-09)
+              // Family Chat & AI Assistant Action with Badge (D-09)
               IconButton(
-                tooltip: 'Czat Rodzinny',
-                onPressed: () => context.go('/czat'),
+                tooltip: 'Czat & AI ✨',
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    useRootNavigator: true,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) => Padding(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                      ),
+                      child: const FloatingChatPanel(isInsideBottomSheet: true),
+                    ),
+                  );
+                },
                 icon: Badge(
                   isLabelVisible: chatUnreadCount > 0,
                   label: Text('$chatUnreadCount'),
-                  backgroundColor: AppColors.primary,
-                  child: const Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    color: AppColors.onSurface,
-                    size: 22,
+                  backgroundColor: AppColors.error,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0052CC), Color(0xFF4F46E5)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.auto_awesome_rounded,
+                          color: Colors.white,
+                          size: 15,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          'AI',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
