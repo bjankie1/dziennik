@@ -115,13 +115,14 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 | 261016-cvn | Upewnij się że oceny są dobrze prezentowane. Średnia 2.74. Rozkład pokazuje 6 ocen 1, ale tabelka poniżej już 1 ocenę 1, ale też kilka 0. Średnia ogólna na dole to 4.82, a na górze 2.74 | 2026-10-16 | b0a0ee2 | [261016-cvn-upewnij-si-e-oceny-s-dobrze-prezentowane](./quick/261016-cvn-upewnij-si-e-oceny-s-dobrze-prezentowane/) |
 | 261016-dko | Średnie ważone dla poszczególnych przedmiotów są z dupy - niejak się mają do otrzymanych ocen. | 2026-10-16 | 9e2b22c | [261016-dko-rednie-wa-one-dla-poszczeg-lnych-przedmi](./quick/261016-dko-rednie-wa-one-dla-poszczeg-lnych-przedmi/) |
 | 261016-e8f | Słupki w histogramie ocen są rozjechane - powinny zaczynać się na tym samym poziomie | 2026-10-16 | 2a3a91f | [261016-e8f-s-upki-w-histogramie-ocen-s-rozjechane-c](./quick/261016-e8f-s-upki-w-histogramie-ocen-s-rozjechane-c/) |
+| 261028-a6e | Przeniesienie przycisku Czat & AI do górnego paska na mobile (AppHeader) oraz układ Wrap dla szybkich powodów usprawiedliwień w FloatingJustificationDock | 2026-10-28 | af75214 | [261028-a6e-przeniesienie-przycisku-czat-ai-do-g-rne](./quick/261028-a6e-przeniesienie-przycisku-czat-ai-do-g-rne/) |
 
 ## Session
 
-**Last session:** 2026-10-16T17:22:30.000Z
+**Last session:** 2026-10-28T06:22:46.000Z
 **Stopped at:** Phase 26 complete, ready to plan Phase 19
 **Resume file:** None
-Last activity: 2026-10-16 - Completed quick task 261016-e8f: Słupki w histogramie ocen są rozjechane - powinny zaczynać się na tym samym poziomie
+Last activity: 2026-10-28 - Completed quick task 261028-a6e: Przeniesienie przycisku Czat & AI do górnego paska na mobile (AppHeader) oraz układ Wrap dla szybkich powodów usprawiedliwień w FloatingJustificationDock
 
 ## Current Position
 
@@ -130,7 +131,7 @@ Current Plan: Not started
 Total Plans in Phase: 1
 Next Phase: 19 (Raporty tygodniowe)
 Status: Phase complete — ready for verification
-Last activity: 2026-10-16 - Completed quick task 261016-e8f: Słupki w histogramie ocen są rozjechane - powinny zaczynać się na tym samym poziomie
+Last activity: 2026-10-28 - Completed quick task 261028-a6e: Przeniesienie przycisku Czat & AI do górnego paska na mobile (AppHeader) oraz układ Wrap dla szybkich powodów usprawiedliwień w FloatingJustificationDock
 
 ## Performance Metrics
 
