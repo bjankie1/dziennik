@@ -40,6 +40,8 @@ Milestone v3.0 („Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia”) 
 - [x] **Phase 25: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień i powiadomienia o akceptacji** — Ręczna archiwizacja i przywracanie wiadomości z zakładką „Archiwum”, automatyczna archiwizacja systemowych potwierdzeń akceptacji usprawiedliwień z podglądem zaakceptowanych usprawiedliwień we Frekwencji oraz powiadomienia Telegram / Web Push o zaakceptowaniu usprawiedliwienia przez wychowawcę. (completed 2026-10-04)
 - [x] **Phase 26: Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram** — Powiadomienia o nowej wiadomości i ogłoszeniu na Telegramie zawierające pełną treść wiadomości/ogłoszenia oraz listę załączników wraz z bezpośrednimi linkami do ich pobrania. (completed 2026-10-04)
 - [ ] **Phase 27: Poranny briefing planu lekcji na Telegram** — Codzienne poranne powiadomienie na Telegram z informacją na starcie, o której godzinie Oskar zaczyna i kończy lekcje danego dnia, oraz pełnym planem lekcji (z uwzględnieniem zastępstw, odwołań i sprawdzianów).
+- [ ] **Phase 28: Oznaczanie wagarów we frekwencji i ukrywanie ich z widoku szczegółowego** — Możliwość zaznaczenia nieusprawiedliwionych lekcji i oznaczenia ich jako „Wagary” (pozostają nieusprawiedliwione w Librusie i widoczne w statystykach, znikają z bieżącego widoku szczegółowego i można je podejrzeć pod przyciskiem „Wagary”).
+- [ ] **Phase 29: Usprawiedliwianie nieobecności w przyszłości (wyprzedzające wnioski o usprawiedliwienie)** — Możliwość wysłania prośby/wniosku o usprawiedliwienie przyszłych dni lub zakresów dat (np. wyjazd wakacyjny na cały obecny tydzień razem z przyszłym poniedziałkiem).
 
 ---
 
@@ -382,3 +384,32 @@ Plans:
 Plans:
 
 - [ ] TBD (run /gsd-plan-phase 27 to break down)
+
+### Phase 28: Oznaczanie wagarów we frekwencji i ukrywanie ich z widoku szczegółowego
+
+**Goal**: Umożliwienie oznaczenia wybranych nieusprawiedliwionych lekcji Oskara jako „Wagary”, tak aby pozostały nieusprawiedliwione w Librusie i nadal wliczały się do statystyk frekwencji, ale nie zaśmiecały bieżącego widoku szczegółowego lekcji do decyzji — z możliwością podejrzenia i ewentualnego cofnięcia oznaczenia po kliknięciu dedykowanego przycisku/filtra „Wagary”.  
+**Requirements**: REQ-ATT-TRUANCY-01, REQ-ATT-TRUANCY-02  
+**Depends on**: Phase 25  
+**Success Criteria**:
+
+1. W module Frekwencji (`AttendanceScreen`) rodzic może zaznaczyć wybrane nieusprawiedliwione godziny lekcyjne checkboxami i oznaczyć je jako **„Wagary”** (bez wysyłania wniosku o usprawiedliwienie do Librusa), a stan ten jest trwale zapisywany w Firestore oraz lokalnym cache'u i odporny na kolejne synchronizacje z Librusem oraz odświeżenie strony (`F5`).
+2. Lekcje oznaczone jako „Wagary” znikają z domyślnego widoku szczegółowego zgłoszeń nieobecności (`Do usprawiedliwienia` oraz bieżącej listy dni wymagających decyzji) i pomniejszają licznik pozycji wymagających decyzji rodzica.
+3. Lekcje oznaczone jako „Wagary” pozostają nieusprawiedliwione i są nadal uwzględniane w semestralnych statystykach frekwencji (`AttendanceSemesterKpiCard` — łączna liczba opuszczonych/nieusprawiedliwionych godzin i wskaźniki procentowe, z opcjonalnym wyszczególnieniem liczby wagarów).
+4. Na pasku filtrów (`AttendanceFilterBar`) dostępny jest przycisk/pigułka **„Wagary (X)”**, którego kliknięcie wyświetla listę wszystkich lekcji oznaczonych jako wagary (pogrupowanych po dniach) wraz z możliwością cofnięcia oznaczenia („Przywróć do decyzji” / „Usuń z wagarów”).
+
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 28 to break down)
+
+### Phase 29: Chciałbym mieć możliwość usprawiedliwiania nieobecności w przyszłości. Teraz jestesmy na wakacjach i chciałbym wysłać prośbę o  usprawiedliwienie za cały obecny tydzień razem z przyszłym poniedziałekiem.
+
+**Goal:** Umożliwienie wysyłania próśb i wniosków o usprawiedliwienie nieobecności z wyprzedzeniem na przyszłe dni i zakresy dat (np. podczas wyjazdu wakacyjnego za cały bieżący tydzień wraz z kolejnym poniedziałkiem).  
+**Requirements**: TBD  
+**Depends on:** Phase 28  
+**Plans:** 0 plans
+
+Plans:
+
+- [ ] TBD (run /gsd-plan-phase 29 to break down)

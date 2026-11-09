@@ -5,17 +5,17 @@ current_phase: 19
 current_phase_name: Raporty tygodniowe (Piątkowy briefing sprawdzianów i planu)
 current_plan: Not started
 status: planning
-stopped_at: Phase 26 complete, ready to plan Phase 19
-last_updated: "2026-10-04T12:51:52.454Z"
-last_activity: 2026-10-04
+stopped_at: Phase 29 context gathered
+last_updated: "2026-11-09T18:41:27.094Z"
+last_activity: 2026-10-28
 last_activity_desc: Phase 26 complete, transitioned to Phase 19
-state_head: a4bce490a26cc7d996950e9a98eb3d67bc29e14f
+state_head: 15b79091383f0636e6c76ede52572be1dbf506ce
 progress:
-  total_phases: 15
+  total_phases: 18
   completed_phases: 8
   total_plans: 26
   completed_plans: 24
-  percent: 53
+  percent: 44
 milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 ---
 
@@ -44,6 +44,8 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - [x] **Phase 25**: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień i powiadomienia o akceptacji (completed 2026-10-04)
 - [x] **Phase 26**: Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram (completed 2026-10-04)
 - [ ] **Phase 27**: Poranny briefing planu lekcji na Telegram (godziny rozpoczęcia i zakończenia lekcji Oskara oraz pełny plan dnia)
+- [ ] **Phase 28**: Oznaczanie wagarów we frekwencji i ukrywanie ich z widoku szczegółowego
+- [ ] **Phase 29**: Usprawiedliwianie przyszłych nieobecności i wyprzedzające wnioski o usprawiedliwienie (np. wyjazd wakacyjny na cały tydzień z kolejnym poniedziałkiem)
 
 ## Completed in Previous Milestones
 
@@ -80,6 +82,8 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 - Phase 25 added: Archiwizacja wiadomości, automatyczna archiwizacja potwierdzeń usprawiedliwień (z podglądem zaakceptowanych usprawiedliwień we Frekwencji) i powiadomienia o akceptacji usprawiedliwienia
 - Phase 26 added: Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram
 - Phase 27 added: Poranny briefing planu lekcji na Telegram (godziny rozpoczęcia i zakończenia lekcji Oskara oraz pełny plan dnia)
+- Phase 28 added: Oznaczanie wagarów we frekwencji i ukrywanie ich z widoku szczegółowego (oznaczanie wybranych nieusprawiedliwionych lekcji jako „Wagary”, pozostawienie ich nieusprawiedliwionymi w statystykach, ukrycie z domyślnego widoku szczegółowego i podgląd pod przyciskiem „Wagary”)
+- Phase 29 added: Chciałbym mieć możliwość usprawiedliwiania nieobecności w przyszłości. Teraz jestesmy na wakacjach i chciałbym wysłać prośbę o  usprawiedliwienie za cały obecny tydzień razem z przyszłym poniedziałekiem.
 
 ### Quick Tasks Completed
 
@@ -119,9 +123,9 @@ milestone_name: Dostęp Ucznia, Smart Zadania, Kalendarz & Powiadomienia
 
 ## Session
 
-**Last session:** 2026-10-28T06:22:46.000Z
-**Stopped at:** Phase 26 complete, ready to plan Phase 19
-**Resume file:** None
+**Last session:** 2026-11-09T18:41:26.547Z
+**Stopped at:** Phase 29 context gathered
+**Resume file:** .planning/phases/29-chcia-bym-mie-mo-liwo-usprawiedliwiania-nieobecno-ci-w-przys/29-CONTEXT.md
 Last activity: 2026-10-28 - Completed quick task 261028-a6e: Przeniesienie przycisku Czat & AI do górnego paska na mobile (AppHeader) oraz układ Wrap dla szybkich powodów usprawiedliwień w FloatingJustificationDock
 
 ## Current Position
