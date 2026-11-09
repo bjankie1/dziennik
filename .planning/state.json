@@ -142,6 +142,16 @@
       "number": "26",
       "name": "Pełna treść wiadomości i ogłoszeń oraz linki do załączników w powiadomieniach Telegram",
       "status": "complete"
+    },
+    {
+      "number": "27",
+      "name": "Poranny briefing planu lekcji na Telegram",
+      "status": "pending"
+    },
+    {
+      "number": "28",
+      "name": "Oznaczanie wagarów we frekwencji i ukrywanie ich z widoku szczegółowego",
+      "status": "pending"
     }
   ],
   "next": {
@@ -149,5 +159,5 @@
     "label": "Advance to the next step (plan phase 19)",
     "reason": "Phase 19 of 15 — needs a plan"
   },
-  "updated_at": "2026-10-04T12:51:52.470Z"
+  "updated_at": "2026-11-09T18:05:22.328Z"
 }

@@ -144,6 +144,11 @@
 - [x] **REQ-NOTIF-TG-ANN-01**: Powiadomienie na Telegramie o nowym ogłoszeniu szkolnym zawiera autora, tytuł oraz pełną, wieloliniową treść ogłoszenia (`content`).
 - [x] **REQ-NOTIF-TG-ATT-01**: Jeśli nowa wiadomość posiada załączniki (`attachmentFiles`), powiadomienie na Telegramie wypisuje listę nazw załączników wraz z klikalnymi linkami pozwalającymi na ich pobranie (`/api/downloadAttachment?path=...` na domenie `https://lepsza-szkola.web.app`).
 
+### Truancy Marking & Filtering (Phase 28)
+
+- [ ] **REQ-ATT-TRUANCY-01**: Zaznaczanie wybranych nieusprawiedliwionych godzin lekcyjnych i trwałe oznaczanie ich jako „Wagary” (Firestore + `SharedPreferences`) bez wysyłania usprawiedliwienia do Librusa, z możliwością cofnięcia oznaczenia.
+- [ ] **REQ-ATT-TRUANCY-02**: Ukrywanie lekcji oznaczonych jako „Wagary” z domyślnych widoków szczegółowych nieobecności do decyzji przy jednoczesnym zachowaniu ich w statystykach frekwencji oraz udostępnieniu dedykowanego przycisku/filtra `Wagary (X)` do ich podglądu.
+
 ## Traceability
 
 | Requirement | Phase | Status |
@@ -179,3 +184,5 @@
 | REQ-NOTIF-TG-MSG-01 | Phase 26 | Complete |
 | REQ-NOTIF-TG-ANN-01 | Phase 26 | Complete |
 | REQ-NOTIF-TG-ATT-01 | Phase 26 | Complete |
+| REQ-ATT-TRUANCY-01 | Phase 28 | Pending |
+| REQ-ATT-TRUANCY-02 | Phase 28 | Pending |
