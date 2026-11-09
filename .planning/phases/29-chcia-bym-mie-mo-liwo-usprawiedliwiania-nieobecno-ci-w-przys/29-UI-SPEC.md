@@ -1,10 +1,11 @@
 ---
 phase: "29"
 slug: "chcia-bym-mie-mo-liwo-usprawiedliwiania-nieobecno-ci-w-przys"
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: "2026-11-09"
+reviewed_at: "2026-11-09T18:48:30Z"
 ---
 
 # Phase 29 — UI Design Contract
@@ -155,7 +156,7 @@ Applicable state considerations resolved: 20 covered, 0 backstop, 0 unresolved
 | zero-one-many | E4 (`AttendanceSemesterKpiCard` Protection) | ✅ covered | Niezależnie od tego, czy użytkownik zgłosi 1 przyszły dzień czy 10 przyszłych dni wakacyjnych, syntetyczne wpisy dla przyszłych dat (`date > today`) są wykluczone z `totalLessons` i `totalAbsences`, więc procent frekwencji na wykresie kołowym pozostaje niezmieniony (D-12). |
 | populated | E4 (`ScheduleScreen` / `AgendaLessonCard` / `LessonDetailsModal` Badges) | ✅ covered | Kafelki lekcji w siatce tygodniowej i agendzie planu lekcji dla dni objętych wyprzedzającym wnioskiem wyświetlają plakietkę `Zgłoszona nieobecność` (status `requested`) lub `Usprawiedliwione` (status `approved` / `excused`) (D-13). |
 | empty | E4 (`ScheduleScreen` Future Regular Days) | ✅ covered | Dni przyszłe nieobjęte żadnym zgłoszeniem nieobecności wyświetlają standardowe kafelki planu lekcji bez żadnych plakietek frekwencji. |
-| overflow | E4 (`ScheduleScreen` & `AgendaLessonCard` Tile Badges) | ✅ covered | Plakietka `Zgłoszona nieobecność` / `Usprawiedliwione` na kafelku lekcji używa `TextOverflow.ellipsis` i kompaktowego rozmiaru czcionki (`11px–12px`), nie powodując przepełnienia kafelka w siatce tygodniowej. |
+| overflow | E4 (`ScheduleScreen` & `AgendaLessonCard` Tile Badges) | ✅ covered | Plakietka `Zgłoszona nieobecność` / `Usprawiedliwione` na kafelku lekcji używa `TextOverflow.ellipsis` i rozmiaru czcionki `12px` (`Label`), nie powodując przepełnienia kafelka w siatce tygodniowej. |
 | long-text | E4 (`PendingTeacherAccordionBanner` Reason Text) | ✅ covered | Długie uzasadnienia wpisane przez rodzica lub ucznia (do 250 znaków) zawijają się w wielu liniach wewnątrz karty lekcji w rozwiniętym akordeonie bez wypychania przycisku `Cofnij` poza krawędź ekranu. |
 
 ---
@@ -170,12 +171,12 @@ Applicable state considerations resolved: 20 covered, 0 backstop, 0 unresolved
 
 ## Checker Sign-Off
 
-- [ ] Dimension 1 Copywriting: PASS
-- [ ] Dimension 2 Visuals: PASS
-- [ ] Dimension 3 Color: PASS
-- [ ] Dimension 4 Typography: PASS
-- [ ] Dimension 5 Spacing: PASS
-- [ ] Dimension 6 Registry Safety: PASS
-- [ ] Dimension 7 Inventory Provenance: PASS
+- [x] Dimension 1 Copywriting: PASS
+- [x] Dimension 2 Visuals: PASS
+- [x] Dimension 3 Color: PASS
+- [x] Dimension 4 Typography: PASS
+- [x] Dimension 5 Spacing: PASS
+- [x] Dimension 6 Registry Safety: PASS
+- [x] Dimension 7 Inventory Provenance: PASS
 
-**Approval:** pending
+**Approval:** approved (2026-11-09T18:48:30Z)
